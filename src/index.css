@@ -1,0 +1,462 @@
+@import "tailwindcss";
+
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+
+:root {
+  --font-size: 14px;
+  --background: #0f172a; /* Dark blue background */
+  --foreground: #f8fafc; /* Light text color for contrast */
+  --card: #1e293b; /* Darker blue card background */
+  --card-foreground: #f8fafc; /* Light text on cards */
+  --popover: #1e293b; /* Darker blue popover background */
+  --popover-foreground: #f8fafc; /* Light text on popovers */
+  --primary: #3b82f6; /* Blue primary color */
+  --primary-foreground: #ffffff;
+  --secondary: #334155; /* Medium dark blue secondary */
+  --secondary-foreground: #f8fafc; /* Light text on secondary */
+  --muted: #334155; /* Medium dark blue muted */
+  --muted-foreground: #94a3b8; /* Lighter blue muted text */
+  --accent: #ffd60a; /* Yellow accent color */
+  --accent-foreground: #0f172a; /* Dark text on yellow accent */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #334155; /* Medium dark blue border */
+  --input: #334155; /* Medium dark blue input */
+  --input-background: #334155; /* Medium dark blue input background */
+  --switch-background: #334155; /* Medium dark blue switch background */
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #3b82f6;
+  --chart-1: #3b82f6;
+  --chart-2: #60a5fa;
+  --chart-3: #818cf8;
+  --chart-4: #c084fc;
+  --chart-5: #f472b6;
+  --radius: 0.625rem;
+  --sidebar: #1e293b; /* Darker blue sidebar */
+  --sidebar-foreground: #f8fafc; /* Light text on sidebar */
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #334155; /* Medium dark blue sidebar accent */
+  --sidebar-accent-foreground: #f8fafc; /* Light text on sidebar accent */
+  --sidebar-border: #475569; /* Medium-light blue sidebar border */
+  --sidebar-ring: #3b82f6;
+  --spotify-green: #1DB954;
+  --spotify-black: #191414;
+  --yellow-accent: #ffd60a; /* Yellow accent color */
+  --electric-blue: #0284c7; /* Electric blue for high-visibility */
+  --bright-blue: #3b82f6; /* Bright blue accent */
+}
+
+/* Light theme values - not used by default but kept for reference */
+.light {
+  --background: #ffffff;
+  --foreground: oklch(0.145 0 0);
+  --card: #ffffff;
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: oklch(0.95 0.0058 264.53);
+  --secondary-foreground: #030213;
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --accent: #ffd60a;
+  --accent-foreground: #030213;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: transparent;
+  --input-background: #f3f3f5;
+  --switch-background: #cbced4;
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  --spotify-green: #1DB954;
+  --spotify-black: #191414;
+  --yellow-accent: #ffd60a;
+  --electric-blue: #0284c7;
+  --bright-blue: #3b82f6;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html, body {
+    @apply bg-background text-foreground;
+    background-color: var(--background) !important;
+    color: var(--foreground) !important;
+    min-height: 100vh;
+  }
+}
+
+@layer base {
+  h1 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h2 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  p {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+  }
+
+  label {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  button {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  input {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+  }
+}
+
+html {
+  font-size: var(--font-size);
+  background-color: var(--background) !important;
+}
+
+/* Add glowing effect for primary elements */
+.glow {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+  transition: all 0.3s ease;
+}
+
+.glow:hover {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.7);
+}
+
+/* Yellow accent glow */
+.glow-accent {
+  box-shadow: 0 0 15px rgba(255, 214, 10, 0.4);
+  transition: all 0.3s ease;
+}
+
+.glow-accent:hover {
+  box-shadow: 0 0 20px rgba(255, 214, 10, 0.6);
+}
+
+/* Blue glow for the request section */
+.glow-blue {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
+  transition: all 0.3s ease;
+}
+
+.glow-blue:hover {
+  box-shadow: 0 0 20px rgba(2, 132, 199, 0.8);
+}
+
+/* Glassmorphism for cards */
+.glass {
+  background: rgba(30, 41, 59, 0.7); /* Dark blue with transparency */
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient text for highlights */
+.gradient-text {
+  background: linear-gradient(90deg, #3b82f6, #60a5fa, #ffd60a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Text gradient for selected items */
+.text-gradient {
+  background: linear-gradient(90deg, #ffd60a, #3b82f6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Spotify branding styles */
+.spotify-button {
+  background-color: var(--spotify-green);
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.spotify-button:hover {
+  filter: brightness(1.1);
+  transform: scale(1.02);
+}
+
+/* Animated equalizer for now playing */
+.equalizer {
+  display: flex;
+  align-items: flex-end;
+  height: 15px;
+  width: 20px;
+  gap: 1px;
+}
+
+.equalizer-bar {
+  width: 3px;
+  background-color: var(--accent);
+  border-radius: 1px;
+  animation: equalize 1.5s ease-in-out infinite;
+}
+
+.equalizer-bar:nth-child(1) {
+  animation-delay: 0s;
+  height: 40%;
+}
+
+.equalizer-bar:nth-child(2) {
+  animation-delay: 0.2s;
+  height: 80%;
+}
+
+.equalizer-bar:nth-child(3) {
+  animation-delay: 0.4s;
+  height: 60%;
+}
+
+.equalizer-bar:nth-child(4) {
+  animation-delay: 0.6s;
+  height: 30%;
+}
+
+@keyframes equalize {
+  0%, 100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* Pulse animation for music */
+.pulse-music {
+  animation: pulse-music 2s ease-in-out infinite;
+}
+
+@keyframes pulse-music {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+/* Music poster styles */
+.music-poster {
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.music-poster:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* Currently playing music poster */
+.now-playing-poster {
+  border-radius: var(--radius);
+  box-shadow: 0 0 20px rgba(255, 214, 10, 0.3);
+  animation: glow-poster 3s ease-in-out infinite;
+}
+
+@keyframes glow-poster {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(255, 214, 10, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(255, 214, 10, 0.5);
+  }
+}
+
+/* Album art floating animation */
+.floating-album {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* DJ Mode indication */
+.dj-mode {
+  position: relative;
+  overflow: hidden;
+}
+
+.dj-mode::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, var(--primary) 0%, transparent 70%);
+  opacity: 0.2;
+  border-radius: inherit;
+}
+
+/* Music waves animation */
+.music-wave {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 20px;
+}
+
+.wave-bar {
+  width: 2px;
+  background-color: var(--accent);
+  animation: wave 1s ease-in-out infinite;
+}
+
+.wave-bar:nth-child(1) { height: 30%; animation-delay: 0.0s; }
+.wave-bar:nth-child(2) { height: 60%; animation-delay: 0.1s; }
+.wave-bar:nth-child(3) { height: 80%; animation-delay: 0.2s; }
+.wave-bar:nth-child(4) { height: 100%; animation-delay: 0.3s; }
+.wave-bar:nth-child(5) { height: 80%; animation-delay: 0.4s; }
+.wave-bar:nth-child(6) { height: 60%; animation-delay: 0.5s; }
+.wave-bar:nth-child(7) { height: 30%; animation-delay: 0.6s; }
+
+@keyframes wave {
+  0%, 100% {
+    transform: scaleY(0.5);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* Price badge styling */
+.price-badge {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  font-weight: bold;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 8px rgba(255, 214, 10, 0.4);
+  transition: all 0.2s ease;
+  position: relative;
+  animation: price-pulse 2s infinite alternate;
+  display: inline-block;
+}
+
+.price-badge:hover {
+  box-shadow: 0 0 12px rgba(255, 214, 10, 0.6);
+  transform: translateY(-1px);
+}
+
+@keyframes price-pulse {
+  0% {
+    box-shadow: 0 0 8px rgba(255, 214, 10, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 12px rgba(255, 214, 10, 0.7);
+  }
+}
+
+/* Pulsing blue animation for the request song section */
+@keyframes pulse-blue {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(2, 132, 199, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(2, 132, 199, 0.6);
+  }
+}
+
+.animate-pulse-blue {
+  animation: pulse-blue 4s infinite alternate;
+}
