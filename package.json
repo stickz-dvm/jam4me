@@ -5,8 +5,9 @@
   "description": "A Nigerian web platform connecting party-goers with DJs",
   "main": "index.html",
   "scripts": {
-    "dev": "vite",
+    "start": "vite --port 4050",
     "build": "tsc && vite build",
+    "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "test": "vitest"
@@ -62,6 +63,8 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@eslint/js": "^9.9.0",
+    "@tailwindcss/typography": "^0.5.15",
     "@types/node": "^20.10.6",
     "@types/react": "^18.2.46",
     "@types/react-dom": "^18.2.18",
@@ -75,6 +78,7 @@
     "postcss": "^8.5.4",
     "tailwindcss": "^4.1.8",
     "typescript": "^5.3.3",
+    "typescript-eslint": "^8.0.1",
     "vite": "^6.3.5",
     "vitest": "^3.2.3"
   },
