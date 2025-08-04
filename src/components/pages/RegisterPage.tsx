@@ -11,13 +11,13 @@ import { User, Music } from "lucide-react";
 
 export function RegisterPage() {
   const navigate = useNavigate();
-  const { register, isLoading } = useAuth();
-  const [name, setName] = useState("");
+  const { register, isLoading, signupResponse } = useAuth();
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [userType, setUserType] = useState<UserType>("user");
+  const [user_status, setUserStatus] = useState<UserType>("user");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,14 +29,22 @@ export function RegisterPage() {
     }
     
     try {
-      await register(name, email, password, userType);
+      console.log("payload in component: ", {
+        username,
+        email,
+        password,
+        user_status
+      })
+      await register(username, email, password, user_status);
+
+      console.log("register response in component: ", signupResponse);
       
       // Navigate based on user type
-      if (userType === "dj") {
-        navigate("/dj/onboarding");
-      } else {
-        navigate("/onboarding");
-      }
+      // if (userType === "dj") {
+      //   navigate("/dj/onboarding");
+      // } else {
+      //   navigate("/onboarding");
+      // }
     } catch (err) {
       setError("Failed to register. Please try again.");
       console.error(err);
@@ -51,7 +59,7 @@ export function RegisterPage() {
       exit={{ opacity: 0, y: 20 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="relative w-full h-full absolute inset-0 -z-10">
+      <div className="relative w-full h-full inset-0 -z-10">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-background"></div>
         <motion.div 
           className="absolute top-1/4 right-1/4 w-64 h-64 rounded-full bg-primary/10 blur-3xl"
@@ -93,7 +101,7 @@ export function RegisterPage() {
             </CardDescription>
           </CardHeader>
           
-          <Tabs defaultValue="user" onValueChange={(value) => setUserType(value as UserType)} className="w-full">
+          <Tabs defaultValue="user" onValueChange={(value) => setUserStatus(value as UserType)} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="user" className="flex items-center justify-center gap-2">
                 <User className="h-4 w-4" />
@@ -114,12 +122,12 @@ export function RegisterPage() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    <label htmlFor="name">Full Name</label>
+                    <label htmlFor="username">Username</label>
                     <Input
-                      id="name"
-                      placeholder="John Doe"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      id="username"
+                      placeholder="jamesBond"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                       required
                       className="bg-input-background"
                     />
@@ -189,8 +197,8 @@ export function RegisterPage() {
                     <Input
                       id="dj-name"
                       placeholder="John Doe"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                       required
                       className="bg-input-background"
                     />

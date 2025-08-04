@@ -11,8 +11,8 @@ import { User, Music } from "lucide-react";
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
-  const [email, setEmail] = useState("");
+  const { login, isLoading, loginResponse } = useAuth();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [userType, setUserType] = useState<UserType>("user");
@@ -22,14 +22,16 @@ export function LoginPage() {
     setError("");
     
     try {
-      await login(email, password, userType);
+      await login(username, password, userType);
+
+      console.log("login response in component: ", loginResponse);
       
-      // Navigate based on user type
-      if (userType === "dj") {
-        navigate("/dj/dashboard");
-      } else {
-        navigate("/parties");
-      }
+      // // Navigate based on user type
+      // if (userType === "dj") {
+      //   navigate("/dj/dashboard");
+      // } else {
+      //   navigate("/parties");
+      // }
     } catch (err) {
       setError("Failed to log in. Please check your credentials.");
       console.error(err);
@@ -107,13 +109,13 @@ export function LoginPage() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    <label htmlFor="email">Email</label>
+                    <label htmlFor="username">Username</label>
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="username"
+                      type="text"
+                      placeholder="jamesbond007"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                       required
                       className="bg-input-background"
                     />
@@ -163,13 +165,13 @@ export function LoginPage() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    <label htmlFor="dj-email">Email</label>
+                    <label htmlFor="dj-username">Username</label>
                     <Input
-                      id="dj-email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="dj-username"
+                      type="text"
+                      placeholder="jamesbond007"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                       required
                       className="bg-input-background"
                     />

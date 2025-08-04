@@ -1,4 +1,6 @@
+import { api } from "@/api/apiMethods";
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import axios from "axios";
 
 export type UserType = "user" | "dj";
 
@@ -27,6 +29,8 @@ type AuthContextType = {
   isDj: boolean;
   getUserType: () => UserType | null;
   getHomeRoute: () => string;
+  signupResponse: object;
+  loginResponse: object;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,6 +42,8 @@ const USER_KEY = "jam4me-user";
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [signupResponse, setSignupResponse] = useState({});
+  const [loginResponse, setLoginResponse] = useState({});
 
   useEffect(() => {
     // Check if user is stored in local storage
@@ -51,49 +57,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string, userType: UserType = "user") => {
+  const login = async (username: string, password: string, user_status: UserType = "user") => {
     // Simulate API call
     setIsLoading(true);
     try {
-      // In a real app, this would be an API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log("login payload in context: ", {
+        username,
+        password
+      });
+
+      const endpoint = user_status === "user" ? "/user_wallet/us_log/us_hub_er/" : "/dj_wallet/us_log/d_hub_j/";
+      const response = await api.post(endpoint, {username, password});
+
+      setLoginResponse(response);
+      console.log("login response: ", response);
+      // // In a real app, this would be an API call
+      // await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const mockUser: User = {
-        id: userType === "dj" ? "dj-123" : "user-123",
-        name: userType === "dj" ? "DJ Spinmaster" : "Demo User",
-        email,
-        userType,
-        djName: userType === "dj" ? "DJ Spinmaster" : undefined,
-        genre: userType === "dj" ? "Afrobeats" : undefined,
-        bio: userType === "dj" ? "Professional DJ with 5 years of experience" : undefined,
-      };
+      // const mockUser: User = {
+      //   id: userType === "dj" ? "dj-123" : "user-123",
+      //   name: userType === "dj" ? "DJ Spinmaster" : "Demo User",
+      //   email,
+      //   userType,
+      //   djName: userType === "dj" ? "DJ Spinmaster" : undefined,
+      //   genre: userType === "dj" ? "Afrobeats" : undefined,
+      //   bio: userType === "dj" ? "Professional DJ with 5 years of experience" : undefined,
+      // };
       
-      setUser(mockUser);
-      localStorage.setItem(USER_KEY, JSON.stringify(mockUser));
-      // Store user type separately for quicker access
-      localStorage.setItem(USER_TYPE_KEY, userType);
+      // setUser(mockUser);
+      // localStorage.setItem(USER_KEY, JSON.stringify(mockUser));
+      // // Store user type separately for quicker access
+      // localStorage.setItem(USER_TYPE_KEY, userType);
+    } catch (error) {
+      console.error(error);
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const register = async (name: string, email: string, password: string, userType: UserType = "user") => {
+  const register = async (username: string, email: string, password: string, user_status: UserType = "user") => {
     setIsLoading(true);
     try {
-      // In a real app, this would be an API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockUser: User = {
-        id: userType === "dj" ? "dj-" + Date.now().toString() : "user-" + Date.now().toString(),
-        name,
+      console.log("payload in context: ", {
+        username,
         email,
-        userType,
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem(USER_KEY, JSON.stringify(mockUser));
-      // Store user type separately for quicker access
-      localStorage.setItem(USER_TYPE_KEY, userType);
+        password,
+        user_status
+      })
+
+      const endpoint = user_status === "user" 
+      ? "user_wallet/crt_ur/us_hub_er/" 
+      : "dj_wallet/crt_ur/d_hub_j/";
+    
+      const response = await api.post(endpoint, {
+        username, 
+        email, 
+        password, 
+        user_status
+      });
+
+      setSignupResponse(response);
+      console.log("sign up response: ", response)
+    } catch (error) {
+      console.error(error);
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
@@ -169,6 +197,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isDj: user?.userType === "dj",
         getUserType,
         getHomeRoute,
+        loginResponse,
+        signupResponse,
       }}
     >
       {children}
