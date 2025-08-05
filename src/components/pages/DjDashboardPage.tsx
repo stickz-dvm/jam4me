@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, MouseEvent, SetStateAction } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
@@ -46,7 +46,7 @@ export function DjDashboardPage() {
   const [activeTab, setActiveTab] = useState("ongoing");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
-  const [selectedParty, setSelectedParty] = useState(null);
+  const [selectedParty, setSelectedParty] = useState<any>();
   
   // Create a ref for focusing, but we won't pass it directly to Input
   const inputContainerRef = useRef<HTMLDivElement>(null);
@@ -255,7 +255,7 @@ export function DjDashboardPage() {
   }, [dialogOpen]);
 
   // Show QR code modal
-  const handleShowQRCode = (party, e) => {
+  const handleShowQRCode = (party: any, e: MouseEvent<HTMLButtonElement>) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -265,7 +265,7 @@ export function DjDashboardPage() {
   };
 
   // Navigate to party management page
-  const navigateToPartyManagement = (partyId) => {
+  const navigateToPartyManagement = (partyId: string) => {
     if (!partyId) {
       console.error("Invalid party ID for navigation");
       return;
@@ -282,7 +282,7 @@ export function DjDashboardPage() {
   };
   
   // Get initials from name for avatar fallback
-  const getInitials = (name) => {
+  const getInitials = (name: string) => {
     return name
       .split(' ')
       .map(part => part[0])

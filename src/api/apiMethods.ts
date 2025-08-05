@@ -1,19 +1,19 @@
 import { InternalAxiosRequestConfig } from "axios";
-import apiClient, { authApi } from "./apiClient";
+import { authApi } from "./apiClient";
 
 export const api = {
-  get: <T = any>(url: string, config?): Promise<T> =>
+  get: <T = any>(url: string, config?: any): Promise<T> =>
     authApi.get<T>(url, config).then(res => res.data),
     
-  post: <T = any>(url: string, data?: any, config?): Promise<T> =>
+  post: <T = any>(url: string, data?: any, config?: any): Promise<T> =>
     authApi.post<T>(url, data, config).then(res => res.data),
     
-  put: <T = any>(url: string, data?: any, config?): Promise<T> =>
+  put: <T = any>(url: string, data?: any, config?: any): Promise<T> =>
     authApi.put<T>(url, data, config).then(res => res.data),
     
-  patch: <T = any>(url: string, data?: any, config?): Promise<T> =>
+  patch: <T = any>(url: string, data?: any, config?: any): Promise<T> =>
     authApi.patch<T>(url, data, config).then(res => res.data),
     
-  delete: <T = any>(url: string, config?): Promise<T> =>
+  delete: <T = any>(url: string, config?: any): Promise<T> =>
     authApi.delete<T>(url, config).then(res => res.data),
 };

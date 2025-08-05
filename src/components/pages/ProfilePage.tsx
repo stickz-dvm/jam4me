@@ -52,15 +52,15 @@ export function ProfilePage() {
       // Create updatedProfile object with name and phone
       const updatedProfile = {
         name,
-        phone
+        phone,
       };
 
       // If there's a selected image, add it to the updated profile
-      if (selectedImage) {
-        // In a real app, you would upload the image to a server and get a URL back
-        // For now, we'll just use the local preview URL as if it was uploaded
-        updatedProfile.avatar = imagePreviewUrl;
-      }
+      // if (selectedImage) {
+      //   // In a real app, you would upload the image to a server and get a URL back
+      //   // For now, we'll just use the local preview URL as if it was uploaded
+      //   updatedProfile.avatar = imagePreviewUrl;
+      // }
 
       // Update the user profile
       updateUserProfile(updatedProfile);

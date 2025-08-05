@@ -54,7 +54,8 @@ export function PartyDetailPage() {
     markSongAsPlayed,
     closeParty,
     hasPendingSongs,
-    getPartyQrCode
+    getPartyQrCode,
+    setCurrentParty
   } = useParty();
   const { balance } = useWallet();
   const { searchTracks } = useSpotify();
@@ -229,7 +230,7 @@ export function PartyDetailPage() {
       await closeParty(currentParty.id);
       toast.success("Party closed successfully");
       navigate("/dj/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error closing party:", error);
       toast.error(error.message || "Failed to close party. Please try again.");
     } finally {
@@ -482,7 +483,7 @@ export function PartyDetailPage() {
                   <Button 
                     onClick={handleSearch} 
                     disabled={isSearching || !searchQuery.trim()}
-                    className="bg-[rgba(43,110,255,1)] text-white hover:bg-blue-4 bg-[rgba(43,78,255,1)] bg-[rgba(71,43,255,1)]00 shadow-md"
+                    className="bg-[rgba(43,110,255,1)] text-white hover:bg-blue-4 bg-[rgba(71,43,255,1)]00 shadow-md"
                   >
                     {isSearching ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

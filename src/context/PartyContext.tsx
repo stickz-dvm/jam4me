@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from "react";
 import { useAuth } from "./AuthContext";
 import { toast } from "sonner";
 import { useWallet } from "./WalletContext";
@@ -46,6 +46,7 @@ export type PartyContextType = {
   isLoading: boolean;
   getPartyQrCode: (partyId: string) => string;
   hasPendingSongs: (partyId: string) => boolean;
+  setCurrentParty: Dispatch<SetStateAction<Party | null>>;
 };
 
 const PartyContext = createContext<PartyContextType | undefined>(undefined);
@@ -401,7 +402,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       }
       
       const updatedSongs = party.songs.map(s => 
-        s.id === songId ? { ...s, status: "pending" } : s
+        s.id === songId ? { ...s, status: "pending" as const } : s
       );
       
       const updatedParty = {
@@ -445,7 +446,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       await addFunds(song.price);
       
       const updatedSongs = party.songs.map(s => 
-        s.id === songId ? { ...s, status: "declined" } : s
+        s.id === songId ? { ...s, status: "declined" as const } : s
       );
       
       const updatedParty = {
@@ -487,8 +488,8 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       
       // Mark current playing song as played
       const updatedSongs = party.songs.map(s => {
-        if (s.status === "playing") return { ...s, status: "played" };
-        if (s.id === songId) return { ...s, status: "playing" };
+        if (s.status === "playing") return { ...s, status: "played" as const };
+        if (s.id === songId) return { ...s, status: "playing" as const };
         return s;
       });
       
@@ -540,7 +541,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       }
       
       const updatedSongs = party.songs.map(s => 
-        s.id === songId ? { ...s, status: "played" } : s
+        s.id === songId ? { ...s, status: "played" as const } : s
       );
       
       const updatedParty = {
@@ -622,6 +623,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         isLoading,
         getPartyQrCode,
         hasPendingSongs,
+        setCurrentParty,
       }}
     >
       {children}

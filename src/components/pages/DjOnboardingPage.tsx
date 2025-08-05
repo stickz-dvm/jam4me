@@ -306,8 +306,8 @@ export function DjOnboardingPage() {
                   </Button>
                   <Button 
                     type="button" 
-                    onClick={() => {
-                      const isValid = form.trigger(['djName', 'phone']);
+                    onClick={async () => {
+                      const isValid = await form.trigger(['djName', 'phone']);
                       if (isValid) {
                         setCurrentStep(2);
                       }
@@ -330,8 +330,8 @@ export function DjOnboardingPage() {
                   </Button>
                   <Button 
                     type="button" 
-                    onClick={() => {
-                      const isValid = form.trigger(['genre', 'bio', 'yearsOfExperience']);
+                    onClick={async () => {
+                      const isValid = await form.trigger(['genre', 'bio', 'yearsOfExperience']);
                       if (isValid) {
                         setCurrentStep(3);
                       }

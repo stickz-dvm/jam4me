@@ -121,7 +121,7 @@ export function DjPartyManagementPage() {
   }
 
   // Handle song actions
-  const handlePlaySong = async (songId) => {
+  const handlePlaySong = async (songId: string) => {
     try {
       // Find the song that's being played
       const songToPlay = party.songs.find(s => s.id === songId);
@@ -137,29 +137,29 @@ export function DjPartyManagementPage() {
       setIsPlaying(true);
       
       toast.success(`Now playing: ${songToPlay.title} by ${songToPlay.artist}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error playing song:", error);
       toast.error(error.message || "Failed to play song. Please try again.");
     }
   };
 
-  const handleDeclineSong = async (songId) => {
+  const handleDeclineSong = async (songId: string) => {
     try {
       // Pass the partyId explicitly to the declineSong function
       await declineSong(songId, partyId);
       toast.success("Song declined and refunded to user");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error declining song:", error);
       toast.error(error.message || "Failed to decline song. Please try again.");
     }
   };
 
-  const handleMarkAsPlayed = async (songId) => {
+  const handleMarkAsPlayed = async (songId: string) => {
     try {
       // Pass the partyId explicitly to the markSongAsPlayed function
       await markSongAsPlayed(songId, partyId);
       toast.success("Song marked as played");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error marking song as played:", error);
       toast.error(error.message || "Failed to update song status. Please try again.");
     }
@@ -173,7 +173,7 @@ export function DjPartyManagementPage() {
       
       toast.success(`Minimum request price updated to ₦${minRequestPrice.toLocaleString()}`);
       setShowSettingsDialog(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating party settings:", error);
       toast.error("Failed to update settings. Please try again.");
     } finally {
@@ -182,7 +182,7 @@ export function DjPartyManagementPage() {
   };
 
   const handleCloseParty = async () => {
-    if (hasPendingSongs(partyId)) {
+    if (hasPendingSongs(partyId as string)) {
       toast.error("Cannot close party with pending accepted songs");
       setShowClosePartyDialog(false);
       return;
@@ -190,10 +190,10 @@ export function DjPartyManagementPage() {
 
     setIsClosing(true);
     try {
-      await closeParty(partyId);
+      await closeParty(partyId as string);
       toast.success("Party closed successfully");
       navigate("/dj/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error closing party:", error);
       toast.error("Failed to close party. Please try again.");
     } finally {
@@ -272,7 +272,7 @@ export function DjPartyManagementPage() {
             <div className="flex flex-wrap gap-4 text-muted-foreground">
               <div className="flex items-center">
                 <Music2 className="mr-1 h-4 w-4" />
-                <span>DJ: {party.dj || user?.displayName}</span>
+                <span>DJ: {party.dj || user?.djName}</span>
               </div>
               <div className="flex items-center">
                 <QrCode className="mr-1 h-4 w-4" />
@@ -338,7 +338,7 @@ export function DjPartyManagementPage() {
               </Button>
               
               <Button
-                variant={isPlaying ? "default" : "accent"}
+                variant={isPlaying ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setIsPlaying(!isPlaying)}
               >
@@ -524,7 +524,7 @@ export function DjPartyManagementPage() {
                                   ₦{song.price?.toLocaleString() || 0}
                                 </Badge>
                                 <span className="text-xs text-muted-foreground ml-2">
-                                  Played {new Date(song.playedAt || song.requestedAt).toLocaleTimeString()}
+                                  Played {new Date(song.requestedAt).toLocaleTimeString()}
                                 </span>
                               </div>
                             </div>
@@ -779,7 +779,7 @@ export function DjPartyManagementPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            {hasPendingSongs(partyId) ? (
+            {hasPendingSongs(partyId as string) ? (
               <div className="bg-destructive/10 text-destructive p-4 rounded-md flex items-start gap-3 mb-4">
                 <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
                 <div>
@@ -802,7 +802,7 @@ export function DjPartyManagementPage() {
             <Button 
               variant="destructive" 
               onClick={handleCloseParty} 
-              disabled={isClosing || hasPendingSongs(partyId)}
+              disabled={isClosing || hasPendingSongs(partyId as string)}
             >
               {isClosing ? (
                 <>

@@ -8,7 +8,7 @@
 // Popular Nigerian artists with real album art posters
 interface ArtistData {
   name: string;
-  albums: {
+  albums?: {
     title: string;
     coverUrl: string;
     year?: number;
@@ -483,19 +483,19 @@ export class MusicArtService {
       }
       
       // Try to match using genre or location keywords
-      for (const keyword in hitSongsDatabase) {
+      for (const [keyword, data] of Object.entries(hitSongsDatabase)) {
         if (normalizedTitle.includes(keyword) || normalizedArtist.includes(keyword)) {
           console.log(`Found keyword match: ${keyword}`);
-          return hitSongsDatabase[keyword].coverUrl;
+          return data.coverUrl;
         }
       }
       
       // Check if any of the related artists match
-      for (const keyword in hitSongsDatabase) {
-        for (const artist of hitSongsDatabase[keyword].relatedArtists) {
+      for (const[keyword, data] of Object.entries(hitSongsDatabase)) {
+        for (const artist of data.relatedArtists) {
           if (normalizedArtist.includes(artist.toLowerCase())) {
             console.log(`Found related artist match: ${artist}`);
-            return hitSongsDatabase[keyword].coverUrl;
+            return data.coverUrl;
           }
         }
       }
@@ -535,8 +535,8 @@ export class MusicArtService {
       return ASAKE_LUNGU_BOY_COVER;
     }
     
-    if (hitSongsDatabase[normalizedGenre]) {
-      return hitSongsDatabase[normalizedGenre].coverUrl;
+    if (normalizedGenre in hitSongsDatabase) {
+      return hitSongsDatabase[normalizedGenre as keyof typeof hitSongsDatabase].coverUrl;
     }
     
     return DEFAULT_ALBUM_COVER;
@@ -556,9 +556,13 @@ export class MusicArtService {
     }
     
     // Get random artist
-    const artistKeys = Object.keys(nigerianMusicDatabase);
-    const randomArtistKey = artistKeys[Math.floor(Math.random() * artistKeys.length)];
-    const artistData = nigerianMusicDatabase[randomArtistKey];
+    const artistEntries = Object.entries(nigerianMusicDatabase).filter(([_, data]) => data.albums && data.albums.length > 0);
+
+    if (artistEntries.length === 0) {
+      throw new Error('No artists with albums found');
+    }
+    const randomEntry = artistEntries[Math.floor(Math.random() * artistEntries.length)];
+    const [ randomArtistsKey, artistData ] = randomEntry;
     
     // Choose between album track or single
     let title: string;
@@ -571,7 +575,7 @@ export class MusicArtService {
       albumArt = randomSingle.coverUrl;
     } else {
       // Pick an album
-      const randomAlbum = artistData.albums[Math.floor(Math.random() * artistData.albums.length)];
+      const randomAlbum = artistData.albums![Math.floor(Math.random() * artistData.albums!.length)];
       // Pick a random track from album if available
       if (randomAlbum.tracks && randomAlbum.tracks.length > 0) {
         title = randomAlbum.tracks[Math.floor(Math.random() * randomAlbum.tracks.length)];
