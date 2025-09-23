@@ -111,15 +111,15 @@ export function DjWalletPage() {
   };
 
   // Summary statistics
-  const totalEarned = mockTransactions
-    .filter(tx => tx.type === "earning")
+  const totalEarned = transactions
+    .filter(tx => tx.type === "songPayment")
     .reduce((sum, tx) => sum + tx.amount, 0);
   
-  const totalWithdrawn = mockTransactions
+  const totalWithdrawn = transactions
     .filter(tx => tx.type === "withdrawal" && tx.status === "completed")
     .reduce((sum, tx) => sum + tx.amount, 0);
   
-  const pendingWithdrawals = mockTransactions
+  const pendingWithdrawals = transactions
     .filter(tx => tx.type === "withdrawal" && tx.status === "processing")
     .reduce((sum, tx) => sum + tx.amount, 0);
 
@@ -287,18 +287,18 @@ export function DjWalletPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockTransactions.map((tx) => (
+                  {transactions.map((tx) => (
                     <div 
                       key={tx.id} 
                       className="flex items-center justify-between p-4 rounded-lg bg-muted/30 backdrop-blur-sm"
                     >
                       <div className="flex items-center space-x-4">
                         <div className={`p-2 rounded-full ${
-                          tx.type === "earning" 
+                          tx.type === "songPayment" 
                             ? "bg-green-500/20 text-green-500" 
                             : "bg-primary/20 text-primary"
                         }`}>
-                          {tx.type === "earning" ? (
+                          {tx.type === "songPayment" ? (
                             <ArrowDownIcon className="h-5 w-5" />
                           ) : (
                             <ArrowUpIcon className="h-5 w-5" />
@@ -307,12 +307,12 @@ export function DjWalletPage() {
                         <div>
                           <p className="font-medium">{tx.description}</p>
                           {tx.partyName && <p className="text-sm text-muted-foreground">{tx.partyName}</p>}
-                          <p className="text-xs text-muted-foreground">{formatDate(tx.timestamp)}</p>
+                          <p className="text-xs text-muted-foreground">{formatDate(tx.date)}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`font-bold ${tx.type === "earning" ? "text-green-500" : ""}`}>
-                          {tx.type === "earning" ? "+" : "-"}₦{tx.amount.toLocaleString()}
+                        <p className={`font-bold ${tx.type === "songPayment" ? "text-green-500" : ""}`}>
+                          {tx.type === "songPayment" ? "+" : "-"}₦{tx.amount.toLocaleString()}
                         </p>
                         <div className="flex items-center justify-end space-x-1 text-xs">
                           {tx.status === "completed" ? (
@@ -348,8 +348,8 @@ export function DjWalletPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockTransactions
-                    .filter(tx => tx.type === "earning")
+                  {transactions
+                    .filter(tx => tx.type === "songPayment")
                     .map((tx) => (
                       <div 
                         key={tx.id} 
@@ -362,7 +362,7 @@ export function DjWalletPage() {
                           <div>
                             <p className="font-medium">{tx.description}</p>
                             {tx.partyName && <p className="text-sm text-muted-foreground">{tx.partyName}</p>}
-                            <p className="text-xs text-muted-foreground">{formatDate(tx.timestamp)}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(tx.date)}</p>
                           </div>
                         </div>
                         <div className="text-right">
@@ -389,7 +389,7 @@ export function DjWalletPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockTransactions
+                  {transactions
                     .filter(tx => tx.type === "withdrawal")
                     .map((tx) => (
                       <div 
@@ -402,7 +402,7 @@ export function DjWalletPage() {
                           </div>
                           <div>
                             <p className="font-medium">{tx.description}</p>
-                            <p className="text-xs text-muted-foreground">{formatDate(tx.timestamp)}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(tx.date)}</p>
                           </div>
                         </div>
                         <div className="text-right">

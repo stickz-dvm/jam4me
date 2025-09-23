@@ -11,7 +11,7 @@ import { User, Music } from "lucide-react";
 
 export function RegisterPage() {
   const navigate = useNavigate();
-  const { register, isLoading, signupResponse } = useAuth();
+  const { register, isLoading } = useAuth();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,16 +35,18 @@ export function RegisterPage() {
         password,
         user_status
       })
-      await register(username, email, password, user_status);
+      const response = await register(username, email, password, user_status);
 
-      console.log("register response in component: ", signupResponse);
+      console.log("register response in component: ", response);
       
       // Navigate based on user type
-      // if (userType === "dj") {
-      //   navigate("/dj/onboarding");
-      // } else {
-      //   navigate("/onboarding");
-      // }
+      if (response.data.message === "Welcome to D'HUB") {
+        if (user_status === "HUB_DJ") {
+          navigate("/dj/onboarding");
+        } else {
+          navigate("/onboarding");
+        }
+      }
     } catch (err) {
       setError("Failed to register. Please try again.");
       console.error(err);
@@ -107,7 +109,7 @@ export function RegisterPage() {
                 <User className="h-4 w-4" />
                 <span>User</span>
               </TabsTrigger>
-              <TabsTrigger value="dj" className="flex items-center justify-center gap-2">
+              <TabsTrigger value="HUB_DJ" className="flex items-center justify-center gap-2">
                 <Music className="h-4 w-4" />
                 <span>DJ</span>
               </TabsTrigger>
@@ -184,7 +186,7 @@ export function RegisterPage() {
               </form>
             </TabsContent>
             
-            <TabsContent value="dj">
+            <TabsContent value="HUB_DJ">
               <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-4 mb-4">
                   {error && (
@@ -193,10 +195,10 @@ export function RegisterPage() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    <label htmlFor="dj-name">Full Name</label>
+                    <label htmlFor="dj-name">Username</label>
                     <Input
                       id="dj-name"
-                      placeholder="John Doe"
+                      placeholder="DJ-Jockey"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       required

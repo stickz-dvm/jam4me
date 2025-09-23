@@ -10,6 +10,7 @@ import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 import { Separator } from "../ui/separator";
 import { LogoutConfirmDialog } from "../LogoutConfirmDialog";
+import { api } from "@/api/apiMethods";
 
 export function ProfilePage() {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ export function ProfilePage() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -39,20 +40,26 @@ export function ProfilePage() {
 
   const handleEditProfile = async () => {
     setError("");
-    if (!name.trim()) {
-      setError("Please enter your name");
+    if (!username.trim()) {
+      setError("Please enter your username");
       return;
     }
 
+    console.log("edit button clicked!");
+
     setIsLoading(true);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const endpoint = user?.userType === "user" ? "/user_wallet/edit/profile/" : "/dj_wallet/dj/edit/profile/";
+
+      console.log("edit profile name payload: ", {old: user?.username, new: username})
+      const response = api.post(endpoint, {dj_name: user?.username, new_username: username});
+
+      console.log("update username: ", response);
 
       // Create updatedProfile object with name and phone
       const updatedProfile = {
-        name,
-        phone,
+        username,
+        // phone,
       };
 
       // If there's a selected image, add it to the updated profile
@@ -60,7 +67,7 @@ export function ProfilePage() {
       //   // In a real app, you would upload the image to a server and get a URL back
       //   // For now, we'll just use the local preview URL as if it was uploaded
       //   updatedProfile.avatar = imagePreviewUrl;
-      // }
+      // } 
 
       // Update the user profile
       updateUserProfile(updatedProfile);
@@ -190,7 +197,12 @@ export function ProfilePage() {
       setImagePreviewUrl(reader.result as string);
     };
     reader.readAsDataURL(file);
+
   };
+  
+  useEffect(() => {
+    console.log("image url: ", imagePreviewUrl);
+  }, [imagePreviewUrl])
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
@@ -229,8 +241,8 @@ export function ProfilePage() {
       <div className="flex flex-col items-center justify-center py-6">
         <div className="relative group">
           <Avatar className="w-24 h-24 mb-4 cursor-pointer" onClick={triggerFileInput}>
-            <AvatarImage src={user.avatar} alt={user.name} />
-            <AvatarFallback className="text-xl">{getInitials(user.name)}</AvatarFallback>
+            <AvatarImage src={user.avatar} alt={user.username} />
+            <AvatarFallback className="text-xl">{getInitials(user.username)}</AvatarFallback>
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 rounded-full transition-opacity">
               <Camera className="w-6 h-6 text-white" />
             </div>
@@ -243,7 +255,7 @@ export function ProfilePage() {
             onChange={handleImageChange}
           />
         </div>
-        <h2>{user.name}</h2>
+        <h2>{user.username}</h2>
         
         {phone && (
           <p className="text-muted-foreground flex items-center mt-1">
@@ -259,8 +271,8 @@ export function ProfilePage() {
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Name</span>
-            <span>{user.name}</span>
+            <span className="text-muted-foreground">Username</span>
+            <span>{user.username}</span>
           </div>
          
           <div className="flex justify-between items-center">
@@ -273,7 +285,7 @@ export function ProfilePage() {
             variant="outline" 
             className="w-full"
             onClick={() => {
-              setName(user.name);
+              setUsername(user.username);
               setPhone(user.phone || "");
               setSelectedImage(null);
               setImagePreviewUrl(null);
@@ -309,7 +321,7 @@ export function ProfilePage() {
               variant="ghost" 
               size="sm"
               onClick={() => {
-                setEmail(user.email);
+                setEmail(user.email!);
                 setCurrentPassword("");
                 setError("");
                 setShowEmailDialog(true);
@@ -386,11 +398,11 @@ export function ProfilePage() {
                   ) : user.avatar ? (
                     <img 
                       src={user.avatar} 
-                      alt={user.name} 
+                      alt={user.username} 
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-xl">{getInitials(user.name)}</span>
+                    <span className="text-xl">{getInitials(user.username)}</span>
                   )}
                   
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -419,12 +431,12 @@ export function ProfilePage() {
             </div>
             
             <div className="space-y-2">
-              <label htmlFor="name">Full Name</label>
+              <label htmlFor="username">Username</label>
               <Input
-                id="name"
+                id="username"
                 placeholder="John Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="bg-input-background"
                 required
               />

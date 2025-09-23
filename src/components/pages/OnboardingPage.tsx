@@ -12,10 +12,10 @@ export function OnboardingPage() {
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
   
-  if (!user) {
-    navigate("/login");
-    return null;
-  }
+  // if (!user) {
+  //   navigate("/login");
+  //   return null;
+  // }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

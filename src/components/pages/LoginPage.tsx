@@ -8,30 +8,34 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { useAuth, UserType } from "../../context/AuthContext";
 import { LogoPlaceholder } from "../LogoPlaceholder";
 import { User, Music } from "lucide-react";
+import { toast } from "react-toastify";
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { login, isLoading, loginResponse } = useAuth();
+  const { login, isLoading } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [userType, setUserType] = useState<UserType>("user");
+  const [user_status, setUserStatus] = useState<UserType>("user");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     
     try {
-      await login(username, password, userType);
+      const response = await login(username, password, user_status);
 
-      console.log("login response in component: ", loginResponse);
+      console.log("login response in component: ", response);
       
-      // // Navigate based on user type
-      // if (userType === "dj") {
-      //   navigate("/dj/dashboard");
-      // } else {
-      //   navigate("/parties");
-      // }
+      // Navigate based on user type
+      if (response?.status === 200 && response?.data.message.includes("Login successful") || response?.data.message.includes("login success")) {
+          toast.success("Login successful!");
+          if (user_status === "HUB_DJ" || response?.data.message.includes("login success")) {
+            navigate("/dj/dashboard");
+          } else {
+            navigate("/parties");
+          }
+      }
     } catch (err) {
       setError("Failed to log in. Please check your credentials.");
       console.error(err);
@@ -46,7 +50,7 @@ export function LoginPage() {
       exit={{ opacity: 0, y: 20 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="relative w-full h-full absolute inset-0 -z-10">
+      <div className="relative w-full h-full inset-0 -z-10">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-background"></div>
         <motion.div 
           className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-primary/10 blur-3xl"
@@ -88,13 +92,13 @@ export function LoginPage() {
             </CardDescription>
           </CardHeader>
           
-          <Tabs defaultValue="user" onValueChange={(value) => setUserType(value as UserType)} className="w-full">
+          <Tabs defaultValue="user" onValueChange={(value) => setUserStatus(value as UserType)} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="user" className="flex items-center justify-center gap-2">
                 <User className="h-4 w-4" />
                 <span>User</span>
               </TabsTrigger>
-              <TabsTrigger value="dj" className="flex items-center justify-center gap-2">
+              <TabsTrigger value="HUB_DJ" className="flex items-center justify-center gap-2">
                 <Music className="h-4 w-4" />
                 <span>DJ</span>
               </TabsTrigger>
@@ -156,7 +160,7 @@ export function LoginPage() {
               </form>
             </TabsContent>
             
-            <TabsContent value="dj">
+            <TabsContent value="HUB_DJ">
               <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-4 mb-4">
                   {error && (

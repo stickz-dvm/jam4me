@@ -32,11 +32,16 @@ import { NairaSign } from "../icons/NairaSign";
 import { toast } from "sonner";
 import { MusicPlayer } from "../MusicPlayer";
 
+// Utility function to normalize IDs
+export const normalizeId = (id: string | number | undefined | null): string => {
+  return id != null ? String(id) : "";
+};
+
 export function DjPartyManagementPage() {
   const { partyId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { 
+  const {
     currentParty,
     createdParties, 
     approveSong,
@@ -46,6 +51,7 @@ export function DjPartyManagementPage() {
     closeParty,
     getPartyQrCode,
     hasPendingSongs,
+    handleExpiredParties,
     isLoading
   } = useParty();
 
@@ -61,9 +67,11 @@ export function DjPartyManagementPage() {
   const [currentlyPlaying, setCurrentlyPlaying] = useState<any | null>(null);
   
   // Get the relevant party - either current party or from createdParties
-  const party = currentParty?.id === partyId 
+  const partyIdStr = normalizeId(partyId);
+
+  const party = normalizeId(currentParty?.id) === partyIdStr
     ? currentParty
-    : createdParties.find(p => p.id === partyId);
+    : createdParties.find(p => normalizeId(p.id) === partyIdStr);
 
   // Navigate away if party not found
   useEffect(() => {
@@ -119,6 +127,10 @@ export function DjPartyManagementPage() {
       </div>
     );
   }
+
+  useEffect(() => {
+    handleExpiredParties();
+  })
 
   // Handle song actions
   const handlePlaySong = async (songId: string) => {

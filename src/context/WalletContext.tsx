@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 import { toast } from "sonner";
+import { api } from "../api/apiMethods";
 
 export type Transaction = {
   id: string;
@@ -13,6 +14,7 @@ export type Transaction = {
   artist?: string;
   partyName?: string;
   requestedBy?: string;
+  status?: "completed" | "pending" | "processing" | "failed";
 };
 
 export type PaymentMethod = {
@@ -77,7 +79,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       if (storedBalance) {
         setBalance(Number(storedBalance));
       }
-      
+
       if (storedTransactions) {
         try {
           const parsedTransactions = JSON.parse(storedTransactions);
@@ -100,7 +102,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
             amount: 5000,
             type: "deposit",
             description: "Initial wallet funding via Paystack",
-            date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7 days ago
+            date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+            status: "completed"
           }
         ];
         setTransactions(demoTransactions);
@@ -135,7 +138,30 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     saveWalletData();
+    getBalance();
+    getDJTransactionHistory();
   }, [balance, transactions, paymentMethods, user]);
+
+  const getBalance = async () => {
+    try {
+      const response = await api.get("/dj_wallet/dj/check/wal/223/");
+
+      console.log("getting balance: ", response);
+    } catch (error: any) {
+      console.error("Error fetching wallet balance: ", error);
+    }
+  };
+
+  const getDJTransactionHistory = async () => {
+    try {
+      const response = await api.get("/dj_wallet/transaction_history/")
+
+      console.log("DJ transaction history response: ", response);
+      
+    } catch (error: any) {
+      console.error("Error fetching transaction history: ", error);
+    }
+  };
 
   const fundWallet = async (amount: number) => {
     setIsLoading(true);
@@ -225,7 +251,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
 
   const receiveSongPayment = async (amount: number, partyName: string, songTitle: string, artist: string, requestedBy: string) => {
-    if (!user || user.userType !== "dj") {
+    if (!user || user.userType !== "HUB_DJ") {
       throw new Error("Only DJs can receive song payments");
     }
     
@@ -256,7 +282,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
 
   const refundSongPayment = async (amount: number, partyName: string, songTitle: string, artist: string, requestedBy: string) => {
-    if (!user || user.userType !== "dj") {
+    if (!user || user.userType !== "HUB_DJ") {
       throw new Error("Only DJs can issue refunds");
     }
     

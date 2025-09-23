@@ -47,7 +47,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   // If the user is a DJ, redirect them to the DJ dashboard
   const userType = getUserType();
-  if (userType === "dj") {
+  if (userType === "HUB_DJ") {
     return <Navigate to="/dj/dashboard" />;
   }
 
@@ -74,7 +74,7 @@ function DjProtectedRoute({ children }: { children: React.ReactNode }) {
 
   // Check if user is a DJ from the stored user type
   const userType = getUserType();
-  if (userType !== "dj") {
+  if (userType !== "HUB_DJ") {
     return <Navigate to="/parties" />;
   }
 
@@ -138,7 +138,8 @@ function AppWithProviders() {
                   border: '1px solid var(--border)'
                 },
                 className: 'glass'
-              }}  
+              }}
+              expand  
             />
           </SpotifyProvider>
         </PartyProvider>

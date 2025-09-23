@@ -28,9 +28,11 @@ export function DjDashboardPage() {
   const { 
     createParty, 
     createdParties,
+    currentParty,
     isLoading: contextLoading,
     getPartyQrCode,
-    hasPendingSongs 
+    hasPendingSongs,
+    handleExpiredParties, 
   } = useParty();
 
   // Component state
@@ -63,8 +65,10 @@ export function DjDashboardPage() {
 
   // Filter parties by status - safely handle undefined parties
   const parties = createdParties || [];
-  const ongoingParties = parties.filter(party => party.isActive !== false);
+  const ongoingParty = currentParty;
   const pastParties = parties.filter(party => party.isActive === false);
+
+  console.log("ongoing party det: ", ongoingParty);
 
   // Handle custom price input change
   const handleCustomPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -168,6 +172,11 @@ export function DjDashboardPage() {
     calculateStats();
   }, [parties]);
 
+  // Handle expired parties 
+  useEffect(() => {
+    handleExpiredParties();
+  }, [])
+
   // Update custom price input when the minSongRequestPrice changes
   useEffect(() => {
     setCustomPriceInput(minSongRequestPrice.toString());
@@ -215,12 +224,21 @@ export function DjDashboardPage() {
 
     setIsCreatingParty(true);
     try {
+      console.log("creating party payload in component: ", {
+        name: partyName,
+        minRequestPrice: minSongRequestPrice,
+        passcode: Math.floor(100000 + Math.random() * 900000).toString(), // Generate a 6-digit passcode
+        location: partyVenue,
+        dj: user?.username || "DJ Anonymous",
+        activeUntil: endDateTime,
+      });
+
       await createParty({
         name: partyName,
         minRequestPrice: minSongRequestPrice,
         passcode: Math.floor(100000 + Math.random() * 900000).toString(), // Generate a 6-digit passcode
         location: partyVenue,
-        dj: user?.name || "DJ Anonymous",
+        dj: user?.username || "DJ Anonymous",
         activeUntil: endDateTime,
       });
 
@@ -538,39 +556,39 @@ export function DjDashboardPage() {
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-              ) : ongoingParties.length > 0 ? (
+              ) : ongoingParty ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {ongoingParties.map((party) => (
+                  {/* {ongoingParties.map((party) => ( */}
                     <Card 
-                      key={party.id} 
+                      key={ongoingParty?.id} 
                       className="bg-card/80 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-colors"
                     >
                       <CardHeader>
                         <div className="flex justify-between items-start">
-                          <CardTitle>{party.name}</CardTitle>
+                          <CardTitle>{ongoingParty?.name}</CardTitle>
                           <Badge>Active</Badge>
                         </div>
                         <CardDescription>
-                          Created {new Date(party.createdAt).toLocaleDateString()}
+                          Created {new Date(ongoingParty!.createdAt).toLocaleDateString()}
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Passcode:</span>
-                            <span className="font-mono bg-muted/30 px-2 rounded">{party.passcode}</span>
+                            <span className="font-mono bg-muted/30 px-2 rounded">{ongoingParty?.passcode}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Min. Request:</span>
-                            <span>₦{party.minRequestPrice || 0}</span>
+                            <span>₦{ongoingParty?.minRequestPrice || 0}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Requests:</span>
-                            <span>{party.songs?.length || 0}</span>
+                            <span>{ongoingParty?.songs?.length || 0}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Earnings:</span>
-                            <span className="text-spotify-green">₦{party.earnings || 0}</span>
+                            <span className="text-spotify-green">₦{ongoingParty?.earnings || 0}</span>
                           </div>
                         </div>
                       </CardContent>
@@ -578,7 +596,7 @@ export function DjDashboardPage() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={(e) => handleShowQRCode(party, e)}
+                          onClick={(e) => handleShowQRCode(ongoingParty, e)}
                         >
                           <QrCode className="h-4 w-4 mr-2" />
                           QR Code
@@ -589,16 +607,17 @@ export function DjDashboardPage() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            navigateToPartyManagement(party.id);
+                            console.log("clicked: ", ongoingParty.id);
+                            navigateToPartyManagement(ongoingParty.id);
                           }}
                         >
                           Manage
                         </Button>
                       </CardFooter>
                     </Card>
-                  ))}
+                  {/* // ))} */}
                   
-                  <Card className="bg-muted/10 border-dashed backdrop-blur-sm border-border/50 hover:border-primary/50 transition-colors">
+                  {/* <Card className="bg-muted/10 border-dashed backdrop-blur-sm border-border/50 hover:border-primary/50 transition-colors">
                     <CardContent className="flex flex-col items-center justify-center h-full min-h-[240px] cursor-pointer">
                       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                         <DialogTrigger className="flex flex-col items-center justify-center w-full h-full">
@@ -725,7 +744,7 @@ export function DjDashboardPage() {
                         </DialogContent>
                       </Dialog>
                     </CardContent>
-                  </Card>
+                  </Card> */}
                 </div>
               ) : (
                 <Card className="bg-muted/10 backdrop-blur-sm">

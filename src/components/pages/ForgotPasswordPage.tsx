@@ -29,8 +29,9 @@ export function ForgotPasswordPage() {
     }
     
     try {
-      // In a real app, this would call your backend API
-      await resetPassword(email);
+      const response = await resetPassword(email);
+
+      console.log("reset passsword resposne: ", response);
       setSuccess("Password reset instructions sent to your email");
       setEmail("");
     } catch (err) {
@@ -68,7 +69,7 @@ export function ForgotPasswordPage() {
       exit={{ opacity: 0, y: 20 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="relative w-full h-full absolute inset-0 -z-10">
+      <div className="relative w-full h-full inset-0 -z-10">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-background"></div>
         <motion.div 
           className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-primary/10 blur-3xl"

@@ -1,13 +1,15 @@
 import { api } from "@/api/apiMethods";
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import axios from "axios";
+import { ApiResponse } from "../api/types";
+import { toast } from "react-toastify";
+import { generateCryptoUserId } from "../services/GenerateUniqueId";
 
-export type UserType = "user" | "dj";
+export type UserType = "user" | "HUB_DJ";
 
 export type User = {
   id: string;
-  name: string;
-  email: string;
+  username: string;
+  email?: string;
   phone?: string;
   avatar?: string;
   userType: UserType;
@@ -21,16 +23,14 @@ type AuthContextType = {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string, userType: UserType) => Promise<void>;
-  register: (name: string, email: string, password: string, userType: UserType) => Promise<void>;
-  resetPassword: (emailOrPhone: string) => Promise<void>;
+  login: (username: string, password: string, user_status: UserType) => Promise<ApiResponse<any> | undefined>;
+  register: (username: string, email: string, password: string, user_status: UserType) => Promise<ApiResponse>;
+  resetPassword: (emailOrPhone: string) => Promise<ApiResponse>;
   logout: () => void;
   updateUserProfile: (userData: Partial<User>) => void;
   isDj: boolean;
   getUserType: () => UserType | null;
   getHomeRoute: () => string;
-  signupResponse: object;
-  loginResponse: object;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,8 +42,6 @@ const USER_KEY = "jam4me-user";
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [signupResponse, setSignupResponse] = useState({});
-  const [loginResponse, setLoginResponse] = useState({});
 
   useEffect(() => {
     // Check if user is stored in local storage
@@ -63,31 +61,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log("login payload in context: ", {
         username,
-        password
+        password,
+        user_status
       });
 
       const endpoint = user_status === "user" ? "/user_wallet/us_log/us_hub_er/" : "/dj_wallet/us_log/d_hub_j/";
-      const response = await api.post(endpoint, {username, password});
+      const response = await api.post(endpoint, {username, password, user_status});
 
-      setLoginResponse(response);
       console.log("login response: ", response);
-      // // In a real app, this would be an API call
-      // await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // const mockUser: User = {
-      //   id: userType === "dj" ? "dj-123" : "user-123",
-      //   name: userType === "dj" ? "DJ Spinmaster" : "Demo User",
-      //   email,
-      //   userType,
-      //   djName: userType === "dj" ? "DJ Spinmaster" : undefined,
-      //   genre: userType === "dj" ? "Afrobeats" : undefined,
-      //   bio: userType === "dj" ? "Professional DJ with 5 years of experience" : undefined,
-      // };
-      
-      // setUser(mockUser);
-      // localStorage.setItem(USER_KEY, JSON.stringify(mockUser));
-      // // Store user type separately for quicker access
-      // localStorage.setItem(USER_TYPE_KEY, userType);
+      if (response.status === 200 && response.data.message.includes("Login successful") || response.data.message.includes("login success")) {
+        setUser({
+          id: response.data.user.id,
+          username: username,
+          userType: user_status,
+        })
+      }
+
+      return response;
     } catch (error) {
       console.error(error);
       setIsLoading(false);
@@ -99,16 +89,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (username: string, email: string, password: string, user_status: UserType = "user") => {
     setIsLoading(true);
     try {
-      console.log("payload in context: ", {
-        username,
-        email,
-        password,
-        user_status
-      })
 
       const endpoint = user_status === "user" 
-      ? "user_wallet/crt_ur/us_hub_er/" 
-      : "dj_wallet/crt_ur/d_hub_j/";
+      ? "/user_wallet/crt_ur/us_hub_er/" 
+      : "/dj_wallet/crt_ur/d_hub_j/";
     
       const response = await api.post(endpoint, {
         username, 
@@ -117,11 +101,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user_status
       });
 
-      setSignupResponse(response);
-      console.log("sign up response: ", response)
-    } catch (error) {
+      if (response.status === 200) {
+        if (response.data.message === "Welcome to D'HUB") {
+          setUser({
+            id: generateCryptoUserId(),
+            username: username,
+            userType: user_status,
+          })
+        } else if (response.data.error.includes("is wrong")) {
+          toast.error(response.data.error);
+        }
+      }
+
+      return response;
+    } catch (error: any) {
       console.error(error);
+      if (error.status === 400 && error.originalError.error === "username already exists") {
+        toast.error("Username already exists")
+      };
+
       setIsLoading(false);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -130,13 +130,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const resetPassword = async (emailOrPhone: string) => {
     setIsLoading(true);
     try {
-      // In a real app, this would be an API call to send password reset
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await api.post("/user_wallet/forgot_password/", emailOrPhone);
+
+      console.log("forgot password response: ", response);
       
       // Just simulate a successful request
       console.log(`Password reset instructions sent to: ${emailOrPhone}`);
       
-      return Promise.resolve();
+      return response;
     } finally {
       setIsLoading(false);
     }
@@ -170,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // If no user in state, check localStorage
     const storedType = localStorage.getItem(USER_TYPE_KEY);
-    if (storedType === "dj" || storedType === "user") {
+    if (storedType === "HUB_DJ" || storedType === "user") {
       return storedType;
     }
     
@@ -180,7 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // New utility function to get the appropriate home route
   const getHomeRoute = (): string => {
     const userType = getUserType();
-    return userType === "dj" ? "/dj/dashboard" : "/parties";
+    return userType === "HUB_DJ" ? "/dj/dashboard" : "/parties";
   };
 
   return (
@@ -194,11 +195,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         resetPassword,
         logout,
         updateUserProfile,
-        isDj: user?.userType === "dj",
+        isDj: user?.userType === "HUB_DJ",
         getUserType,
         getHomeRoute,
-        loginResponse,
-        signupResponse,
       }}
     >
       {children}
