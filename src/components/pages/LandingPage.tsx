@@ -132,7 +132,7 @@ export function LandingPage() {
             <Button size="lg" className="glow" asChild>
               <Link to={isAuthenticated ? homeRoute : "/register"}>
                 {isAuthenticated 
-                  ? userType === "dj" 
+                  ? userType === "HUB_DJ" 
                     ? "Go to DJ Dashboard" 
                     : "Go to Parties"
                   : "Create Account"
@@ -355,7 +355,7 @@ export function LandingPage() {
           <Button size="lg" className="glow" asChild>
             <Link to={isAuthenticated ? homeRoute : "/register"}>
               {isAuthenticated 
-                ? userType === "dj" 
+                ? userType === "HUB_DJ" 
                   ? "Go to DJ Dashboard" 
                   : "Go to Parties"
                 : "Get Started For Free"

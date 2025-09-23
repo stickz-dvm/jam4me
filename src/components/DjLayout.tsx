@@ -59,7 +59,7 @@ export function DjLayout() {
                   {user?.avatar ? (
                     <ImageWithFallback
                       src={user.avatar}
-                      alt={user.name}
+                      alt={user.username}
                       className="h-full w-full object-cover"
                     />
                   ) : (
@@ -73,7 +73,7 @@ export function DjLayout() {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col">
-                  <span>{user?.djName || user?.name}</span>
+                  <span>{user?.djName || user?.username}</span>
                   
                 </div>
               </DropdownMenuLabel>
