@@ -40,7 +40,7 @@ export function DjDashboardPage() {
   const [partyVenue, setPartyVenue] = useState("");
   const [minSongRequestPrice, setMinSongRequestPrice] = useState(500);
   const [customPriceInput, setCustomPriceInput] = useState("500");
-  const [partyEndDate, setPartyEndDate] = useState<Date | undefined>(new Date(Date.now() + 24 * 60 * 60 * 1000)); // 24 hours from now
+  const [partyEndDate, setPartyEndDate] = useState<Date | undefined>(new Date());
   const [partyEndHour, setPartyEndHour] = useState("23");
   const [partyEndMinute, setPartyEndMinute] = useState("59");
   const [isCreatingParty, setIsCreatingParty] = useState(false);
@@ -184,14 +184,14 @@ export function DjDashboardPage() {
 
   // Combine date and time into a single Date object
   const getCombinedDateTime = () => {
-    if (!partyEndDate) return new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now as fallback
+    if (!partyEndDate) return "23:59";
     
     const endDate = new Date(partyEndDate);
     endDate.setHours(parseInt(partyEndHour || "23", 10));
     endDate.setMinutes(parseInt(partyEndMinute || "59", 10));
     endDate.setSeconds(0);
     
-    return endDate;
+    return format(endDate, "HH:mm");
   };
 
   // Create a new party
@@ -217,7 +217,8 @@ export function DjDashboardPage() {
     const endDateTime = getCombinedDateTime();
     
     // Make sure end time is in the future
-    if (endDateTime <= new Date()) {
+    if (endDateTime <= new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })) 
+    {
       toast.error("Party end time must be in the future");
       return;
     }
@@ -240,6 +241,8 @@ export function DjDashboardPage() {
         location: partyVenue,
         dj: user?.username || "DJ Anonymous",
         activeUntil: endDateTime,
+        endDate: format(partyEndDate!, "PPP"),
+        isActive: true
       });
 
       toast.success("Party created successfully!");
@@ -247,7 +250,7 @@ export function DjDashboardPage() {
       setPartyVenue("");
       setMinSongRequestPrice(500);
       setCustomPriceInput("500");
-      setPartyEndDate(new Date(Date.now() + 24 * 60 * 60 * 1000));
+      setPartyEndDate(new Date());
       setPartyEndHour("23");
       setPartyEndMinute("59");
       closeDialog();

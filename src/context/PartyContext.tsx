@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useWallet } from "./WalletContext";
 import { api } from "../api/apiMethods";
 import { normalizeId } from "../components/pages/DjPartyManagementPage";
+import { ApiResponse } from "../api/types";
 
 export type Song = {
   id: string;
@@ -24,7 +25,8 @@ export type Party = {
   dj: string;
   djId: string; // ID of the DJ who created the party
   songs: Song[];
-  activeUntil: Date;
+  activeUntil: string;
+  endDate: string;
   minRequestPrice: number;
   isActive: boolean;
   qrCode?: string; // URL to QR code image
@@ -38,13 +40,13 @@ export type PartyContextType = {
   createdParties: Party[]; // For DJs - parties they created
   joinParty: (passcode: string) => Promise<Party>;
   leaveParty: () => void;
-  createParty: (partyData: Omit<Party, "id" | "djId" | "songs" | "isActive" | "createdAt">) => Promise<Party>;
+  createParty: (partyData: Omit<Party, "id" | "djId" | "songs" | "createdAt">) => Promise<Party>;
   requestSong: (songTitle: string, artist: string, price: number, albumArt?: string) => Promise<void>;
   approveSong: (songId: string, partyId?: string) => Promise<void>;
   declineSong: (songId: string, partyId?: string) => Promise<void>;
   playSong: (songId: string, partyId?: string) => Promise<void>;
   markSongAsPlayed: (songId: string, partyId?: string) => Promise<void>;
-  closeParty: (partyId: string) => Promise<void>;
+  closeParty: (partyId: string) => Promise<ApiResponse>;
   isLoading: boolean;
   getPartyQrCode: (partyId: string) => string;
   hasPendingSongs: (partyId: string) => boolean;
@@ -55,57 +57,57 @@ export type PartyContextType = {
 
 const PartyContext = createContext<PartyContextType | undefined>(undefined);
 
-// Mock data for available parties
-const AVAILABLE_PARTIES: Party[] = [
-  {
-    id: "party-1",
-    name: "Friday Night Fever",
-    passcode: "123456",
-    location: "Club Zoom",
-    dj: "DJ Spinmaster",
-    djId: "dj-123",
-    minRequestPrice: 700,
-    songs: [
-      {
-        id: "song-1",
-        title: "Lungu Boy",
-        artist: "Asake",
-        price: 500,
-        requestedBy: "User 1",
-        status: "playing",
-        requestedAt: new Date(Date.now() - 5 * 60 * 1000)
-      },
-      {
-        id: "song-2",
-        title: "Made in Lagos",
-        artist: "Wizkid",
-        price: 700,
-        requestedBy: "User 2",
-        status: "pending",
-        albumArt: "https://upload.wikimedia.org/wikipedia/en/c/c2/Wizkid_-_Made_in_Lagos.png",
-        requestedAt: new Date(Date.now() - 2 * 60 * 1000)
-      }
-    ],
-    activeUntil: new Date(Date.now() + 5 * 60 * 60 * 1000),
-    isActive: true,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    earnings: 1200
-  },
-  {
-    id: "party-2",
-    name: "Beach Vibes",
-    passcode: "654321",
-    location: "Sandy Shores Resort",
-    dj: "DJ WaveMaker",
-    djId: "dj-456",
-    minRequestPrice: 500,
-    songs: [],
-    activeUntil: new Date(Date.now() + 8 * 60 * 60 * 1000),
-    isActive: true,
-    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000),
-    earnings: 0
-  }
-];
+// // Mock data for available parties
+// const AVAILABLE_PARTIES: Party[] = [
+//   {
+//     id: "party-1",
+//     name: "Friday Night Fever",
+//     passcode: "123456",
+//     location: "Club Zoom",
+//     dj: "DJ Spinmaster",
+//     djId: "dj-123",
+//     minRequestPrice: 700,
+//     songs: [
+//       {
+//         id: "song-1",
+//         title: "Lungu Boy",
+//         artist: "Asake",
+//         price: 500,
+//         requestedBy: "User 1",
+//         status: "playing",
+//         requestedAt: new Date(Date.now() - 5 * 60 * 1000)
+//       },
+//       {
+//         id: "song-2",
+//         title: "Made in Lagos",
+//         artist: "Wizkid",
+//         price: 700,
+//         requestedBy: "User 2",
+//         status: "pending",
+//         albumArt: "https://upload.wikimedia.org/wikipedia/en/c/c2/Wizkid_-_Made_in_Lagos.png",
+//         requestedAt: new Date(Date.now() - 2 * 60 * 1000)
+//       }
+//     ],
+//     activeUntil: new Date(Date.now() + 5 * 60 * 60 * 1000),
+//     isActive: true,
+//     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+//     earnings: 1200
+//   },
+//   {
+//     id: "party-2",
+//     name: "Beach Vibes",
+//     passcode: "654321",
+//     location: "Sandy Shores Resort",
+//     dj: "DJ WaveMaker",
+//     djId: "dj-456",
+//     minRequestPrice: 500,
+//     songs: [],
+//     activeUntil: new Date(Date.now() + 8 * 60 * 60 * 1000),
+//     isActive: true,
+//     createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000),
+//     earnings: 0
+//   }
+// ];
 
 // Helper function to fix any references to "Blinding Lights" by "The Weeknd"
 const updateSongReferences = (party: Party): Party => {
@@ -206,13 +208,14 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         } catch (e) {
           console.error("Failed to parse created parties", e);
         }
-      } else if (user.userType === "HUB_DJ") {
-        // If DJ is logging in for the first time, assign some mock created parties
-        const djParties = AVAILABLE_PARTIES.filter(p => p.djId === user.id);
-        if (djParties.length > 0) {
-          setCreatedParties(djParties);
-        }
-      }
+      } 
+      // else if (user.userType === "HUB_DJ") {
+      //   // If DJ is logging in for the first time, assign some mock created parties
+      //   const djParties = AVAILABLE_PARTIES.filter(p => p.djId === user.id);
+      //   if (djParties.length > 0) {
+      //     setCreatedParties(djParties);
+      //   }
+      // }
     } else {
       // Reset when logged out
       setCurrentParty(null);
@@ -289,7 +292,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       console.log("join party response: ", response)
       
       // Check both available parties and DJ created parties
-      const allParties = [...AVAILABLE_PARTIES, ...createdParties];
+      const allParties = [...createdParties];
       const party = allParties.find(p => p.passcode === passcode && p.isActive);
       
       if (!party) {
@@ -316,7 +319,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     setCurrentParty(null);
   };
 
-  const createParty = async (partyData: Omit<Party, "id" | "djId" | "songs" | "isActive" | "createdAt">): Promise<Party> => {
+  const createParty = async (partyData: Omit<Party, "id" | "djId" | "songs" | "createdAt">): Promise<Party> => {
     if (!user || user.userType !== "HUB_DJ") {
       throw new Error("Only DJs can create parties");
     }
@@ -324,9 +327,14 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const payload = {
+        // hub_dj: user.djName || user.username,
         dj_id: user.id,
         party_name: partyData.name,
-        base_price: partyData.minRequestPrice
+        hub_status: partyData.isActive,
+        base_price: partyData.minRequestPrice,
+        date_to_end: partyData.endDate,
+        time_to_end: partyData.activeUntil,
+        venue_name: partyData.location
       }
 
       console.log("create party payload: ", payload);
@@ -339,7 +347,6 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         djId: user.id,
         dj: user.djName || user.username,
         songs: [],
-        isActive: true,
         createdAt: new Date(),
         earnings: 0
       };
@@ -591,41 +598,48 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     
     setIsLoading(true);
     try {
-      const response = await api.delete(`/dj_wallet/delete_hub/${partyIdStr}`);
+      const response = await api.delete(`/dj_wallet/delete_hub/${user.id}`);
 
       console.log("delete party", response);
-      
-      const updatedParty = {
-        ...partyToClose,
-        isActive: false,
-      };
-      
-      // Use helper function to update state
-      // updatePartyInState(updatedParty);
-
-      // If this was the current party, clear it
-      if (currentParty && normalizeId(currentParty.id) === partyIdStr) {
-        setCurrentParty(null);
+    
+      if (response.status === 200) {
+        toast.success(`Party "${partyToClose.name}" has been closed successfully`);
+        
+        const updatedParty = {
+          ...partyToClose,
+          isActive: false,
+        };
+        
+        // Use helper function to update state
+        // updatePartyInState(updatedParty);
+  
+        // If this was the current party, clear it
+        if (currentParty && normalizeId(currentParty.id) === partyIdStr) {
+          setCurrentParty(null);
+        }
+        
+        // Update existing entry in createdParties
+        if (!createdParties.some(p => normalizeId(p.id) === partyIdStr)) {
+          setCreatedParties(prev => [...prev, updatedParty]);
+        } else {
+          setCreatedParties(prev => prev.map(p => normalizeId(p.id) === partyIdStr ? updatedParty : p));
+        }
+        
+        // Remove from joinedParties if it exists there
+        setJoinedParties(prev => prev.filter(p => normalizeId(p.id) !== partyIdStr));
       }
       
-      // Update existing entry in createdParties
-      if (!createdParties.some(p => normalizeId(p.id) === partyIdStr)) {
-        setCreatedParties(prev => [...prev, updatedParty]);
-      } else {
-        setCreatedParties(prev => prev.map(p => normalizeId(p.id) === partyIdStr ? updatedParty : p));
-      }
-      
-      // Remove from joinedParties if it exists there
-      setJoinedParties(prev => prev.filter(p => normalizeId(p.id) !== partyIdStr));
-      
-      toast.success(`Party "${partyToClose.name}" has been closed successfully`);
+      return response;
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleExpiredParties = () => {
-    const now = new Date();
+    const now = new Date().toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
     
     // Check and handle expired current party
     if (currentParty && currentParty.activeUntil && now > currentParty.activeUntil) {
@@ -645,18 +659,18 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     }
     
     // Update expired parties in joinedParties
-    setJoinedParties(prev => prev.map(party => 
-      party.activeUntil && now > party.activeUntil 
-        ? { ...party, isActive: false }
-        : party
-    ));
+    // setJoinedParties(prev => prev.map(party => 
+    //   party.activeUntil && now > party.activeUntil 
+    //     ? { ...party, isActive: false }
+    //     : party
+    // ));
     
     // Update expired parties in createdParties
-    setCreatedParties(prev => prev.map(party => 
-      party.activeUntil && now > party.activeUntil 
-        ? { ...party, isActive: false }
-        : party
-    ));
+    // setCreatedParties(prev => prev.map(party => 
+    //   party.activeUntil && now > party.activeUntil 
+    //     ? { ...party, isActive: false }
+    //     : party
+    // ));
   };
 
   const getPartyQrCode = (partyId: string) => {

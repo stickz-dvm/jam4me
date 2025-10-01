@@ -55,7 +55,9 @@ export function DjPartyManagementPage() {
     isLoading
   } = useParty();
 
-  // State variables
+  // ========================================
+  // ALL STATE HOOKS FIRST (no conditions!)
+  // ========================================
   const [showQRDialog, setShowQRDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showClosePartyDialog, setShowClosePartyDialog] = useState(false);
@@ -68,11 +70,14 @@ export function DjPartyManagementPage() {
   
   // Get the relevant party - either current party or from createdParties
   const partyIdStr = normalizeId(partyId);
-
   const party = normalizeId(currentParty?.id) === partyIdStr
     ? currentParty
     : createdParties.find(p => normalizeId(p.id) === partyIdStr);
 
+  // ========================================
+  // ALL USEEFFECT HOOKS (no conditions!)
+  // ========================================
+  
   // Navigate away if party not found
   useEffect(() => {
     if (!isLoading && !party && partyId) {
@@ -104,6 +109,26 @@ export function DjPartyManagementPage() {
     }
   }, [party, currentlyPlaying]);
 
+  useEffect(() => {
+    handleExpiredParties();
+  }, []); // Added dependency array to prevent infinite loop
+
+  // ========================================
+  // NOW CONDITIONAL RETURNS/LOGIC
+  // ========================================
+  
+  // Check if partyId exists
+  if (!partyId) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <AlertTriangle className="h-12 w-12 mx-auto text-destructive mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
+        <p className="text-muted-foreground mb-6">This party does not exist.</p>
+        <Button onClick={() => navigate('/dj/dashboard')}>Back to Dashboard</Button>
+      </div>
+    );
+  }
+
   // Show loading state when necessary
   if (!party || isLoading) {
     return (
@@ -128,10 +153,10 @@ export function DjPartyManagementPage() {
     );
   }
 
-  useEffect(() => {
-    handleExpiredParties();
-  })
-
+  // ========================================
+  // EVENT HANDLERS
+  // ========================================
+  
   // Handle song actions
   const handlePlaySong = async (songId: string) => {
     try {
@@ -202,9 +227,11 @@ export function DjPartyManagementPage() {
 
     setIsClosing(true);
     try {
-      await closeParty(partyId as string);
-      toast.success("Party closed successfully");
-      navigate("/dj/dashboard");
+      const response = await closeParty(partyId as string);
+      if (response.status === 200 && response.data.message.includes("Closed")) {
+        toast.success("Party closed successfully");
+        navigate("/dj/dashboard");
+      }
     } catch (error: any) {
       console.error("Error closing party:", error);
       toast.error("Failed to close party. Please try again.");
@@ -230,6 +257,10 @@ export function DjPartyManagementPage() {
   // Sort pending songs by price (highest first)
   const sortedPendingSongs = [...pendingSongs].sort((a, b) => b.price - a.price);
 
+  // ========================================
+  // RENDER
+  // ========================================
+  
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
