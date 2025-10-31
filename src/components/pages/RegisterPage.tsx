@@ -5,9 +5,10 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { useAuth, UserType } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { LogoPlaceholder } from "../LogoPlaceholder";
 import { User, Music } from "lucide-react";
+import { UserType } from "@/src/api/types";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ export function RegisterPage() {
       console.log("register response in component: ", response);
       
       // Navigate based on user type
-      if (response.data.message === "Welcome to D'HUB") {
+      if (response.data.message === "Welcome ") {
         if (user_status === "HUB_DJ") {
           navigate("/dj/onboarding");
         } else {

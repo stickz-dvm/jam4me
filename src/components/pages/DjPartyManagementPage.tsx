@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import { useParty } from "../../context/PartyContext";
+import { normalizeId, useParty } from "../../context/PartyContext";
 import { useWallet } from "../../context/WalletContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "../ui/card";
 import { Button } from "../ui/button";
@@ -32,10 +32,7 @@ import { NairaSign } from "../icons/NairaSign";
 import { toast } from "sonner";
 import { MusicPlayer } from "../MusicPlayer";
 
-// Utility function to normalize IDs
-export const normalizeId = (id: string | number | undefined | null): string => {
-  return id != null ? String(id) : "";
-};
+
 
 export function DjPartyManagementPage() {
   const { partyId } = useParams();
@@ -55,9 +52,6 @@ export function DjPartyManagementPage() {
     isLoading
   } = useParty();
 
-  // ========================================
-  // ALL STATE HOOKS FIRST (no conditions!)
-  // ========================================
   const [showQRDialog, setShowQRDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showClosePartyDialog, setShowClosePartyDialog] = useState(false);
@@ -74,10 +68,6 @@ export function DjPartyManagementPage() {
     ? currentParty
     : createdParties.find(p => normalizeId(p.id) === partyIdStr);
 
-  // ========================================
-  // ALL USEEFFECT HOOKS (no conditions!)
-  // ========================================
-  
   // Navigate away if party not found
   useEffect(() => {
     if (!isLoading && !party && partyId) {
@@ -113,10 +103,6 @@ export function DjPartyManagementPage() {
     handleExpiredParties();
   }, []); // Added dependency array to prevent infinite loop
 
-  // ========================================
-  // NOW CONDITIONAL RETURNS/LOGIC
-  // ========================================
-  
   // Check if partyId exists
   if (!partyId) {
     return (
@@ -153,10 +139,6 @@ export function DjPartyManagementPage() {
     );
   }
 
-  // ========================================
-  // EVENT HANDLERS
-  // ========================================
-  
   // Handle song actions
   const handlePlaySong = async (songId: string) => {
     try {
@@ -257,10 +239,6 @@ export function DjPartyManagementPage() {
   // Sort pending songs by price (highest first)
   const sortedPendingSongs = [...pendingSongs].sort((a, b) => b.price - a.price);
 
-  // ========================================
-  // RENDER
-  // ========================================
-  
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}

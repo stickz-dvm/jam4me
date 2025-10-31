@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, QrCode, PartyPopper, MapPin, Clock } from "lucide-react";
 import { motion } from "framer-motion";
@@ -10,6 +10,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useParty } from "../../context/PartyContext";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 import { LogoPlaceholder } from "../LogoPlaceholder";
+import { Html5QrcodeScanner, Html5QrcodeScanType, Html5QrcodeCameraScanConfig, QrcodeSuccessCallback } from "html5-qrcode";
 
 export function PartiesPage() {
   const navigate = useNavigate();
@@ -18,6 +19,11 @@ export function PartiesPage() {
   const [passcode, setPasscode] = useState("");
   const [joinError, setJoinError] = useState("");
   const [showJoinDialog, setShowJoinDialog] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanResult, setScanResult] = useState<string | null>(null);
+
+  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const containerRef = useRef(null);
   
   // Helper function to get initials from a name
   const getInitials = (name: string) => {
@@ -40,6 +46,54 @@ export function PartiesPage() {
     return null;
   }
 
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const config: any = {
+      fps: 10,
+      qrbox: { width: 150, height: 150 },
+      rememberLastUsedCamera: true,
+      supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA, Html5QrcodeScanType.SCAN_TYPE_FILE]
+    }
+
+    const scanner = new Html5QrcodeScanner(
+      "reader",
+      config,
+      false
+    )
+
+    const onScanSuccess: QrcodeSuccessCallback = (decodedText, decodedResult) => {
+      const partyId = decodedText.match(/party\/([a-z0-9]+)/)?.[1] || decodedText;
+
+      if (partyId) {
+        setScanResult(partyId);
+        scanner.clear();
+        setPasscode(partyId);
+        // window.location.href = `/party/${partyId}`;
+        setShowScanner(false);
+      } else {
+        setJoinError("Invalid QR code");
+      }
+    };
+
+    const onScanFailure = (error: any) => {
+      // console.warn("Scan failed: ", error);
+    }
+
+    scanner.render(onScanSuccess, onScanFailure);
+
+    scannerRef.current = scanner;
+
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.clear().catch((err) => {
+          // console.error("Scanner clear error: ", err);
+        })
+        scannerRef.current = null
+      }
+    }
+  })
+
   const handleJoinParty = async () => {
     if (!passcode.trim()) {
       setJoinError("Please enter a passcode");
@@ -50,11 +104,18 @@ export function PartiesPage() {
       setJoinError("");
       const party = await joinParty(passcode);
       setShowJoinDialog(false);
-      navigate(`/party/${party.id}`);
+      navigate(`/party/${passcode}`);
     } catch (err: any) {
       setJoinError(err.message || "Failed to join party");
     }
   };
+
+  const handleOpenModal = (isOpen: boolean) => {
+    if (!isOpen) {
+      setShowJoinDialog(false);
+      setShowScanner(false);
+    }
+;  }
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -172,7 +233,7 @@ export function PartiesPage() {
         </motion.div>
       )}
 
-      <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
+      <Dialog open={showJoinDialog} onOpenChange={handleOpenModal}>
         <DialogContent className="glass border-border/50 sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Join a Party</DialogTitle>
@@ -223,12 +284,19 @@ export function PartiesPage() {
               </div>
             </div>
             
-            <Button variant="outline" className="w-full" onClick={() => alert("QR Scanner would open here")}>
+
+            <Button variant="outline" className="w-full" onClick={() => setShowScanner(!showScanner) }>
               <QrCode className="w-4 h-4 mr-2" />
               Scan QR Code
             </Button>
+
+            {showScanner && (
+              <div ref={containerRef}>
+                <div id="reader" style={{ width: "100%", height: "400px" }}></div>
+              </div>
+            )}
           </div>
-          
+
           <DialogFooter>
             <Button 
               onClick={handleJoinParty} 

@@ -162,7 +162,7 @@ export function DjDashboardPage() {
           topSongs
         });
       } catch (error) {
-        console.error("Failed to calculate stats:", error);
+        // console.error("Failed to calculate stats:", error);
         toast.error("Failed to load dashboard data. Please try again later.");
       } finally {
         setIsLoading(false);
@@ -228,7 +228,7 @@ export function DjDashboardPage() {
       console.log("creating party payload in component: ", {
         name: partyName,
         minRequestPrice: minSongRequestPrice,
-        passcode: Math.floor(100000 + Math.random() * 900000).toString(), // Generate a 6-digit passcode
+        // passcode: Math.floor(100000 + Math.random() * 900000).toString(), // Generate a 6-digit passcode
         location: partyVenue,
         dj: user?.username || "DJ Anonymous",
         activeUntil: endDateTime,
@@ -237,7 +237,6 @@ export function DjDashboardPage() {
       await createParty({
         name: partyName,
         minRequestPrice: minSongRequestPrice,
-        passcode: Math.floor(100000 + Math.random() * 900000).toString(), // Generate a 6-digit passcode
         location: partyVenue,
         dj: user?.username || "DJ Anonymous",
         activeUntil: endDateTime,

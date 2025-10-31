@@ -11,7 +11,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "../ui/input";
 import { Slider } from "../ui/slider";
 import { Badge } from "../ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, DialogClose } from "../ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { 
@@ -89,7 +88,7 @@ export function PartyDetailPage() {
   // Check if user is a DJ and it's their party
   const isDjParty = isDj && currentParty?.djId === user?.id;
 
-  // Mock DJ avatar URL - in a real app, this would come from the backend
+  // DJ avatar URL
   const getDjAvatarUrl = () => {
     // Generate a consistent avatar for the same DJ
     if (currentParty) {

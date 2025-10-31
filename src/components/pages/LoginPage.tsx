@@ -1,26 +1,46 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { useAuth, UserType } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { LogoPlaceholder } from "../LogoPlaceholder";
 import { User, Music } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
+import { UserType } from "@/src/api/types";
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const location = useLocation();
+
+  const { login, isLoading: authLoading, isAuthenticated, getUserType } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [user_status, setUserStatus] = useState<UserType>("user");
+
+  // useEffect(() => {
+  //   if (isAuthenticated && !authLoading) {
+  //     const targetRoute = getUserType() === "HUB_DJ" ? "/dj/dashboard" : "/parties";
+  //     const from = (location.state as any)?.from?.pathname || targetRoute;
+      
+  //     console.log("✅ Already authenticated, redirecting to:", from);
+  //     navigate(from, { replace: true });
+  //   }
+  // }, [isAuthenticated, authLoading, getUserType, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsSubmitting(true);
+
+    if (!username.trim() || !password.trim()) {
+      toast.error("Please enter username and password");
+      return;
+    };
     
     try {
       const response = await login(username, password, user_status);
@@ -29,18 +49,31 @@ export function LoginPage() {
       
       // Navigate based on user type
       if (response?.status === 200 && response?.data.message.includes("Login successful") || response?.data.message.includes("login success")) {
-          toast.success("Login successful!");
-          if (user_status === "HUB_DJ" || response?.data.message.includes("login success")) {
-            navigate("/dj/dashboard");
-          } else {
-            navigate("/parties");
-          }
+        // 1s delay so that localStorage can populate
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    
+        // Navigate based on user type
+        const targetRoute = user_status === "HUB_DJ" ? "/dj/dashboard" : "/parties";
+        
+        navigate(targetRoute, { replace: true });
       }
     } catch (err) {
       setError("Failed to log in. Please check your credentials.");
       console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="relative w-16 h-16">
+          <div className="absolute top-0 w-full h-full rounded-full border-4 border-primary/20 border-t-accent animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div 
@@ -122,6 +155,7 @@ export function LoginPage() {
                       onChange={(e) => setUsername(e.target.value)}
                       required
                       className="bg-input-background"
+                      disabled={isSubmitting}
                     />
                   </div>
                   <div className="space-y-2 mb-2">
@@ -142,13 +176,14 @@ export function LoginPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       className="bg-input-background"
+                      disabled={isSubmitting}
                     />
                   </div>
                 </CardContent>
                 
                 <CardFooter className="flex flex-col space-y-2 pt-2">
-                  <Button type="submit" className="w-full glow" disabled={isLoading}>
-                    {isLoading ? "Logging in..." : "Login as User"}
+                  <Button type="submit" className="w-full glow" disabled={isSubmitting}>
+                    {isSubmitting ? "Logging in..." : "Login as User"}
                   </Button>
                   <p className="text-center text-sm text-muted-foreground pt-2">
                     Don't have an account?{" "}
@@ -178,6 +213,7 @@ export function LoginPage() {
                       onChange={(e) => setUsername(e.target.value)}
                       required
                       className="bg-input-background"
+                      disabled={isSubmitting}
                     />
                   </div>
                   <div className="space-y-2 mb-2">
@@ -198,13 +234,14 @@ export function LoginPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       className="bg-input-background"
+                      disabled={isSubmitting}
                     />
                   </div>
                 </CardContent>
                 
                 <CardFooter className="flex flex-col space-y-2 pt-2">
-                  <Button type="submit" className="w-full glow-accent bg-accent text-accent-foreground hover:bg-accent/90" disabled={isLoading}>
-                    {isLoading ? "Logging in..." : "Login as DJ"}
+                  <Button type="submit" className="w-full glow-accent bg-accent text-accent-foreground hover:bg-accent/90" disabled={isSubmitting}>
+                    {isSubmitting ? "Logging in..." : "Login as DJ"}
                   </Button>
                   <p className="text-center text-sm text-muted-foreground pt-2">
                     DJ without an account?{" "}

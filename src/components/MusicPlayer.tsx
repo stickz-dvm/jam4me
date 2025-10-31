@@ -54,7 +54,7 @@ export function MusicPlayer({ song, isPlaying }: MusicPlayerProps) {
     } 
     // Otherwise, use the MusicArtService to get appropriate artwork based on the song title
     else {
-      console.log(`Fetching album art for "${title}" by "${artist}"`);
+      // console.log(`Fetching album art for "${title}" by "${artist}"`);
       
       // Use specific album art for known songs
       if (title.toLowerCase() === "lungu boy" && artist.toLowerCase() === "asake") {

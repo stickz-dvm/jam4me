@@ -1,46 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from "react";
 import { useAuth } from "./AuthContext";
 import { toast } from "sonner";
 import { api } from "../api/apiMethods";
-
-export type Transaction = {
-  id: string;
-  amount: number;
-  type: "deposit" | "withdrawal" | "payment" | "songPayment" | "refund";
-  description: string;
-  date: Date;
-  // Additional fields for song payments
-  songTitle?: string;
-  artist?: string;
-  partyName?: string;
-  requestedBy?: string;
-  status?: "completed" | "pending" | "processing" | "failed";
-};
-
-export type PaymentMethod = {
-  id: string;
-  type: "bankAccount" | "paystack";
-  lastFour: string;
-  name: string;
-  isDefault: boolean;
-};
-
-type WalletContextType = {
-  balance: number;
-  transactions: Transaction[];
-  paymentMethods: PaymentMethod[];
-  isLoading: boolean;
-  fundWallet: (amount: number) => Promise<void>;
-  withdrawFunds: (amount: number, bankDetails?: { accountNumber: string; bankName: string }) => Promise<void>;
-  payForSong: (amount: number, partyName: string, songTitle: string, artist: string) => Promise<void>;
-  receiveSongPayment: (amount: number, partyName: string, songTitle: string, artist: string, requestedBy: string) => Promise<void>;
-  refundSongPayment: (amount: number, partyName: string, songTitle: string, artist: string, requestedBy: string) => Promise<void>;
-  addFunds: (amount: number) => Promise<void>;
-  deductFunds: (amount: number) => Promise<void>;
-  addPaymentMethod: (method: Omit<PaymentMethod, "id">) => Promise<void>;
-  removePaymentMethod: (methodId: string) => Promise<void>;
-  setDefaultPaymentMethod: (methodId: string) => Promise<void>;
-};
+import { PaymentMethod, Transaction, WalletContextType } from "../api/types";
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
@@ -63,110 +25,250 @@ const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
 ];
 
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
-  const [balance, setBalance] = useState(5000); // Start with some initial balance for demo
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      // Load wallet data from local storage
+  // Track if we've already fetched data to prevent duplicate calls
+  const hasFetchedDataRef = useRef(false);
+
+  /**
+   * Load wallet data from localStorage
+   * This runs immediately without waiting for API calls
+   */
+  const loadLocalWalletData = useCallback(() => {
+    if (!user) {
+      setBalance(0);
+      setTransactions([]);
+      setPaymentMethods([]);
+      return;
+    }
+
+    try {
       const storedBalance = localStorage.getItem(`jam4me-balance-${user.id}`);
       const storedTransactions = localStorage.getItem(`jam4me-transactions-${user.id}`);
       const storedPaymentMethods = localStorage.getItem(`jam4me-payment-methods-${user.id}`);
-      
+
       if (storedBalance) {
         setBalance(Number(storedBalance));
       }
 
       if (storedTransactions) {
-        try {
-          const parsedTransactions = JSON.parse(storedTransactions);
-          // Convert string dates back to Date objects
-          setTransactions(
-            parsedTransactions.map((t: any) => ({
-              ...t,
-              date: new Date(t.date)
-            }))
-          );
-        } catch (e) {
-          console.error("Failed to parse transactions", e);
-          setTransactions([]);
-        }
-      } else {
-        // If no transactions yet, provide some demo data
-        const demoTransactions: Transaction[] = [
-          {
-            id: "trx-1",
-            amount: 5000,
-            type: "deposit",
-            description: "Initial wallet funding via Paystack",
-            date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-            status: "completed"
-          }
-        ];
-        setTransactions(demoTransactions);
+        const parsedTransactions = JSON.parse(storedTransactions);
+        setTransactions(
+          parsedTransactions.map((t: any) => ({
+            ...t,
+            date: new Date(t.date)
+          }))
+        );
       }
-      
+
       if (storedPaymentMethods) {
-        try {
-          setPaymentMethods(JSON.parse(storedPaymentMethods));
-        } catch (e) {
-          console.error("Failed to parse payment methods", e);
-          setPaymentMethods(DEFAULT_PAYMENT_METHODS);
-        }
+        setPaymentMethods(JSON.parse(storedPaymentMethods));
       } else {
         setPaymentMethods(DEFAULT_PAYMENT_METHODS);
       }
-    } else {
-      // Reset wallet when logged out
+    } catch (error) {
+      console.error("Failed to load wallet data from localStorage:", error);
+      // Set defaults on error
       setBalance(0);
       setTransactions([]);
-      setPaymentMethods([]);
+      setPaymentMethods(DEFAULT_PAYMENT_METHODS);
     }
-    setIsLoading(false);
   }, [user]);
 
-  const saveWalletData = () => {
-    if (user) {
+  /**
+   * Save wallet data to localStorage
+   */
+  const saveWalletData = useCallback(() => {
+    if (!user) return;
+
+    try {
       localStorage.setItem(`jam4me-balance-${user.id}`, balance.toString());
       localStorage.setItem(`jam4me-transactions-${user.id}`, JSON.stringify(transactions));
       localStorage.setItem(`jam4me-payment-methods-${user.id}`, JSON.stringify(paymentMethods));
+    } catch (error) {
+      console.error("Failed to save wallet data to localStorage:", error);
     }
-  };
+  }, [user, balance, transactions, paymentMethods]);
 
-  useEffect(() => {
-    saveWalletData();
-    getBalance();
-    getDJTransactionHistory();
-  }, [balance, transactions, paymentMethods, user]);
+  /**
+   * Fetch balance from API (DJ only)
+   */
+  const fetchBalance = async (): Promise<number | null> => {
+    if (!user || !isAuthenticated) {
+      console.warn("Cannot fetch balance: User not authenticated");
+      return null;
+    }
 
-  const getBalance = async () => {
+    // Only DJs have the balance endpoint
+    if (user.userType !== "HUB_DJ") {
+      return null;
+    }
+
     try {
       const response = await api.get("/dj_wallet/dj/check/wal/223/");
-
-      console.log("getting balance: ", response);
-    } catch (error: any) {
-      console.error("Error fetching wallet balance: ", error);
-    }
-  };
-
-  const getDJTransactionHistory = async () => {
-    try {
-      const response = await api.get("/dj_wallet/transaction_history/")
-
-      console.log("DJ transaction history response: ", response);
       
+      if (response.data && typeof response.data.balance === "number") {
+        return response.data.balance;
+      }
+      
+      console.warn("Balance not found in API response:", response.data);
+      return null;
     } catch (error: any) {
-      console.error("Error fetching transaction history: ", error);
+      // Log but don't show error for 401 (handled by interceptor) or 403 (permission)
+      if (error.status === 401) {
+        console.warn("⚠️ 401 when fetching balance - might be race condition after login");
+        return null;
+      }
+      
+      if (error.status === 403) {
+        console.warn("⚠️ 403 when fetching balance - permission issue");
+        return null;
+      }
+      
+      console.error("Error fetching wallet balance:", error);
+      toast.error("Failed to fetch wallet balance");
+      
+      return null;
     }
   };
 
-  const fundWallet = async (amount: number) => {
+  /**
+   * Fetch transaction history from API (DJ only)
+   */
+  const fetchTransactionHistory = async (): Promise<Transaction[] | null> => {
+    if (!user || !isAuthenticated) {
+      console.warn("Cannot fetch transactions: User not authenticated");
+      return null;
+    }
+
+    // Only DJs have the transaction history endpoint
+    if (user.userType !== "HUB_DJ") {
+      return null;
+    }
+
+    try {
+      const response = await api.get("/dj_wallet/transaction_history/");
+      
+      if (response.data && Array.isArray(response.data.transactions)) {
+        return response.data.transactions.map((t: any) => ({
+          ...t,
+          date: new Date(t.date || t.created_at)
+        }));
+      }
+      
+      console.warn("Transactions not found in API response:", response.data);
+      return null;
+    } catch (error: any) {
+      console.error("Error fetching transaction history:", error);
+      
+      // Don't show error toast on 401 (handled by interceptor)
+      if (error.status !== 401) {
+        toast.error("Failed to fetch transaction history");
+      }
+      
+      return null;
+    }
+  };
+
+  /**
+   * Refresh wallet data from API and update state
+   */
+  const refreshWalletData = useCallback(async () => {
+    if (!user || !isAuthenticated || authLoading) {
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Simulate API call
+      // Fetch data in parallel
+      const [apiBalance, apiTransactions] = await Promise.all([
+        fetchBalance(),
+        fetchTransactionHistory()
+      ]);
+
+      // Update state with API data if available
+      if (apiBalance !== null) {
+        setBalance(apiBalance);
+      }
+
+      if (apiTransactions !== null && apiTransactions.length > 0) {
+        setTransactions(apiTransactions);
+      }
+    } catch (error) {
+      console.error("Error refreshing wallet data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, isAuthenticated, authLoading]);
+
+  /**
+   * Initialize wallet on mount and when auth state changes
+   * Separate effect from data persistence to avoid loops
+   */
+  useEffect(() => {
+    // Reset initialization flag when user changes
+    hasFetchedDataRef.current = false;
+    setIsInitialized(false);
+
+    // Wait for auth to finish loading
+    if (authLoading) {
+      return;
+    }
+
+    // If not authenticated, clear wallet data
+    if (!isAuthenticated || !user) {
+      setBalance(0);
+      setTransactions([]);
+      setPaymentMethods([]);
+      setIsInitialized(true);
+      return;
+    }
+
+    // Load local data first (instant)
+    loadLocalWalletData();
+
+    // CRITICAL: Add small delay before API calls to let auth settle
+    // This prevents 401 errors immediately after login
+    if (!hasFetchedDataRef.current) {
+      hasFetchedDataRef.current = true;
+      
+      // Wait 500ms for token to be properly set in axios interceptor
+      const timer = setTimeout(() => {
+        refreshWalletData().finally(() => {
+          setIsInitialized(true);
+        });
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setIsInitialized(true);
+    }
+  }, [user, isAuthenticated, authLoading, loadLocalWalletData, refreshWalletData]);
+
+  /**
+   * Save wallet data to localStorage whenever it changes
+   * Separate effect to avoid triggering API calls
+   */
+  useEffect(() => {
+    if (isInitialized && user) {
+      saveWalletData();
+    }
+  }, [balance, transactions, paymentMethods, isInitialized, user, saveWalletData]);
+
+  const fundWallet = async (amount: number) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to fund your wallet");
+      throw new Error("Not authenticated");
+    }
+
+    setIsLoading(true);
+    try {
+      // TODO: Replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const newTransaction: Transaction = {
@@ -175,6 +277,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         type: "deposit",
         description: "Wallet funding via Paystack",
         date: new Date(),
+        status: "completed"
       };
       
       setBalance(prev => prev + amount);
@@ -187,6 +290,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
 
   const withdrawFunds = async (amount: number, bankDetails?: { accountNumber: string; bankName: string }) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to withdraw funds");
+      throw new Error("Not authenticated");
+    }
+
     if (amount > balance) {
       toast.error("Insufficient funds");
       throw new Error("Insufficient funds");
@@ -194,7 +302,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     
     setIsLoading(true);
     try {
-      // Simulate API call
+      // TODO: Replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       let description = "Funds withdrawal";
@@ -208,6 +316,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         type: "withdrawal",
         description,
         date: new Date(),
+        status: "processing"
       };
       
       setBalance(prev => prev - amount);
@@ -220,6 +329,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
 
   const payForSong = async (amount: number, partyName: string, songTitle: string, artist: string) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to request songs");
+      throw new Error("Not authenticated");
+    }
+
     if (amount > balance) {
       toast.error("Insufficient funds");
       throw new Error("Insufficient funds");
@@ -227,7 +341,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     
     setIsLoading(true);
     try {
-      // Simulate API call
+      // TODO: Replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const newTransaction: Transaction = {
@@ -238,7 +352,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         date: new Date(),
         songTitle,
         artist,
-        partyName
+        partyName,
+        status: "completed"
       };
       
       setBalance(prev => prev - amount);
@@ -250,14 +365,21 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const receiveSongPayment = async (amount: number, partyName: string, songTitle: string, artist: string, requestedBy: string) => {
-    if (!user || user.userType !== "HUB_DJ") {
+  const receiveSongPayment = async (
+    amount: number, 
+    partyName: string, 
+    songTitle: string, 
+    artist: string, 
+    requestedBy: string
+  ) => {
+    if (!isAuthenticated || !user || user.userType !== "HUB_DJ") {
+      toast.error("Only DJs can receive song payments");
       throw new Error("Only DJs can receive song payments");
     }
     
     setIsLoading(true);
     try {
-      // Simulate API call
+      // TODO: Replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const newTransaction: Transaction = {
@@ -269,7 +391,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         songTitle,
         artist,
         partyName,
-        requestedBy
+        requestedBy,
+        status: "completed"
       };
       
       setBalance(prev => prev + amount);
@@ -281,8 +404,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const refundSongPayment = async (amount: number, partyName: string, songTitle: string, artist: string, requestedBy: string) => {
-    if (!user || user.userType !== "HUB_DJ") {
+  const refundSongPayment = async (
+    amount: number, 
+    partyName: string, 
+    songTitle: string, 
+    artist: string, 
+    requestedBy: string
+  ) => {
+    if (!isAuthenticated || !user || user.userType !== "HUB_DJ") {
+      toast.error("Only DJs can issue refunds");
       throw new Error("Only DJs can issue refunds");
     }
     
@@ -293,7 +423,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     
     setIsLoading(true);
     try {
-      // Simulate API call
+      // TODO: Replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const newTransaction: Transaction = {
@@ -305,7 +435,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         songTitle,
         artist,
         partyName,
-        requestedBy
+        requestedBy,
+        status: "completed"
       };
       
       setBalance(prev => prev - amount);
@@ -317,8 +448,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   };
   
-  // General purpose functions for adding/deducting funds
   const addFunds = async (amount: number) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to add funds");
+      throw new Error("Not authenticated");
+    }
+
     setIsLoading(true);
     try {
       setBalance(prev => prev + amount);
@@ -329,6 +464,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
   
   const deductFunds = async (amount: number) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to deduct funds");
+      throw new Error("Not authenticated");
+    }
+
     if (amount > balance) {
       toast.error("Insufficient funds");
       throw new Error("Insufficient funds");
@@ -344,9 +484,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
 
   const addPaymentMethod = async (method: Omit<PaymentMethod, "id">) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to add payment methods");
+      throw new Error("Not authenticated");
+    }
+
     setIsLoading(true);
     try {
-      // Simulate API call
+      // TODO: Replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const newMethod: PaymentMethod = {
@@ -354,7 +499,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         id: `pm-${Date.now()}`
       };
       
-      // If this is set as default, update other methods
       if (newMethod.isDefault) {
         setPaymentMethods(prev => 
           prev.map(pm => ({ ...pm, isDefault: false })).concat(newMethod)
@@ -370,9 +514,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
 
   const removePaymentMethod = async (methodId: string) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to remove payment methods");
+      throw new Error("Not authenticated");
+    }
+
     setIsLoading(true);
     try {
-      // Simulate API call
+      // TODO: Replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const method = paymentMethods.find(m => m.id === methodId);
@@ -382,7 +531,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       
       setPaymentMethods(prev => prev.filter(m => m.id !== methodId));
       
-      // If we removed the default method, set a new default if possible
       if (method.isDefault && paymentMethods.length > 1) {
         const remaining = paymentMethods.filter(m => m.id !== methodId);
         if (remaining.length > 0) {
@@ -399,9 +547,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
 
   const setDefaultPaymentMethod = async (methodId: string) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to change default payment method");
+      throw new Error("Not authenticated");
+    }
+
     setIsLoading(true);
     try {
-      // Simulate API call
+      // TODO: Replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const method = paymentMethods.find(m => m.id === methodId);
@@ -436,6 +589,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         addPaymentMethod,
         removePaymentMethod,
         setDefaultPaymentMethod,
+        refreshWalletData,
       }}
     >
       {children}
