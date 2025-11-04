@@ -8,7 +8,7 @@ import { ApiError } from "./types";
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_BASE_URL,
-  timeout: 15000, // 15 second timeout
+  timeout: 30000, // 30 second timeout
   headers: {
     "Content-Type": "application/json",
     Accept: "*/*",
@@ -48,16 +48,14 @@ const clearAuthData = () => {
  * Routes that don't require authentication
  */
 const PUBLIC_ROUTES = [
-  "/user_wallet/crt_ur/",      // User registration
-  "/dj_wallet/crt_ur/",        // DJ registration
-  "/user_wallet/us_log/",      // User login
-  "/dj_wallet/us_log/",        // DJ login
+  "/user_wallet/crt_ur/",
+  "/dj_wallet/crt_ur/",
+  "/user_wallet/us_log/", 
+  "/dj_wallet/us_log/",   
   "/user_wallet/forgot_password/",
   "/auth/login",
   "/auth/register",
 ];
-
-console.log("🔧 Public routes configured:", PUBLIC_ROUTES);
 
 /**
  * Check if route is public
@@ -74,13 +72,11 @@ apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // Skip auth for public routes
     if (isPublicRoute(config.url)) {
-      console.log("🌍 Public route, skipping auth:", config.url);
       return config;
     }
 
     // Check if token is expired before making request
     if (isTokenExpired()) {
-      console.log("⏰ Token expired before request:", config.url);
       clearAuthData();
       // Redirect to login if not already there
       if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
@@ -92,26 +88,26 @@ apiClient.interceptors.request.use(
     // Add token to headers
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
     
-    console.log("🔐 Request interceptor:", {
+    console.log("Request interceptor:", {
       url: config.url,
       method: config.method,
       hasToken: !!token,
-      tokenPreview: token ? token.substring(0, 20) + "..." : "null",
+      tokenPreview: token ? token.substring(0, 10) + "..." : "null",
       tokenLength: token?.length || 0
     });
     
     if (token && config.headers) {
       config.headers.Authorization = `Token ${token}`;
-      console.log("✅ Token added to request headers");
+      console.log("Token added to request headers");
     } else if (!isPublicRoute(config.url)) {
       // Token missing for protected route
-      console.warn("⚠️ No auth token found for protected route:", config.url);
+      console.warn("No auth token found for protected route:", config.url);
     }
 
     return config;
   },
   (error: AxiosError) => {
-    console.error("❌ Request interceptor error:", error);
+    console.error("Request interceptor error:", error);
     return Promise.reject(error);
   }
 );
@@ -154,15 +150,12 @@ apiClient.interceptors.response.use(
           case 401:
             customError.message = "Session expired - Please login again";
             
-            // CRITICAL: Only clear auth and redirect if NOT on a public route
-            // AND if this is an authentication-related endpoint
             const isAuthEndpoint = error.config?.url?.includes("/log/") || 
                                    error.config?.url?.includes("/auth/");
             
             if (!isPublicRoute(error.config?.url) && !isAuthEndpoint) {
-              console.warn("⚠️ 401 error but NOT clearing auth (might be permission issue)");
+              console.warn("401 error but NOT clearing auth (might be permission issue)");
               // Don't clear auth - this might just be a permission error
-              // or a race condition right after login
               break;
             }
             
@@ -171,7 +164,7 @@ apiClient.interceptors.response.use(
             
             // Prevent redirect loop
             if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
-              console.log("🚪 401 on auth endpoint - redirecting to login");
+              console.log("401 on auth endpoint - redirecting to login");
               setTimeout(() => {
                 window.location.href = "/login";
               }, 100);
