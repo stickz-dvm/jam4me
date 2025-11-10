@@ -39,11 +39,12 @@ import { MusicPlayer } from "../MusicPlayer";
 import { toast } from "sonner";
 
 export function PartyDetailPage() {
-  const { partyId } = useParams();
+  const { passcode } = useParams();
   const navigate = useNavigate();
   const { user, isDj } = useAuth();
   const { 
     currentParty, 
+    joinedParties,
     requestSong, 
     leaveParty, 
     isLoading, 
@@ -54,7 +55,8 @@ export function PartyDetailPage() {
     closeParty,
     hasPendingSongs,
     getPartyQrCode,
-    setCurrentParty
+    setCurrentParty,
+    fetchPartyByPasscode
   } = useParty();
   const { balance } = useWallet();
   const { searchTracks } = useSpotify();
@@ -100,17 +102,6 @@ export function PartyDetailPage() {
   };
 
   useEffect(() => {
-    if (!currentParty) {
-      // If no party is selected, navigate back to appropriate page
-      navigate(isDj ? "/dj/dashboard" : "/parties");
-    } else {
-      // Set initial price to the minimum price set by the DJ
-      setPrice(currentParty.minRequestPrice || 1000);
-      setMinRequestPrice(currentParty.minRequestPrice || 1000);
-    }
-  }, [currentParty, navigate, isDj]);
-  
-  useEffect(() => {
     if (currentParty && currentParty.songs.length > 0) {
       const playingSong = currentParty.songs.find(song => song.status === "playing");
       if (playingSong) {
@@ -119,6 +110,50 @@ export function PartyDetailPage() {
       }
     }
   }, [currentParty]);
+
+  useEffect(() => {
+    // Don't do anything if we already have the current party
+    if (currentParty) {
+      setPrice(currentParty.minRequestPrice || 1000);
+      setMinRequestPrice(currentParty.minRequestPrice || 1000);
+      return;
+    }
+
+    // If no currentParty but we have a passcode, try to restore from joinedParties
+    if (!currentParty && passcode) {
+      const found = joinedParties.find(
+        (p) => String(p.id) === String(passcode)
+      );
+
+      if (found) {
+        // Restore the party from joinedParties
+        setCurrentParty(found);
+        console.log("Restored currentParty from joinedParties:", found);
+        setPrice(found.minRequestPrice || 1000);
+        setMinRequestPrice(found.minRequestPrice || 1000);
+      } else {
+        // Add a small delay to allow state to propagate
+        const timeoutId = setTimeout(() => {
+          console.log("Party not found in joinedParties, redirecting...");
+          toast.error("Party not found. Please rejoin from the Parties page.");
+          navigate(isDj ? "/dj/dashboard" : "/parties");
+        }, 1000);
+
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [currentParty, passcode, joinedParties, setCurrentParty, navigate, isDj]);
+
+  useEffect(() => {
+    const loadParty = async () => {
+      if (passcode) {
+        const party = await fetchPartyByPasscode(passcode);
+        setCurrentParty(party);
+      }
+      // Party is automatically set and saved!
+    };
+    loadParty();
+  }, [passcode]);
 
   // Set active tab based on which section has songs
   useEffect(() => {

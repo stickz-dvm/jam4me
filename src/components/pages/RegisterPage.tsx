@@ -41,7 +41,7 @@ export function RegisterPage() {
       console.log("register response in component: ", response);
       
       // Navigate based on user type
-      if (response.data.message === "Welcome ") {
+      if (response.data.message.includes("Welcome ")) {
         if (user_status === "HUB_DJ") {
           navigate("/dj/onboarding");
         } else {
