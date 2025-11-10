@@ -9,8 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { useAuth } from "../../context/AuthContext";
 import { useParty } from "../../context/PartyContext";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
-import { LogoPlaceholder } from "../LogoPlaceholder";
-import { Html5QrcodeScanner, Html5QrcodeScanType, Html5QrcodeCameraScanConfig, QrcodeSuccessCallback } from "html5-qrcode";
+import { Html5QrcodeScanner, Html5QrcodeScanType, QrcodeSuccessCallback } from "html5-qrcode";
 
 export function PartiesPage() {
   const navigate = useNavigate();
@@ -25,7 +24,6 @@ export function PartiesPage() {
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const containerRef = useRef(null);
   
-  // Helper function to get initials from a name
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -35,9 +33,7 @@ export function PartiesPage() {
       .substring(0, 2);
   };
   
-  // Helper function to generate avatar URL based on DJ ID
   const getDjAvatarUrl = (djId: string) => {
-    // This creates a unique but consistent avatar for each DJ ID
     return `https://api.dicebear.com/7.x/avataaars/svg?seed=${djId}`;
   };
   
@@ -47,7 +43,7 @@ export function PartiesPage() {
   }
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !showScanner) return;
 
     const config: any = {
       fps: 10,
@@ -69,7 +65,6 @@ export function PartiesPage() {
         setScanResult(partyId);
         scanner.clear();
         setPasscode(partyId);
-        // window.location.href = `/party/${partyId}`;
         setShowScanner(false);
       } else {
         setJoinError("Invalid QR code");
@@ -77,22 +72,21 @@ export function PartiesPage() {
     };
 
     const onScanFailure = (error: any) => {
-      // console.warn("Scan failed: ", error);
+      // Silently handle scan failures
     }
 
     scanner.render(onScanSuccess, onScanFailure);
-
     scannerRef.current = scanner;
 
     return () => {
       if (scannerRef.current) {
         scannerRef.current.clear().catch((err) => {
-          // console.error("Scanner clear error: ", err);
+          console.error("Scanner clear error: ", err);
         })
         scannerRef.current = null
       }
     }
-  })
+  }, [showScanner]);
 
   const handleJoinParty = async () => {
     if (!passcode.trim()) {
@@ -102,9 +96,18 @@ export function PartiesPage() {
     
     try {
       setJoinError("");
-      const party = await joinParty(passcode);
+      
+      // Wait for the party to be joined and state to update
+      await joinParty(passcode);
+      
+      // Add a small delay to ensure state has propagated
+      setTimeout(() => {
+        console.log("Navigating to party:", passcode);
+        navigate(`/party/${passcode}`);
+      }, 1000);
+      
+      // Close the dialog
       setShowJoinDialog(false);
-      navigate(`/party/${passcode}`);
     } catch (err: any) {
       setJoinError(err.message || "Failed to join party");
     }
@@ -114,8 +117,10 @@ export function PartiesPage() {
     if (!isOpen) {
       setShowJoinDialog(false);
       setShowScanner(false);
+      setPasscode("");
+      setJoinError("");
     }
-;  }
+  }
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -284,10 +289,9 @@ export function PartiesPage() {
               </div>
             </div>
             
-
-            <Button variant="outline" className="w-full" onClick={() => setShowScanner(!showScanner) }>
+            <Button variant="outline" className="w-full" onClick={() => setShowScanner(!showScanner)}>
               <QrCode className="w-4 h-4 mr-2" />
-              Scan QR Code
+              {showScanner ? "Hide Scanner" : "Scan QR Code"}
             </Button>
 
             {showScanner && (

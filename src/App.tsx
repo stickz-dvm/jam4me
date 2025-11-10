@@ -105,7 +105,7 @@ function AppWithProviders() {
                   <Route path="/onboarding" element={<OnboardingPage />} />
                   <Route path="/home" element={<PartiesPage />} />
                   <Route path="/parties" element={<PartiesPage />} />
-                  <Route path="/party/:partyId" element={<PartyDetailPage />} />
+                  <Route path="/party/:passcode" element={<PartyDetailPage />} />
                   <Route path="/wallet" element={<WalletPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/support" element={<SupportPage />} />
