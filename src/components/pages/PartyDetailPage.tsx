@@ -8,7 +8,6 @@ import { useSpotify } from "../../context/SpotifyContext";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Input } from "../ui/input";
-import { Slider } from "../ui/slider";
 import { Badge } from "../ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
@@ -28,15 +27,89 @@ import {
   Settings,
   X,
   Wallet,
-  User,
   MapPin
 } from "lucide-react";
-import { NairaSign } from "../icons/NairaSign";
-import { SpotifySearch } from "../SpotifySearch";
-import { SongCard } from "../SongCard";
-import { MusicPlayer } from "../MusicPlayer";
+import { SpotifySearch } from "../ui/SpotifySearch";
+import { SongCard } from "../ui/SongCard";
+import { MusicPlayer } from "../ui/MusicPlayer";
 import { toast } from "sonner";
-import { SpotifyTrack } from "../../api/types";
+import { SpotifyTrack } from "../../services/SpotifyService";
+
+// This is my new price stepper component for the user side.
+function PriceStepper({ 
+  minPrice, 
+  value, 
+  onValueChange 
+}: { 
+  minPrice: number;
+  value: number;
+  onValueChange: (newValue: number) => void;
+}) {
+  const [inputValue, setInputValue] = useState(value.toString());
+
+  const handleStep = (increment: number) => {
+    onValueChange(Math.max(minPrice, value + increment));
+  };
+
+  const handleBlur = () => {
+    const numValue = parseInt(inputValue);
+    if (!isNaN(numValue) && numValue >= minPrice) {
+      onValueChange(numValue);
+    } else {
+      setInputValue(value.toString());
+    }
+  };
+  
+  useEffect(() => {
+    setInputValue(value.toString());
+  }, [value]);
+
+  return (
+    <div className="w-full space-y-2">
+      <div className="flex justify-between items-center">
+        <label htmlFor="price" className="text-sm text-white">
+          Your Offer
+        </label>
+        
+        <div className="flex items-center gap-2 w-1/2">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => handleStep(-100)} 
+            className="h-9 w-9 shrink-0 glow-blue"
+          >
+            -
+          </Button>
+          
+          <div className="relative flex-grow">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₦</span>
+            <Input
+              id="price"
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value.replace(/\D/g, ''))}
+              onBlur={handleBlur}
+              className="pl-8 text-center text-lg font-bold bg-yellow-900/20 text-yellow-accent border-yellow-accent/30"
+              inputMode="numeric"
+            />
+          </div>
+          
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => handleStep(100)} 
+            className="h-9 w-9 shrink-0 glow-blue"
+          >
+            +
+          </Button>
+        </div>
+      </div>
+      <p className="text-xs text-blue-200 text-right w-1/2 ml-auto">
+        Higher offers get priority!
+      </p>
+    </div>
+  );
+}
 
 export function PartyDetailPage() {
   const { passcode } = useParams();
@@ -61,7 +134,6 @@ export function PartyDetailPage() {
   const { balance } = useWallet();
   const { searchTracks } = useSpotify();
   
-  // State variables
   const [price, setPrice] = useState(1000);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SpotifyTrack[]>([]);
@@ -77,7 +149,6 @@ export function PartyDetailPage() {
   const [isClosing, setIsClosing] = useState(false);
   const [activeTab, setActiveTab] = useState("queue");
   
-  // Helper function to get initials from a name
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -87,15 +158,11 @@ export function PartyDetailPage() {
       .substring(0, 2);
   };
   
-  // Check if user is a DJ and it's their party
   const isDjParty = isDj && currentParty?.djId === user?.id;
 
-  // DJ avatar URL
   const getDjAvatarUrl = () => {
-    // Generate a consistent avatar for the same DJ
     if (currentParty) {
       const djId = currentParty.djId;
-      // This creates a unique but consistent avatar for each DJ ID
       return `https://api.dicebear.com/7.x/avataaars/svg?seed=${djId}`;
     }
     return undefined;
@@ -112,29 +179,23 @@ export function PartyDetailPage() {
   }, [currentParty]);
 
   useEffect(() => {
-    // Don't do anything if we already have the current party
     if (currentParty) {
       setPrice(currentParty.minRequestPrice || 1000);
       setMinRequestPrice(currentParty.minRequestPrice || 1000);
       return;
     }
 
-    // If no currentParty but we have a passcode, try to restore from joinedParties
     if (!currentParty && passcode) {
       const found = joinedParties.find(
         (p) => String(p.id) === String(passcode)
       );
 
       if (found) {
-        // Restore the party from joinedParties
         setCurrentParty(found);
-        console.log("Restored currentParty from joinedParties:", found);
         setPrice(found.minRequestPrice || 1000);
         setMinRequestPrice(found.minRequestPrice || 1000);
       } else {
-        // Add a small delay to allow state to propagate
         const timeoutId = setTimeout(() => {
-          console.log("Party not found in joinedParties, redirecting...");
           toast.error("Party not found. Please rejoin from the Parties page.");
           navigate(isDj ? "/dj/dashboard" : "/parties");
         }, 1000);
@@ -150,19 +211,20 @@ export function PartyDetailPage() {
         const party = await fetchPartyByPasscode(passcode);
         setCurrentParty(party);
       }
-      // Party is automatically set and saved!
     };
     loadParty();
-  }, [passcode]);
+  }, [passcode, fetchPartyByPasscode, setCurrentParty]);
 
-  // Set active tab based on which section has songs
+  const queuedSongs = currentParty?.songs?.filter(song => song.status === "pending") || [];
+  const playedSongs = currentParty?.songs?.filter(song => song.status === "played") || [];
+
   useEffect(() => {
     if (queuedSongs.length > 0) {
       setActiveTab("queue");
     } else if (playedSongs.length > 0) {
       setActiveTab("played");
     }
-  }, []);
+  }, [queuedSongs.length, playedSongs.length]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -186,10 +248,7 @@ export function PartyDetailPage() {
     setSearchResults([]);
     setSearchQuery("");
     setSearchPerformed(false);
-    toast.success(`Selected "${track.name}" by ${track.artists && track.artists.length > 0 ? track.artists.map((a: { name: string }) => a.name).join(", ") : "Unknown Artist"}`, {
-      duration: 2000,
-      className: "glass"
-    });
+    toast.success(`Selected "${track.name}" by ${track.artists.map((a) => a.name).join(", ")}`);
   };
   
   const handleRequestSong = async () => {
@@ -198,98 +257,70 @@ export function PartyDetailPage() {
     try {
       await requestSong(
         selectedTrack.name, 
-        selectedTrack.artists && selectedTrack.artists.length > 0 ? selectedTrack.artists[0].name : "Unknown Artist", 
+        selectedTrack.artists[0]?.name || "Unknown Artist", 
         price,
         selectedTrack.album?.images?.[0]?.url
       );
       setSelectedTrack(null);
       setPrice(currentParty?.minRequestPrice || 1000);
-      toast.success("Song requested successfully! The DJ will review your request.");
+      toast.success("Song requested successfully!");
     } catch (error) {
       console.error("Error requesting song:", error);
-      toast.error("Failed to request song. Please try again.");
+      toast.error("Failed to request song.");
     }
-  };
-  
-  const handlePriceChange = (values: number[]) => {
-    setPrice(values[0]);
   };
 
   const handleMinPriceChange = (values: number[]) => {
     setMinRequestPrice(values[0]);
   };
 
-  // DJ actions
   const handlePlaySong = async (songId: string) => {
     try {
       await playSong(songId);
-      toast.success("Now playing the selected song");
-      // Switch to the played tab when there are no more queue songs
-      if (queuedSongs.length <= 1) {
-        setActiveTab("played");
-      }
     } catch (error) {
-      console.error("Error playing song:", error);
-      toast.error("Failed to play song. Please try again.");
+      toast.error("Failed to play song.");
     }
   };
 
   const handleDeclineSong = async (songId: string) => {
     try {
       await declineSong(songId);
-      toast.success("Song request declined and refunded");
     } catch (error) {
-      console.error("Error declining song:", error);
-      toast.error("Failed to decline song. Please try again.");
+      toast.error("Failed to decline song.");
     }
   };
 
   const handleMarkAsPlayed = async (songId: string) => {
     try {
       await markSongAsPlayed(songId);
-      toast.success("Song marked as played");
-      // Switch to the played tab when the current song is marked as played
-      setActiveTab("played");
     } catch (error) {
-      console.error("Error marking song as played:", error);
-      toast.error("Failed to mark song as played. Please try again.");
+      toast.error("Failed to mark song as played.");
     }
   };
 
   const handleCloseParty = async () => {
     if (!currentParty) return;
     
+    setIsClosing(true);
     try {
-      setIsClosing(true);
       await closeParty(currentParty.id);
       toast.success("Party closed successfully");
       navigate("/dj/dashboard");
     } catch (error: any) {
-      console.error("Error closing party:", error);
-      toast.error(error.message || "Failed to close party. Please try again.");
+      toast.error(error.message || "Failed to close party.");
     } finally {
       setIsClosing(false);
     }
   };
 
   const handleUpdateMinPrice = async () => {
-    // This would call an API to update the minimum price
-    // For now, we'll just simulate it
     setIsUpdatingPrice(true);
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update the current party with new minimum price
       if (currentParty) {
-        const updatedParty = {
-          ...currentParty,
-          minRequestPrice: minRequestPrice
-        };
-        setCurrentParty(updatedParty);
+        setCurrentParty({ ...currentParty, minRequestPrice });
       }
-      
-      toast.success(`Minimum request price updated to ₦${minRequestPrice.toLocaleString()}`);
+      toast.success(`Minimum price updated to ₦${minRequestPrice.toLocaleString()}`);
       setShowPriceDialog(false);
     } catch (error) {
       toast.error("Failed to update minimum price");
@@ -298,7 +329,6 @@ export function PartyDetailPage() {
     }
   };
 
-  // Copy party passcode to clipboard
   const copyPasscodeToClipboard = () => {
     if (currentParty) {
       navigator.clipboard.writeText(currentParty.passcode);
@@ -306,24 +336,8 @@ export function PartyDetailPage() {
     }
   };
 
-  // Filter songs by status
   const nowPlayingSongs = currentParty?.songs?.filter(song => song.status === "playing") || [];
-  const queuedSongs = currentParty?.songs?.filter(song => song.status === "pending") || [];
-  const playedSongs = currentParty?.songs?.filter(song => song.status === "played") || [];
   const hasPendingAcceptedSongs = currentParty ? hasPendingSongs(currentParty.id) : false;
-  
-  // Log song counts to help debug
-  useEffect(() => {
-    if (currentParty) {
-      console.log({
-        partyName: currentParty.name,
-        totalSongs: currentParty.songs?.length || 0,
-        playing: nowPlayingSongs.length,
-        queued: queuedSongs.length,
-        played: playedSongs.length
-      });
-    }
-  }, [currentParty, nowPlayingSongs.length, queuedSongs.length, playedSongs.length]);
 
   if (!currentParty) {
     return (
@@ -333,7 +347,6 @@ export function PartyDetailPage() {
     );
   }
 
-  // Different layouts for DJ vs regular user
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
@@ -347,22 +360,14 @@ export function PartyDetailPage() {
         
         {isDj ? (
           <div className="flex gap-2">
-            <Button 
-              variant="outline"
-              onClick={() => setShowQRDialog(true)}
-            >
+            <Button variant="outline" onClick={() => setShowQRDialog(true)}>
               <QrCode className="mr-2 h-4 w-4" />
               Show QR
             </Button>
-            
-            <Button 
-              variant="outline"
-              onClick={() => setShowPriceDialog(true)}
-            >
+            <Button variant="outline" onClick={() => setShowPriceDialog(true)}>
               <Settings className="mr-2 h-4 w-4" />
               Settings
             </Button>
-            
             <Button 
               variant="destructive"
               onClick={handleCloseParty}
@@ -379,12 +384,7 @@ export function PartyDetailPage() {
         )}
       </div>
       
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-8"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-8">
         <div className="flex justify-between items-start">
           <div>
             <h1 className="mb-2 text-3xl font-bold gradient-text">{currentParty.name}</h1>
@@ -406,189 +406,92 @@ export function PartyDetailPage() {
                 <MapPin className="mr-1 h-4 w-4" />
                 <span>Venue: {currentParty.location}</span>
               </div>
-              <div className="flex items-center">
-                <Clock className="mr-1 h-4 w-4" />
-                <span>Ends at: {new Date(currentParty.activeUntil).toLocaleString('en-NG', {
-                  dateStyle: 'medium',
-                  timeStyle: 'short'
-                })}</span>
-              </div>
             </div>
           </div>
-
-          {isDj && (
-            <Badge className="bg-accent text-accent-foreground">
-              DJ MODE
-            </Badge>
-          )}
+          {isDj && <Badge className="bg-accent text-accent-foreground">DJ MODE</Badge>}
         </div>
       </motion.div>
       
       {currentlyPlaying && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="mb-8"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="mb-8">
           <h2 className="mb-4 flex items-center text-xl font-semibold">
             <Music className="mr-2 h-5 w-5 text-accent" /> Now Playing
           </h2>
-          <MusicPlayer
-            song={{
-              id: currentlyPlaying.id,
-              title: currentlyPlaying.title,
-              artist: currentlyPlaying.artist,
-              albumArt: currentlyPlaying.albumArt || undefined,
-              duration: 180000, // Placeholder duration (3 minutes)
-            }}
-            isPlaying={isPlaying}
-          />
-          
-          {/* DJ Controls for currently playing song */}
+          <MusicPlayer song={currentlyPlaying} isPlaying={isPlaying} />
           {isDj && (
             <div className="mt-4 flex justify-end">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleMarkAsPlayed(currentlyPlaying.id)}
-                className="gap-2"
-              >
+              <Button size="sm" variant="outline" onClick={() => handleMarkAsPlayed(currentlyPlaying.id)} className="gap-2">
                 <CheckCircle className="h-4 w-4" />
                 Mark as Played
               </Button>
             </div>
           )}
-          
-          <p className="mt-2 text-sm text-muted-foreground">
-            <span className="text-accent">Note:</span> {isDj 
-              ? "You can mark songs as played when they finish or decline song requests."
-              : "Only the DJ can control what's playing. Request songs below to add them to the queue."
-            }
-          </p>
         </motion.div>
       )}
       
-      {/* For regular users: Request a Song section */}
       {!isDj && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="mb-8"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="mb-8">
           <h2 className="mb-4 text-xl font-semibold">Request a Song</h2>
-          <Card className="relative overflow-hidden border-2 border-primary shadow-[0_0_25px_rgba(59,130,246,0.5)] animate-pulse-blue" style={{ background: "linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%)" }}>
-            {/* Colorful corner accent */}
+          <Card className="relative overflow-hidden border-2 border-primary shadow-[0_0_25px_rgba(59,130,246,0.5)]" style={{ background: "linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%)" }}>
             <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-400 via-blue-500/50 to-transparent transform rotate-45 translate-x-12 -translate-y-12 z-0 opacity-80"></div>
-            
             <CardHeader className="relative z-10">
-              <CardTitle className="flex items-center text-white">
-                <Music className="mr-2 h-5 w-5 text-blue-300" />
-                Find a Song
-              </CardTitle>
-              <CardDescription className="text-blue-100">
-                Search for a song to request from the DJ
-              </CardDescription>
+              <CardTitle className="flex items-center text-white"><Music className="mr-2 h-5 w-5 text-blue-300" />Find a Song</CardTitle>
+              <CardDescription className="text-blue-100">Search for a song to request</CardDescription>
             </CardHeader>
             <CardContent className="relative z-10">
-              {/* Minimum Price Notice */}
               <div className="mb-4 p-3 bg-blue-950/70 rounded-md flex items-start gap-3 shadow-inner border border-blue-400/30">
                 <AlertCircle className="h-5 w-5 text-blue-300 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-white">
-                    DJ Minimum Request Price: ₦{currentParty.minRequestPrice?.toLocaleString() || "1,000"}
-                  </p>
-                  <p className="text-xs text-blue-200 mt-1">
-                    This is the minimum amount set by the DJ for song requests. Higher bids get priority in the queue.
-                  </p>
+                  <p className="text-sm font-medium text-white">DJ Minimum: ₦{currentParty.minRequestPrice?.toLocaleString() || "1,000"}</p>
+                  <p className="text-xs text-blue-200 mt-1">Higher bids get priority in the queue.</p>
                 </div>
               </div>
-
               <div className="space-y-4">
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Search for Nigerian hits, artists or albums..."
+                    placeholder="Search for songs, artists, or albums..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                     className="bg-blue-900/80 backdrop-blur-sm shadow-inner text-white border-blue-500/30 placeholder:text-blue-300/70"
                   />
-                  <Button 
-                    onClick={handleSearch} 
-                    disabled={isSearching || !searchQuery.trim()}
-                    className="bg-[rgba(43,110,255,1)] text-white hover:bg-blue-4 bg-[rgba(71,43,255,1)]00 shadow-md"
-                  >
-                    {isSearching ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Search className="mr-2 h-4 w-4" />
-                    )}
+                  <Button onClick={handleSearch} disabled={isSearching || !searchQuery.trim()} className="bg-blue-500 text-white hover:bg-blue-600 shadow-md">
+                    {isSearching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
                     Search
                   </Button>
                 </div>
-                
                 {searchPerformed && searchResults.length === 0 && !isSearching && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="p-4 rounded-md bg-blue-950/80 text-center"
-                  >
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-md bg-blue-950/80 text-center">
                     <XCircle className="mx-auto mb-2 h-8 w-8 text-blue-300" />
                     <h4 className="font-medium text-white">No songs found</h4>
-                    <p className="text-sm text-blue-200">
-                      We couldn't find any songs matching "{searchQuery}". Try different keywords or check the spelling.
-                    </p>
+                    <p className="text-sm text-blue-200">Try different keywords or check the spelling.</p>
                   </motion.div>
                 )}
-                
-                <SpotifySearch 
-                  results={searchResults} 
-                  onSelect={handleTrackSelect}
-                  isLoading={isSearching} 
-                />
-                
+                <SpotifySearch results={searchResults} onSelect={handleTrackSelect} isLoading={isSearching} />
                 {selectedTrack && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-4 overflow-hidden rounded-lg bg-blue-900/80 p-4 backdrop-blur-sm border border-blue-400/30 shadow-lg"
-                  >
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 overflow-hidden rounded-lg bg-blue-900/80 p-4 backdrop-blur-sm border border-blue-400/30 shadow-lg">
                     <div className="flex items-center gap-4">
-                      {selectedTrack.album && selectedTrack.album.images && selectedTrack.album.images[0]?.url ? (
-                        <motion.div
-                          initial={{ scale: 0.9 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                        >
+                      {selectedTrack.album?.images?.[0]?.url ? (
+                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
                           <img 
                             src={selectedTrack.album.images[0].url} 
                             alt={selectedTrack.album.name || "Album cover"}
-                            className="music-poster h-20 w-20 object-cover rounded-md shadow-lg"
+                            className="h-20 w-20 object-cover rounded-md shadow-lg"
                           />
                         </motion.div>
                       ) : (
-                        <motion.div
-                          initial={{ scale: 0.9 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                          className="flex h-20 w-20 items-center justify-center rounded-md bg-blue-800"
-                        >
+                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="flex h-20 w-20 items-center justify-center rounded-md bg-blue-800">
                           <Music className="h-8 w-8 text-blue-300" />
                         </motion.div>
                       )}
                       <div>
                         <h3 className="font-medium text-white text-lg">{selectedTrack.name}</h3>
-                        <p className="text-sm text-blue-200">
-                          {selectedTrack.artists && selectedTrack.artists.length > 0 
-                            ? selectedTrack.artists.map(a => a.name).join(", ")
-                            : "Unknown Artist"}
-                        </p>
+                        <p className="text-sm text-blue-200">{selectedTrack.artists.map(a => a.name).join(", ")}</p>
                         <div className="mt-1 flex items-center text-xs text-blue-300">
                           <Music className="mr-1 h-3 w-3 text-blue-400" />
-                          <span>{selectedTrack.album ? selectedTrack.album.name || "Unknown Album" : "Unknown Album"}</span>
+                          <span>{selectedTrack.album?.name || "Unknown Album"}</span>
                           <span className="mx-1">•</span>
-                          <span>{Math.floor((selectedTrack.duration_ms || 0) / 60000)}:{(((selectedTrack.duration_ms || 0) % 60000) / 1000).toFixed(0).padStart(2, '0')}</span>
+                          <span>{Math.floor(selectedTrack.duration_ms / 60000)}:{((selectedTrack.duration_ms % 60000) / 1000).toFixed(0).padStart(2, '0')}</span>
                         </div>
                       </div>
                     </div>
@@ -596,41 +499,19 @@ export function PartyDetailPage() {
                 )}
               </div>
             </CardContent>
-            
             {selectedTrack && (
               <CardFooter className="flex-col space-y-4 relative z-10">
-                <div className="w-full space-y-2">
-                  <div className="flex justify-between text-white">
-                    <label htmlFor="price" className="text-sm">
-                      Request Price (₦)
-                    </label>
-                    <span className="price-badge text-sm">₦{price.toLocaleString()}</span>
-                  </div>
-                  <Slider
-                    id="price"
-                    value={[price]}
-                    min={currentParty.minRequestPrice || 500}
-                    max={10000}
-                    step={100}
-                    onValueChange={handlePriceChange}
-                    className="w-full"
-                  />
-                  <p className="text-xs text-blue-200">
-                    Higher amount increases the chances of your song being played sooner
-                  </p>
-                </div>
-                
+                <PriceStepper 
+                  minPrice={currentParty.minRequestPrice || 500}
+                  value={price}
+                  onValueChange={setPrice}
+                />
                 <div className="w-full">
                   <div className="mb-2 flex justify-between text-sm text-white">
                     <span>Your balance:</span>
                     <span className={price > balance ? "text-red-300 font-medium" : ""}>₦{balance.toLocaleString()}</span>
                   </div>
-                  <Button 
-                    onClick={handleRequestSong} 
-                    disabled={isLoading || price > balance}
-                    className="w-full glow-blue"
-                    variant="default"
-                  >
+                  <Button onClick={handleRequestSong} disabled={isLoading || price > balance} className="w-full glow-blue" variant="default">
                     Request for ₦{price.toLocaleString()}
                   </Button>
                   {price > balance && (
@@ -638,22 +519,13 @@ export function PartyDetailPage() {
                       <div className="mb-2 p-2 rounded-md bg-red-900/30 border border-red-500/30 flex items-start gap-2">
                         <AlertCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-xs text-red-300 font-medium">
-                            Insufficient Funds
-                          </p>
-                          <p className="text-xs text-blue-200">
-                            You need additional ₦{(price - balance).toLocaleString()} to request this song
-                          </p>
+                          <p className="text-xs text-red-300 font-medium">Insufficient Funds</p>
+                          <p className="text-xs text-blue-200">You need ₦{(price - balance).toLocaleString()} more.</p>
                         </div>
                       </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => navigate("/wallet")}
-                        className="w-full gap-2 border-blue-400/50 text-blue-300 hover:bg-blue-800/50"
-                      >
+                      <Button variant="outline" size="sm" onClick={() => navigate("/wallet")} className="w-full gap-2 border-blue-400/50 text-blue-300 hover:bg-blue-800/50">
                         <Wallet className="h-4 w-4" />
-                        Add Funds to Wallet
+                        Add Funds
                       </Button>
                     </div>
                   )}
@@ -664,67 +536,38 @@ export function PartyDetailPage() {
         </motion.div>
       )}
       
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="space-y-8"
-      >
-        {/* Playlist Section with Tabs */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className="space-y-8">
         <div>
           <h2 className="mb-4 flex items-center text-xl font-semibold">
             <ListMusic className="mr-2 h-5 w-5 text-accent" /> 
             Playlist ({currentParty.songs?.length || 0})
           </h2>
-          
           {currentParty.songs && currentParty.songs.length > 0 ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList>
-                <TabsTrigger 
-                  value="queue" 
-                  className="flex items-center gap-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
-                >
+                <TabsTrigger value="queue" className="flex items-center gap-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
                   <Clock className="h-4 w-4" /> 
                   In Queue ({queuedSongs.length})
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="played" 
-                  className="flex items-center gap-2 data-[state=active]:bg-green-500/20 data-[state=active]:text-green-500"
-                >
+                <TabsTrigger value="played" className="flex items-center gap-2 data-[state=active]:bg-green-500/20 data-[state=active]:text-green-500">
                   <CheckCircle className="h-4 w-4" /> 
                   Played Songs ({playedSongs.length})
                 </TabsTrigger>
               </TabsList>
-              
               <TabsContent value="queue" className="mt-0">
                 {queuedSongs.length > 0 ? (
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {queuedSongs.map((song) => (
-                      <Card key={song.id} className="bg-card/80 backdrop-blur-sm border-border/50 hover:border-primary/20 transition-colors">
+                      <Card key={song.id} className="bg-card/80 backdrop-blur-sm border-border/50">
                         <CardContent className="p-4">
-                          <SongCard
-                            song={{...song, status: "queued"}}
-                            currentlyPlaying={false}
-                          />
-                          
-                          {/* DJ Controls */}
+                          <SongCard song={{...song, status: "queued"}} currentlyPlaying={false} />
                           {isDj && (
                             <div className="mt-4 pt-4 border-t border-border/50 flex justify-between">
-                              <Button 
-                                size="sm" 
-                                variant="destructive"
-                                onClick={() => handleDeclineSong(song.id)}
-                                className="flex-1 mr-2"
-                              >
+                              <Button size="sm" variant="destructive" onClick={() => handleDeclineSong(song.id)} className="flex-1 mr-2">
                                 <Ban className="h-4 w-4 mr-2" />
                                 Decline
                               </Button>
-                              <Button 
-                                size="sm"
-                                variant="default"
-                                onClick={() => handlePlaySong(song.id)}
-                                className="flex-1"
-                              >
+                              <Button size="sm" variant="default" onClick={() => handlePlaySong(song.id)} className="flex-1">
                                 <Play className="h-4 w-4 mr-2" />
                                 Play Next
                               </Button>
@@ -735,43 +578,33 @@ export function PartyDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="py-6 text-center bg-card/30 backdrop-blur-sm rounded-lg border border-border/50">
-                    <Clock className="mx-auto mb-2 h-8 w-8 text-muted-foreground opacity-70" />
-                    <p className="text-muted-foreground">
-                      No songs in queue. {isDj ? "Waiting for song requests." : "Be the first to request a song!"}
-                    </p>
+                  <div className="py-6 text-center bg-card/30 backdrop-blur-sm rounded-lg">
+                    <Clock className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                    <p className="text-muted-foreground">No songs in queue.</p>
                   </div>
                 )}
               </TabsContent>
-              
               <TabsContent value="played" className="mt-0">
                 {playedSongs.length > 0 ? (
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {playedSongs.map((song) => (
-                      <Card key={song.id} className="bg-card/80 backdrop-blur-sm border-border/50 hover:border-primary/20 transition-colors">
+                      <Card key={song.id} className="bg-card/80 backdrop-blur-sm border-border/50">
                         <CardContent className="p-4">
-                          <SongCard
-                            song={{...song, status: "played"}}
-                            currentlyPlaying={false}
-                          />
+                          <SongCard song={{...song, status: "played"}} currentlyPlaying={false} />
                         </CardContent>
                       </Card>
                     ))}
                   </div>
                 ) : (
-                  <div className="py-6 text-center bg-card/30 backdrop-blur-sm rounded-lg border border-border/50">
-                    <CheckCircle className="mx-auto mb-2 h-8 w-8 text-muted-foreground opacity-70" />
-                    <p className="text-muted-foreground">
-                      No songs have been played yet. {isDj ? "Play some songs from the queue." : "Stay tuned for songs to be played!"}
-                    </p>
+                  <div className="py-6 text-center bg-card/30 backdrop-blur-sm rounded-lg">
+                    <CheckCircle className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                    <p className="text-muted-foreground">No songs have been played yet.</p>
                   </div>
                 )}
               </TabsContent>
             </Tabs>
           ) : (
-            <p className="py-8 text-center text-muted-foreground">
-              No songs in the playlist yet. {isDj ? "Waiting for song requests." : "Be the first to request a song!"}
-            </p>
+            <p className="py-8 text-center text-muted-foreground">No songs in the playlist yet.</p>
           )}
         </div>
       </motion.div>
