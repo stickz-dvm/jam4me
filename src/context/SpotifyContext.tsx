@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { spotifyService, SpotifyTrack } from "../services/SpotifyService";
+import { spotifyService } from "../services/SpotifyService";
+import { SpotifyTrack } from "../api/types";
 import { toast } from "sonner";
 
 type SpotifyContextType = {

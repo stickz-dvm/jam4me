@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { SpotifyTrack } from "../services/SpotifyService";
+import { SpotifyTrack } from "../api/types";
 import { Music, Loader2 } from "lucide-react";
 
 interface SpotifySearchProps {
@@ -25,7 +25,7 @@ export function SpotifySearch({ results, onSelect, isLoading = false }: SpotifyS
     );
   }
 
-  // Return null if there are no results
+  // Return null if there are no results and search hasn't been performed
   if (!results || results.length === 0) {
     return null;
   }
@@ -68,7 +68,7 @@ export function SpotifySearch({ results, onSelect, isLoading = false }: SpotifyS
               <p className="truncate font-medium">{track.name}</p>
               <p className="truncate text-sm text-muted-foreground">
                 {track.artists && track.artists.length > 0 
-                  ? track.artists.map((artist) => artist.name).join(", ")
+                  ? track.artists.map((artist: { name: string }) => artist.name).join(", ")
                   : "Unknown Artist"}
               </p>
             </div>

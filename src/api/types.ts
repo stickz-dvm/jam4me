@@ -135,3 +135,23 @@ export type WalletContextType = {
   setDefaultPaymentMethod: (methodId: string) => Promise<void>;
   refreshWalletData: () => Promise<void>;
 };
+
+// Spotify
+export interface SpotifyTrack {
+  id: string;
+  name: string;
+  artists: { name: string }[];
+  album: {
+    name: string;
+    images: { url: string }[];
+  };
+  duration_ms: number;
+  preview_url: string | null;
+  uri: string;
+}
+
+export interface SpotifySearchResponse {
+  tracks: {
+    items: SpotifyTrack[];
+  };
+}

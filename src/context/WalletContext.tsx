@@ -2,26 +2,55 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { useAuth } from "./AuthContext";
 import { toast } from "sonner";
 import { api } from "../api/apiMethods";
-import { PaymentMethod, Transaction, WalletContextType } from "../api/types";
+
+// NOTE: The original file imported these from a central types file. I'm defining them here
+// to match the code you provided, but they should ideally live in `src/api/types.ts`.
+export type Transaction = {
+  id: string;
+  amount: number;
+  type: "deposit" | "withdrawal" | "payment" | "songPayment" | "refund";
+  description: string;
+  date: Date;
+  songTitle?: string;
+  artist?: string;
+  partyName?: string;
+  requestedBy?: string;
+  status?: "completed" | "pending" | "processing" | "failed";
+};
+
+export type PaymentMethod = {
+  id: string;
+  type: "bankAccount" | "paystack";
+  lastFour: string;
+  name: string;
+  isDefault: boolean;
+};
+
+// This is the main context type definition
+export type WalletContextType = {
+  balance: number;
+  transactions: Transaction[];
+  paymentMethods: PaymentMethod[];
+  isLoading: boolean;
+  fundWallet: (amount: number) => Promise<void>;
+  // This is the line we are fixing. It now includes bankCode and accountName.
+  withdrawFunds: (amount: number, bankDetails: { accountNumber: string; bankCode: string; accountName: string; }) => Promise<void>;
+  payForSong: (amount: number, partyName: string, songTitle: string, artist: string) => Promise<void>;
+  receiveSongPayment: (amount: number, partyName: string, songTitle: string, artist: string, requestedBy: string) => Promise<void>;
+  refundSongPayment: (amount: number, partyName: string, songTitle: string, artist: string, requestedBy: string) => Promise<void>;
+  addFunds: (amount: number) => Promise<void>;
+  deductFunds: (amount: number) => Promise<void>;
+  addPaymentMethod: (method: Omit<PaymentMethod, "id">) => Promise<void>;
+  removePaymentMethod: (methodId: string) => Promise<void>;
+  setDefaultPaymentMethod: (methodId: string) => Promise<void>;
+  refreshWalletData: () => Promise<void>;
+};
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
-// Sample payment methods
 const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
-  {
-    id: "pm-1",
-    type: "paystack",
-    lastFour: "N/A",
-    name: "Paystack (Default)",
-    isDefault: true
-  },
-  {
-    id: "pm-2",
-    type: "bankAccount",
-    lastFour: "1234",
-    name: "GTBank Account",
-    isDefault: false
-  }
+  { id: "pm-1", type: "paystack", lastFour: "N/A", name: "Paystack (Default)", isDefault: true },
+  { id: "pm-2", type: "bankAccount", lastFour: "1234", name: "GTBank Account", isDefault: false }
 ];
 
 export function WalletProvider({ children }: { children: ReactNode }) {
@@ -31,10 +60,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-
-  // Track if we've already fetched data to prevent duplicate calls
   const hasFetchedDataRef = useRef(false);
-
   /**
    * Load wallet data from localStorage
    * This runs immediately without waiting for API calls
@@ -289,7 +315,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const withdrawFunds = async (amount: number, bankDetails?: { accountNumber: string; bankName: string }) => {
+  // This is the function we are fixing. It now accepts the correct parameters and makes the real API call.
+  const withdrawFunds = async (amount: number, bankDetails: { accountNumber: string; bankCode: string; accountName: string; }) => {
     if (!isAuthenticated) {
       toast.error("Please login to withdraw funds");
       throw new Error("Not authenticated");
@@ -302,19 +329,21 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const payload = {
+        amount: amount,
+        account_number: bankDetails.accountNumber,
+        account_name: bankDetails.accountName,
+        bank_code: bankDetails.bankCode,
+        Transfer_currency: "NGN",
+      };
       
-      let description = "Funds withdrawal";
-      if (bankDetails) {
-        description = `Withdrawal to ${bankDetails.bankName} account ending in ${bankDetails.accountNumber.slice(-4)}`;
-      }
-      
+      await api.post("/transfer_out/", payload);
+
       const newTransaction: Transaction = {
         id: `trx-${Date.now()}`,
         amount,
         type: "withdrawal",
-        description,
+        description: `Withdrawal to ${bankDetails.accountName}`,
         date: new Date(),
         status: "processing"
       };
@@ -322,7 +351,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setBalance(prev => prev - amount);
       setTransactions(prev => [newTransaction, ...prev]);
       
-      toast.success(`Successfully withdrew ₦${amount.toLocaleString()}`);
+      toast.success(`Withdrawal of ₦${amount.toLocaleString()} initiated successfully!`);
+
+    } catch (error: any) {
+      const message = error.message || "An error occurred during withdrawal.";
+      toast.error(message);
+      throw error;
     } finally {
       setIsLoading(false);
     }

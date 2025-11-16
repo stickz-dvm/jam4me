@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { useWallet } from "../../context/WalletContext";
@@ -11,94 +11,110 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { toast } from "sonner";
 import { WalletIcon, ArrowDownIcon, ArrowUpIcon, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import apiClient from "../../api/apiClient";
 
 export function DjWalletPage() {
   const { user } = useAuth();
   const { balance, transactions } = useWallet();
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [bankName, setBankName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  // My new states for handling the withdrawal form
+  const [banks, setBanks] = useState<{ name: string; code: string }[]>([]);
+  const [selectedBankCode, setSelectedBankCode] = useState("");
+  const [accountName, setAccountName] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [verificationError, setVerificationError] = useState("");
 
-  const handleWithdraw = () => {
-    setIsWithdrawing(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast.success(`₦${withdrawAmount} withdrawal initiated successfully!`);
-      setIsWithdrawing(false);
-      setIsDialogOpen(false);
-      setWithdrawAmount("");
-      setBankName("");
-      setAccountNumber("");
-    }, 2000);
+  // I'll run this once when the page loads to get the bank list.
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        const response = await apiClient.get("/user_wallet/list_banks/");
+        if (response.data && Array.isArray(response.data.data)) {
+          setBanks(response.data.data);
+        } else {
+          toast.error("Could not read the bank list from the server.");
+        }
+      } catch (error) {
+        toast.error("Failed to load the list of banks.");
+      }
+    };
+
+    fetchBanks();
+  }, []); // The empty array means this only runs once.
+
+  // This function will handle verifying the account number.
+  const handleVerifyAccount = async (accountNum?: string) => {
+    const accountToVerify = accountNum || accountNumber;
+    if (accountToVerify.length !== 10 || !selectedBankCode) {
+      return;
+    }
+
+    setIsVerifying(true);
+    setIsVerified(false);
+    setAccountName("");
+    setVerificationError("");
+
+    try {
+      const response = await apiClient.post("/user_wallet/verify_account/", {
+        account_number: accountToVerify,
+        bank_code: selectedBankCode,
+      });
+
+      if (response.data && response.data.account_name) {
+        setAccountName(response.data.account_name);
+        setIsVerified(true);
+        toast.success("Account verified!");
+      } else {
+        setVerificationError("Verification successful, but no account name was returned.");
+      }
+    } catch (error: any) {
+      const message = error.message || "Verification failed. Please check the details.";
+      setVerificationError(message);
+      toast.error(message);
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
-  // Mock transaction data - in a real app, this would come from the API
-  const mockTransactions = [
-    {
-      id: "tx1",
-      type: "earning",
-      amount: 500,
-      description: "Song request: 'Calm Down' by Rema",
-      timestamp: new Date(2025, 4, 20, 20, 15),
-      status: "completed",
-      partyName: "Friday Night Jam @ Club Quilox"
-    },
-    {
-      id: "tx2",
-      type: "earning",
-      amount: 2000,
-      description: "Song request: 'Unavailable' by Davido",
-      timestamp: new Date(2025, 4, 20, 21, 30),
-      status: "completed",
-      partyName: "Friday Night Jam @ Club Quilox"
-    },
-    {
-      id: "tx3",
-      type: "withdrawal",
-      amount: 2000,
-      description: "Withdrawal to GTBank ****4532",
-      timestamp: new Date(2025, 4, 21, 10, 15),
-      status: "processing",
-    },
-    {
-      id: "tx4",
-      type: "earning",
-      amount: 1500,
-      description: "Song request: 'Last Last' by Burna Boy",
-      timestamp: new Date(2025, 4, 22, 22, 45),
-      status: "completed",
-      partyName: "Saturday Night Special @ The Deck"
-    },
-    {
-      id: "tx5",
-      type: "earning",
-      amount: 1000,
-      description: "Song request: 'Essence' by Wizkid ft. Tems",
-      timestamp: new Date(2025, 4, 22, 23, 10),
-      status: "completed",
-      partyName: "Saturday Night Special @ The Deck"
-    },
-    {
-      id: "tx6",
-      type: "earning",
-      amount: 3000,
-      description: "Song request: 'Sungba Remix' by Asake ft. Burna Boy",
-      timestamp: new Date(2025, 4, 22, 23, 45),
-      status: "completed",
-      partyName: "Saturday Night Special @ The Deck"
-    },
-    {
-      id: "tx7",
-      type: "withdrawal",
-      amount: 5000,
-      description: "Withdrawal to First Bank ****7890",
-      timestamp: new Date(2025, 4, 23, 9, 30),
-      status: "completed",
+  // I'll use this to reset the verification if the user changes the bank or account number.
+  useEffect(() => {
+    setIsVerified(false);
+    setAccountName("");
+    setVerificationError("");
+  }, [accountNumber, selectedBankCode]);
+
+  const handleWithdraw = async () => {
+    if (!isVerified || !withdrawAmount || !accountName) {
+      toast.error("Please ensure your account is verified and you have entered an amount.");
+      return;
     }
-  ];
+
+    setIsWithdrawing(true);
+    
+    try {
+      // TODO: This is where I'll call the real 'withdrawFunds' function from the WalletContext.
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      toast.success(`₦${withdrawAmount} withdrawal initiated successfully!`);
+
+      setIsDialogOpen(false);
+      setWithdrawAmount("");
+      setSelectedBankCode("");
+      setAccountNumber("");
+      setAccountName("");
+      setIsVerified(false);
+      
+    } catch (error) {
+      console.error("Withdrawal failed:", error);
+      toast.error("Withdrawal failed. Please try again.");
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("en-NG", {
@@ -110,7 +126,6 @@ export function DjWalletPage() {
     });
   };
 
-  // Summary statistics
   const totalEarned = transactions
     .filter(tx => tx.type === "songPayment")
     .reduce((sum, tx) => sum + tx.amount, 0);
@@ -160,6 +175,7 @@ export function DjWalletPage() {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
+                    {/* Amount Input */}
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="amount" className="text-right">
                         Amount
@@ -176,38 +192,80 @@ export function DjWalletPage() {
                         />
                       </div>
                     </div>
+
+                    {/* Bank Selection */}
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="bank" className="text-right">
                         Bank
                       </Label>
                       <div className="col-span-3">
-                        <Select value={bankName} onValueChange={setBankName}>
+                        <Select value={selectedBankCode} onValueChange={setSelectedBankCode}>
                           <SelectTrigger className="bg-input/50 backdrop-blur-sm">
                             <SelectValue placeholder="Select bank" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="gtbank">Guaranty Trust Bank</SelectItem>
-                            <SelectItem value="firstbank">First Bank</SelectItem>
-                            <SelectItem value="zenithbank">Zenith Bank</SelectItem>
-                            <SelectItem value="accessbank">Access Bank</SelectItem>
-                            <SelectItem value="uba">United Bank for Africa</SelectItem>
-                            <SelectItem value="stanbic">Stanbic IBTC</SelectItem>
+                            {banks.length > 0 ? (
+                              banks.map((bank, index) => (
+                                <SelectItem key={`${bank.code}-${index}`} value={bank.code}>
+                                  {bank.name}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="loading" disabled>
+                                Loading banks...
+                              </SelectItem>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
+
+                    {/* Account Number Input */}
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="account" className="text-right">
                         Account No.
                       </Label>
-                      <Input
-                        id="account"
-                        value={accountNumber}
-                        onChange={(e) => setAccountNumber(e.target.value)}
-                        className="col-span-3 bg-input/50 backdrop-blur-sm"
-                        placeholder="Enter account number"
-                      />
+                      <div className="col-span-3">
+                        <Input
+                          id="account"
+                          value={accountNumber}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '');
+                            setAccountNumber(value);
+                            if (value.length === 10 && selectedBankCode) {
+                              handleVerifyAccount(value);
+                            }
+                          }}
+                          maxLength={10}
+                          className="bg-input/50 backdrop-blur-sm"
+                          placeholder="Enter account number"
+                        />
+                      </div>
                     </div>
+
+                    {/* Verification Status Display */}
+                    { (isVerifying || isVerified || verificationError) && (
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <div className="col-start-2 col-span-3 text-sm">
+                          {isVerifying && (
+                            <div className="flex items-center text-muted-foreground">
+                              <WalletIcon className="h-4 w-4 mr-2 animate-spin" />
+                              Verifying...
+                            </div>
+                          )}
+                          {verificationError && !isVerifying && (
+                            <div className="text-destructive font-medium">
+                              {verificationError}
+                            </div>
+                          )}
+                          {isVerified && accountName && !isVerifying && (
+                            <div className="text-green-500 font-bold flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4" /> {accountName}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <DialogFooter>
                     <Button 
@@ -220,9 +278,8 @@ export function DjWalletPage() {
                       onClick={handleWithdraw} 
                       disabled={
                         isWithdrawing || 
+                        !isVerified || 
                         !withdrawAmount || 
-                        !bankName || 
-                        !accountNumber ||
                         parseFloat(withdrawAmount) > balance
                       }
                     >
