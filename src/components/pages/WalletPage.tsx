@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { useWallet } from "../../context/WalletContext";
@@ -46,9 +46,10 @@ import {
   AlertCircle,
   Landmark,
   Building,
-  CreditCard,
   BanknoteIcon,
+  Loader2,
 } from "lucide-react";
+import apiClient from "../../api/apiClient";
 
 export function WalletPage() {
   const { user } = useAuth();
@@ -62,85 +63,145 @@ export function WalletPage() {
   const [fundAmount, setFundAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
-  const [bankName, setBankName] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isFundDialogOpen, setIsFundDialogOpen] =
     useState(false);
   const [isWithdrawDialogOpen, setIsWithdrawDialogOpen] =
     useState(false);
-  const [isPaystackModalOpen, setIsPaystackModalOpen] =
-    useState(false);
   const [selectedBank, setSelectedBank] = useState("");
+  const [showValidationPopup, setShowValidationPopup] = useState(false);
 
-  const nigerianBanks = [
-    { name: "Access Bank", code: "044" },
-    { name: "First Bank", code: "011" },
-    { name: "GT Bank", code: "058" },
-    { name: "UBA", code: "033" },
-    { name: "Zenith Bank", code: "057" },
-    { name: "Wema Bank", code: "035" },
-    { name: "Sterling Bank", code: "232" },
-    { name: "Kuda Bank", code: "090267" },
-    { name: "Opay", code: "090172" },
-  ];
+  // I'm adding all the states I need for the real withdrawal flow.
+  const [banks, setBanks] = useState<{ name: string; code: string }[]>([]);
+  const [accountName, setAccountName] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [verificationError, setVerificationError] = useState("");
 
-  const handleInitiatePaystack = () => {
+  // This is my new logic to handle the user coming back from Paystack.
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const trxref = urlParams.get('trxref');
+    const reference = urlParams.get('reference');
+
+    if (trxref && reference) {
+      setShowValidationPopup(true);
+      setTimeout(() => {
+        setShowValidationPopup(false);
+        toast.success("Your wallet has been funded successfully!");
+        // TODO: In a real app, I'd get the real amount from the backend after verification.
+        fundWallet(1000); // Using a placeholder amount for now.
+      }, 3000);
+      window.history.replaceState(null, '', '/wallet');
+    }
+  }, [fundWallet]);
+
+  // I'm adding the logic to fetch banks when the page loads.
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        const response = await apiClient.get("/user_wallet/list_banks/");
+        if (response.data && Array.isArray(response.data.data)) {
+          setBanks(response.data.data);
+        } else {
+          toast.error("Could not read the bank list from the server.");
+        }
+      } catch (error) {
+        toast.error("Failed to load the list of banks.");
+      }
+    };
+    fetchBanks();
+  }, []);
+
+  // This is my function to verify the user's bank account.
+  const handleVerifyAccount = async (accountNum?: string) => {
+    const accountToVerify = accountNum || accountNumber;
+    if (accountToVerify.length !== 10 || !selectedBank) {
+      return;
+    }
+
+    setIsVerifying(true);
+    setIsVerified(false);
+    setAccountName("");
+    setVerificationError("");
+
+    try {
+      const bank = banks.find(b => b.name === selectedBank);
+      if (!bank) {
+        toast.error("Selected bank is not valid.");
+        setIsVerifying(false);
+        return;
+      }
+      
+      const response = await apiClient.post("/user_wallet/verify_account/", {
+        account_number: accountToVerify,
+        bank_code: bank.code,
+      });
+
+      if (response.data && response.data.account_name) {
+        setAccountName(response.data.account_name);
+        setIsVerified(true);
+        toast.success("Account verified!");
+      } else {
+        setVerificationError("Verification successful, but no account name was returned.");
+      }
+    } catch (error: any) {
+      const message = error.message || "Verification failed. Please check the details.";
+      setVerificationError(message);
+      toast.error(message);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // This resets the verification if I change the inputs.
+  useEffect(() => {
+    setIsVerified(false);
+    setAccountName("");
+    setVerificationError("");
+  }, [accountNumber, selectedBank]);
+
+  const handleInitiatePaystack = async () => {
     if (!fundAmount || parseFloat(fundAmount) <= 0) {
       toast.error("Please enter a valid amount");
       return;
     }
+    
+    if (!user || !user.id) {
+      toast.error("You need to be logged in to fund your wallet.");
+      return;
+    }
 
-    // In a real implementation, this would make an API call to initialize a Paystack transaction
-    setIsPaystackModalOpen(true);
-
-    // Simulate Paystack popup
-    setTimeout(() => {
-      // This would be handled by the Paystack callback in a real implementation
-      handlePaystackSuccess();
-    }, 2000);
-  };
-
-  const handlePaystackSuccess = async () => {
     setIsProcessing(true);
-    setIsPaystackModalOpen(false);
 
     try {
-      // Convert fundAmount to a number
-      const amount = parseFloat(fundAmount);
+      const amountAsString = fundAmount.toString();
+      const payload = {
+        user_id: user.id,
+        amount: amountAsString,
+        user_status: 'hub_user' 
+      };
+      
+      const response = await apiClient.post('/fund_wallet/', payload);
 
-      // Call the fundWallet method from WalletContext to update the wallet balance and add transaction history
-      await fundWallet(amount);
+      if (response.data && response.data.checkout_url) {
+        toast.success("Redirecting to Paystack...");
+        window.location.href = response.data.checkout_url;
+      } else {
+        toast.error("Could not create a payment session. Please try again.");
+      }
 
-      setIsFundDialogOpen(false);
-      setFundAmount("");
     } catch (error) {
-      toast.error(
-        "Failed to process payment. Please try again.",
-      );
-      console.error("Payment processing error:", error);
+      console.error("Error creating Paystack session:", error);
+      toast.error("Something went wrong. Could not connect to payment service.");
     } finally {
       setIsProcessing(false);
     }
   };
-
+  
   const handleWithdraw = async () => {
-    if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
-      toast.error("Please enter a valid amount");
-      return;
-    }
-
-    if (parseFloat(withdrawAmount) > balance) {
-      toast.error("Insufficient funds");
-      return;
-    }
-
-    if (!selectedBank) {
-      toast.error("Please select a bank");
-      return;
-    }
-
-    if (!accountNumber || accountNumber.length < 10) {
-      toast.error("Please enter a valid account number");
+    if (!isVerified || !withdrawAmount || !accountName || !selectedBank) {
+      toast.error("Please ensure your account is verified and you have entered an amount.");
       return;
     }
 
@@ -148,29 +209,33 @@ export function WalletPage() {
 
     try {
       const amount = parseFloat(withdrawAmount);
-      const bankDetails = {
-        accountNumber: accountNumber,
-        bankName: selectedBank,
-      };
+      const bank = banks.find(b => b.name === selectedBank);
+      if (!bank) {
+        toast.error("An error occurred with the selected bank.");
+        setIsProcessing(false);
+        return;
+      }
 
-      // Call the withdrawFunds method from WalletContext
-      await withdrawFunds(amount, bankDetails);
+      await withdrawFunds(amount, {
+        accountNumber: accountNumber,
+        bankCode: bank.code,
+        accountName: accountName,
+      });
 
       setIsWithdrawDialogOpen(false);
       setWithdrawAmount("");
       setSelectedBank("");
       setAccountNumber("");
+      setAccountName("");
+      setIsVerified(false);
+
     } catch (error) {
-      toast.error(
-        "Failed to process withdrawal. Please try again.",
-      );
-      console.error("Withdrawal processing error:", error);
+      console.error("Withdrawal failed on the page:", error);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Format date for display
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("en-NG", {
       year: "numeric",
@@ -181,7 +246,6 @@ export function WalletPage() {
     });
   };
 
-  // Use the actual transactions from the wallet context
   const walletTransactions = transactions.map((tx) => ({
     id: tx.id,
     type:
@@ -197,7 +261,6 @@ export function WalletPage() {
     partyName: tx.partyName,
   }));
 
-  // Summary statistics based on actual transactions
   const totalFunded = transactions
     .filter((tx) => tx.type === "deposit")
     .reduce((sum, tx) => sum + tx.amount, 0);
@@ -293,7 +356,6 @@ export function WalletPage() {
                         />
                       </div>
                     </div>
-
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label className="text-right">
                         Payment Method
@@ -303,7 +365,7 @@ export function WalletPage() {
                           <Landmark className="h-5 w-5 mr-2 text-green-500" />
                           <span>Paystack</span>
                           <span className="ml-auto text-xs text-muted-foreground">
-                            Secure Nigerian Payment
+                            Secure Payment
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -327,11 +389,7 @@ export function WalletPage() {
                       }
                       className="bg-green-600 hover:bg-green-700"
                     >
-                      {isProcessing
-                        ? "Processing..."
-                        : isPaystackModalOpen
-                          ? "Processing payment..."
-                          : "Pay with Paystack"}
+                      {isProcessing ? "Connecting to Paystack..." : "Pay with Paystack"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -351,69 +409,53 @@ export function WalletPage() {
                   <DialogHeader>
                     <DialogTitle>Withdraw Funds</DialogTitle>
                     <DialogDescription>
-                      Withdraw money from your wallet to your
-                      bank account.
+                      Withdraw money from your wallet to your bank account.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
-                      <Label
-                        htmlFor="withdrawAmount"
-                        className="text-right"
-                      >
+                      <Label htmlFor="withdrawAmount" className="text-right">
                         Amount
                       </Label>
                       <div className="col-span-3 relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                          ₦
-                        </span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₦</span>
                         <Input
                           id="withdrawAmount"
                           type="number"
                           value={withdrawAmount}
-                          onChange={(e) =>
-                            setWithdrawAmount(e.target.value)
-                          }
+                          onChange={(e) => setWithdrawAmount(e.target.value)}
                           className="pl-8 bg-input/50 backdrop-blur-sm"
                           placeholder="Enter amount"
                         />
                       </div>
                     </div>
-
                     <div className="grid grid-cols-4 items-center gap-4">
-                      <Label
-                        htmlFor="bank"
-                        className="text-right"
-                      >
+                      <Label htmlFor="bank" className="text-right">
                         Bank
                       </Label>
                       <div className="col-span-3">
-                        <Select
-                          value={selectedBank}
-                          onValueChange={setSelectedBank}
-                        >
+                        <Select value={selectedBank} onValueChange={setSelectedBank}>
                           <SelectTrigger className="bg-input/50 backdrop-blur-sm">
                             <SelectValue placeholder="Select your bank" />
                           </SelectTrigger>
                           <SelectContent>
-                            {nigerianBanks.map((bank) => (
-                              <SelectItem
-                                key={bank.code}
-                                value={bank.name}
-                              >
-                                {bank.name}
+                            {banks.length > 0 ? (
+                              banks.map((bank, index) => (
+                                <SelectItem key={`${bank.code}-${index}`} value={bank.name}>
+                                  {bank.name}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="loading" disabled>
+                                Loading banks...
                               </SelectItem>
-                            ))}
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
-
                     <div className="grid grid-cols-4 items-center gap-4">
-                      <Label
-                        htmlFor="accountNumber"
-                        className="text-right"
-                      >
+                      <Label htmlFor="accountNumber" className="text-right">
                         Account No.
                       </Label>
                       <div className="col-span-3">
@@ -421,44 +463,46 @@ export function WalletPage() {
                           id="accountNumber"
                           type="text"
                           value={accountNumber}
-                          onChange={(e) =>
-                            setAccountNumber(
-                              e.target.value
-                                .replace(/\D/g, "")
-                                .slice(0, 10),
-                            )
-                          }
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                            setAccountNumber(value);
+                            if (value.length === 10 && selectedBank) {
+                              handleVerifyAccount(value);
+                            }
+                          }}
                           className="bg-input/50 backdrop-blur-sm"
                           placeholder="10-digit account number"
                           maxLength={10}
                         />
                       </div>
                     </div>
-
-                    {selectedBank &&
-                      accountNumber.length === 10 && (
-                        <div className="bg-muted/20 p-3 rounded-md">
-                          <div className="flex items-center">
-                            <Building className="h-5 w-5 mr-2 text-yellow-accent" />
-                            <div>
-                              <p className="text-sm font-medium">
-                                Account Verification
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Mohamed Ibrahim - {selectedBank}
-                              </p>
+                    { (isVerifying || isVerified || verificationError) && (
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <div className="col-start-2 col-span-3 text-sm">
+                          {isVerifying && (
+                            <div className="flex items-center text-muted-foreground">
+                              <WalletIcon className="h-4 w-4 mr-2 animate-spin" />
+                              Verifying...
                             </div>
-                            <CheckCircle className="h-5 w-5 ml-auto text-green-500" />
-                          </div>
+                          )}
+                          {verificationError && !isVerifying && (
+                            <div className="text-destructive font-medium">
+                              {verificationError}
+                            </div>
+                          )}
+                          {isVerified && accountName && !isVerifying && (
+                            <div className="text-green-500 font-bold flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4" /> {accountName}
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
+                    )}
                   </div>
                   <DialogFooter>
                     <Button
                       variant="outline"
-                      onClick={() =>
-                        setIsWithdrawDialogOpen(false)
-                      }
+                      onClick={() => setIsWithdrawDialogOpen(false)}
                     >
                       Cancel
                     </Button>
@@ -466,11 +510,10 @@ export function WalletPage() {
                       onClick={handleWithdraw}
                       disabled={
                         isProcessing ||
+                        !isVerified ||
                         !withdrawAmount ||
                         parseFloat(withdrawAmount) <= 0 ||
-                        parseFloat(withdrawAmount) > balance ||
-                        !selectedBank ||
-                        accountNumber.length !== 10
+                        parseFloat(withdrawAmount) > balance
                       }
                     >
                       {isProcessing ? (
@@ -839,6 +882,20 @@ export function WalletPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <Dialog open={showValidationPopup}>
+          <DialogContent className="sm:max-w-[425px] bg-card/95 backdrop-blur-md">
+            <DialogHeader>
+              <DialogTitle className="text-center">Validating Payment</DialogTitle>
+              <DialogDescription className="text-center">
+                Please wait while we confirm your transaction. Do not close this page.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            </div>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </div>
   );

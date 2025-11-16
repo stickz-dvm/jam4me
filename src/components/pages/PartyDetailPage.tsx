@@ -5,7 +5,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useParty } from "../../context/PartyContext";
 import { useWallet } from "../../context/WalletContext";
 import { useSpotify } from "../../context/SpotifyContext";
-import { SpotifyTrack } from "../../services/SpotifyService";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Input } from "../ui/input";
@@ -37,6 +36,7 @@ import { SpotifySearch } from "../SpotifySearch";
 import { SongCard } from "../SongCard";
 import { MusicPlayer } from "../MusicPlayer";
 import { toast } from "sonner";
+import { SpotifyTrack } from "../../api/types";
 
 export function PartyDetailPage() {
   const { passcode } = useParams();
@@ -171,7 +171,7 @@ export function PartyDetailPage() {
       setIsSearching(true);
       setSearchPerformed(true);
       const results = await searchTracks(searchQuery);
-      setSearchResults(results || []);
+      setSearchResults(results);
     } catch (error) {
       console.error("Error searching tracks:", error);
       toast.error("Failed to search for tracks. Please try again.");
@@ -186,7 +186,7 @@ export function PartyDetailPage() {
     setSearchResults([]);
     setSearchQuery("");
     setSearchPerformed(false);
-    toast.success(`Selected "${track.name}" by ${track.artists && track.artists.length > 0 ? track.artists.map(a => a.name).join(", ") : "Unknown Artist"}`, {
+    toast.success(`Selected "${track.name}" by ${track.artists && track.artists.length > 0 ? track.artists.map((a: { name: string }) => a.name).join(", ") : "Unknown Artist"}`, {
       duration: 2000,
       className: "glass"
     });
