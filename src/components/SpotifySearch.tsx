@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { SpotifyTrack } from "../api/types";
+import { SpotifyTrack } from "../../services/SpotifyService";
 import { Music, Loader2 } from "lucide-react";
 
 interface SpotifySearchProps {
@@ -19,13 +19,12 @@ export function SpotifySearch({ results, onSelect, isLoading = false }: SpotifyS
       >
         <div className="flex flex-col items-center text-center">
           <Loader2 className="h-8 w-8 animate-spin text-accent" />
-          <p className="mt-2 text-muted-foreground">Searching Nigerian beats...</p>
+          <p className="mt-2 text-muted-foreground">Searching...</p>
         </div>
       </motion.div>
     );
   }
 
-  // Return null if there are no results and search hasn't been performed
   if (!results || results.length === 0) {
     return null;
   }
@@ -41,7 +40,7 @@ export function SpotifySearch({ results, onSelect, isLoading = false }: SpotifyS
         <div className="sticky top-0 z-10 flex items-center justify-between bg-card/80 p-2 backdrop-blur-sm">
           <div className="flex items-center">
             <Music className="mr-2 h-4 w-4 text-accent" />
-            <span className="text-sm">Top Nigerian Hits</span>
+            <span className="text-sm">Top Results</span>
           </div>
           <span className="text-xs text-muted-foreground">{results.length} results</span>
         </div>
@@ -67,9 +66,7 @@ export function SpotifySearch({ results, onSelect, isLoading = false }: SpotifyS
             <div className="flex-1 overflow-hidden">
               <p className="truncate font-medium">{track.name}</p>
               <p className="truncate text-sm text-muted-foreground">
-                {track.artists && track.artists.length > 0 
-                  ? track.artists.map((artist: { name: string }) => artist.name).join(", ")
-                  : "Unknown Artist"}
+                {track.artists.map((artist) => artist.name).join(", ")}
               </p>
             </div>
             <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-accent/10">

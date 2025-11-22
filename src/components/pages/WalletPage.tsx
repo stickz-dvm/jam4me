@@ -100,16 +100,38 @@ export function WalletPage() {
   useEffect(() => {
     const fetchBanks = async () => {
       try {
+        // Add a small delay to ensure auth is fully initialized
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
         const response = await apiClient.get("/user_wallet/list_banks/");
         if (response.data && Array.isArray(response.data.data)) {
           setBanks(response.data.data);
         } else {
-          toast.error("Could not read the bank list from the server.");
+          // Retry once
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const retryResponse = await apiClient.get("/user_wallet/list_banks/");
+          if (retryResponse.data && Array.isArray(retryResponse.data.data)) {
+            setBanks(retryResponse.data.data);
+          } else {
+            toast.error("Could not read the bank list from the server.");
+          }
         }
-      } catch (error) {
-        toast.error("Failed to load the list of banks.");
+      } catch (error: any) {
+        // Retry once on error
+        await new Promise(resolve => setTimeout(resolve, 500));
+        try {
+          const retryResponse = await apiClient.get("/user_wallet/list_banks/");
+          if (retryResponse.data && Array.isArray(retryResponse.data.data)) {
+            setBanks(retryResponse.data.data);
+          } else {
+            toast.error("Failed to load the list of banks.");
+          }
+        } catch (retryError) {
+          toast.error("Failed to load the list of banks.");
+        }
       }
     };
+    
     fetchBanks();
   }, []);
 
