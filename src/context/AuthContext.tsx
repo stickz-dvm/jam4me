@@ -143,8 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           tokenLength: token?.length || 0
         });
 
-        if (!storedUser) {
-          console.log("No user data found - user not authenticated");
+        if (!storedUser || !token || isExpired) {
+          console.log("No valid auth data - user not authenticated");
           storage.clearAuth();
           setUser(null);
           setIsLoading(false);
@@ -153,10 +153,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         console.log("User restored:", storedUser.username, storedUser.userType);
         setUser(storedUser);
-
-        if(!token || !isExpired) {
-          console.log("No valid token")
-        }
 
       } catch (error) {
         console.error("Error initializing auth:", error);
@@ -221,6 +217,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!response.data.user?.token) {
           console.error("CRITICAL: No token in response!");
           toast.error("Login failed: No authentication token received");
+          // Clear any existing auth data
+          storage.clearAuth();
           return response;
         }
 
@@ -253,6 +251,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!savedUser || !savedToken) {
           console.error("CRITICAL: Failed to save to localStorage!");
           toast.error("Failed to save login data");
+          // Clear any partial data
+          storage.clearAuth();
           return response;
         }
 
@@ -263,6 +263,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast.success("Login successful!");
       } else {
         console.warn("Login response not successful:", response.data.message);
+        // Clear any existing auth data on failed login attempt
+        storage.clearAuth();
       }
 
       return response;
@@ -389,13 +391,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Update React state
         setUser(userData);
-
-        // Verify save
-        const savedUser = storage.getUser();
-        console.log("Verification after registration:", {
-          userSaved: !!savedUser,
-          username: savedUser?.username
-        });
 
         toast.success("Registration successful!");
       }

@@ -7,7 +7,7 @@ import { Avatar } from "./ui/avatar";
 import { LogoPlaceholder } from "./LogoPlaceholder";
 import { useAuth } from "../context/AuthContext";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { LogoutConfirmDialog } from "./LogoutConfirmDialog";
 
 export function DjLayout() {
@@ -16,6 +16,7 @@ export function DjLayout() {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   // Add state to force re-render on route changes
   const [activeRoute, setActiveRoute] = useState(location.pathname);
+  const [disableAnimation, setDisableAnimation] = useState(false);
 
   const isActive = (path: string) => {
     return location.pathname.startsWith(path);
@@ -25,6 +26,7 @@ export function DjLayout() {
   useEffect(() => {
     setActiveRoute(location.pathname);
   }, [location.pathname]);
+
 
   const handleLogoutClick = () => {
     setShowLogoutDialog(true);
@@ -37,6 +39,21 @@ export function DjLayout() {
 
   const handleCancelLogout = () => {
     setShowLogoutDialog(false);
+  };
+
+  const prevLocationRef = useRef(location.pathname);
+
+  // Determine if current navigation is between navbar pages
+  const isNavbarNavigation = () => {
+    const navbarPaths = ['/dj/dashboard', '/dj/wallet', '/dj/profile', '/dj/support'];
+    const prevPath = prevLocationRef.current;
+    const currentPath = location.pathname;
+    
+    // Update the ref for next comparison
+    prevLocationRef.current = currentPath;
+    
+    // Check if both previous and current paths are navbar paths
+    return navbarPaths.includes(prevPath) && navbarPaths.includes(currentPath);
   };
 
   return (
@@ -106,20 +123,26 @@ export function DjLayout() {
         </div>
       </header>
 
-      {/* Main content with AnimatePresence properly scoped */}
+      {/* Main content with conditional animation */}
       <div className="flex-1 container mx-auto p-4 pt-6 bg-background">
-        <AnimatePresence mode="wait">
-          <motion.div 
-            key={location.pathname}
-            className="w-full"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.3 }}
-          >
+        {isNavbarNavigation() ? (
+          <div className="w-full">
             <Outlet />
-          </motion.div>
-        </AnimatePresence>
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div 
+              key={location.pathname}
+              className="w-full"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
+        )}
       </div>
 
       {/* Footer navigation */}

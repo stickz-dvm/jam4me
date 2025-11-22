@@ -125,6 +125,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
    * Fetch balance from API (DJ only)
    */
   const fetchBalance = async (): Promise<number | null> => {
+    // Endpoint is returning 405 Method Not Allowed, commenting out for now
+    /*
     if (!user || !isAuthenticated) {
       console.warn("Cannot fetch balance: User not authenticated");
       return null;
@@ -136,6 +138,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      // Add a small delay to ensure token is properly set
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const response = await api.get("/dj_wallet/dj/check/wal/223/");
       
       if (response.data && typeof response.data.balance === "number") {
@@ -148,6 +153,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       // Log but don't show error for 401 (handled by interceptor) or 403 (permission)
       if (error.status === 401) {
         console.warn("⚠️ 401 when fetching balance - might be race condition after login");
+        // Retry once after a delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        try {
+          const retryResponse = await api.get("/dj_wallet/dj/check/wal/223/");
+          if (retryResponse.data && typeof retryResponse.data.balance === "number") {
+            return retryResponse.data.balance;
+          }
+        } catch (retryError) {
+          console.warn("Retry failed:", retryError);
+        }
         return null;
       }
       
@@ -161,12 +176,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       
       return null;
     }
+    */
+    return null;
   };
 
   /**
    * Fetch transaction history from API (DJ only)
    */
   const fetchTransactionHistory = async (): Promise<Transaction[] | null> => {
+    // Endpoint is returning 404, commenting out for now
+    /*
     if (!user || !isAuthenticated) {
       console.warn("Cannot fetch transactions: User not authenticated");
       return null;
@@ -199,6 +218,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       
       return null;
     }
+    */
+    return null;
   };
 
   /**
@@ -211,17 +232,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      // Fetch data in parallel
-      const [apiBalance, apiTransactions] = await Promise.all([
-        fetchBalance(),
-        fetchTransactionHistory()
-      ]);
+      // Add a small delay to ensure auth is settled
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Fetch transaction history only (balance fetching is problematic)
+      const apiTransactions = await fetchTransactionHistory();
 
       // Update state with API data if available
-      if (apiBalance !== null) {
-        setBalance(apiBalance);
-      }
-
       if (apiTransactions !== null && apiTransactions.length > 0) {
         setTransactions(apiTransactions);
       }

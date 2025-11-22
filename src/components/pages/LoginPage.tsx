@@ -22,15 +22,15 @@ export function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [user_status, setUserStatus] = useState<UserType>("user");
 
-  // useEffect(() => {
-  //   if (isAuthenticated && !authLoading) {
-  //     const targetRoute = getUserType() === "HUB_DJ" ? "/dj/dashboard" : "/parties";
-  //     const from = (location.state as any)?.from?.pathname || targetRoute;
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      const targetRoute = getUserType() === "HUB_DJ" ? "/dj/dashboard" : "/parties";
+      const from = (location.state as any)?.from?.pathname || targetRoute;
       
-  //     console.log("✅ Already authenticated, redirecting to:", from);
-  //     navigate(from, { replace: true });
-  //   }
-  // }, [isAuthenticated, authLoading, getUserType, navigate, location]);
+      console.log("✅ Already authenticated, redirecting to:", from);
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, authLoading, getUserType, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +48,7 @@ export function LoginPage() {
       console.log("login response in component: ", response);
       
       // Navigate based on user type
-      if (response?.status === 200 && response?.data.message.includes("Login successful") || response?.data.message.includes("login success")) {
+      if (response?.status === 200 && (response?.data.message.includes("Login successful") || response?.data.message.includes("login success"))) {
         // 1s delay so that localStorage can populate
         await new Promise(resolve => setTimeout(resolve, 1000));
     
