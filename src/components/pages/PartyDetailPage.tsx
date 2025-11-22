@@ -29,15 +29,9 @@ import {
   Wallet,
   MapPin
 } from "lucide-react";
-<<<<<<< HEAD
 import { SpotifySearch } from "../SpotifySearch";
 import { SongCard } from "../SongCard";
 import { MusicPlayer } from "../MusicPlayer";
-=======
-import { SpotifySearch } from "../ui/SpotifySearch";
-import { SongCard } from "../ui/SongCard";
-import { MusicPlayer } from "../ui/MusicPlayer";
->>>>>>> 9b3b9117a4545a6388ac0d23c6f74b5c30f28d38
 import { toast } from "sonner";
 import { SpotifyTrack } from "../../services/SpotifyService";
 
@@ -68,11 +62,7 @@ function PriceStepper({
   
   useEffect(() => {
     setInputValue(value.toString());
-<<<<<<< HEAD
-  }, [value, minPrice]);
-=======
   }, [value]);
->>>>>>> 9b3b9117a4545a6388ac0d23c6f74b5c30f28d38
 
   return (
     <div className="w-full space-y-2">
@@ -234,19 +224,6 @@ export function PartyDetailPage() {
   const queuedSongs = currentParty?.songs?.filter(song => song.status === "pending") || [];
   const playedSongs = currentParty?.songs?.filter(song => song.status === "played") || [];
 
-<<<<<<< HEAD
-  const queuedSongs = useMemo(
-    () => currentParty?.songs?.filter(song => song.status === "pending") || [],
-    [currentParty?.songs]
-  );
-
-  const playedSongs = useMemo(
-    () => currentParty?.songs?.filter(song => song.status === "played") || [],
-    [currentParty?.songs]
-  );
-
-=======
->>>>>>> 9b3b9117a4545a6388ac0d23c6f74b5c30f28d38
   useEffect(() => {
     if (queuedSongs.length > 0) {
       setActiveTab("queue");
