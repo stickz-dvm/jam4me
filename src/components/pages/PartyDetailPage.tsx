@@ -201,24 +201,37 @@ export function PartyDetailPage() {
         setPrice(found.minRequestPrice || 1000);
         setMinRequestPrice(found.minRequestPrice || 1000);
       } else {
-        const timeoutId = setTimeout(() => {
-          toast.error("Party not found. Please rejoin from the Parties page.");
-          navigate(isDj ? "/dj/dashboard" : "/parties");
-        }, 1000);
-
-        return () => clearTimeout(timeoutId);
+        // Instead of showing error immediately, let's try to fetch the party
+        loadParty();
       }
     }
   }, [currentParty, passcode, joinedParties.length, navigate, isDj]);
 
-  useEffect(() => {
-    const loadParty = async () => {
-      if (passcode) {
+  const loadParty = async () => {
+    if (passcode) {
+      try {
         const party = await fetchPartyByPasscode(passcode);
-        setCurrentParty(party);
+        if (party) {
+          setCurrentParty(party);
+          setPrice(party.minRequestPrice || 1000);
+          setMinRequestPrice(party.minRequestPrice || 1000);
+        } else {
+          toast.error("Party not found. Please rejoin from the Parties page.");
+          navigate(isDj ? "/dj/dashboard" : "/parties");
+        }
+      } catch (error) {
+        console.error("Error loading party:", error);
+        toast.error("Failed to load party details.");
+        navigate(isDj ? "/dj/dashboard" : "/parties");
       }
-    };
-    loadParty();
+    }
+  };
+
+  useEffect(() => {
+    // Only attempt to load party if we don't already have it
+    if (!currentParty && passcode) {
+      loadParty();
+    }
   }, [passcode, fetchPartyByPasscode, setCurrentParty]);
 
   const queuedSongs = currentParty?.songs?.filter(song => song.status === "pending") || [];
