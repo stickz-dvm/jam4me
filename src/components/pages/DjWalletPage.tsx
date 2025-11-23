@@ -15,7 +15,7 @@ import apiClient from "../../api/apiClient";
 
 export function DjWalletPage() {
   const { user } = useAuth();
-  const { balance, transactions } = useWallet();
+  const { balance, transactions, withdrawFunds } = useWallet();
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -118,8 +118,12 @@ export function DjWalletPage() {
     setIsWithdrawing(true);
     
     try {
-      // TODO: This is where I'll call the real 'withdrawFunds' function from the WalletContext.
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call the real 'withdrawFunds' function from the WalletContext
+      await withdrawFunds(parseFloat(withdrawAmount), {
+        accountNumber,
+        bankCode: selectedBankCode,
+        accountName
+      });
       toast.success(`₦${withdrawAmount} withdrawal initiated successfully!`);
 
       setIsDialogOpen(false);

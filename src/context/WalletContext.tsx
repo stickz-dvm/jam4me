@@ -125,8 +125,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
    * Fetch balance from API (DJ only)
    */
   const fetchBalance = async (): Promise<number | null> => {
-    // Endpoint is returning 405 Method Not Allowed, commenting out for now
-    /*
     if (!user || !isAuthenticated) {
       console.warn("Cannot fetch balance: User not authenticated");
       return null;
@@ -176,16 +174,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       
       return null;
     }
-    */
-    return null;
   };
 
   /**
    * Fetch transaction history from API (DJ only)
    */
   const fetchTransactionHistory = async (): Promise<Transaction[] | null> => {
-    // Endpoint is returning 404, commenting out for now
-    /*
     if (!user || !isAuthenticated) {
       console.warn("Cannot fetch transactions: User not authenticated");
       return null;
@@ -218,8 +212,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       
       return null;
     }
-    */
-    return null;
   };
 
   /**
@@ -235,11 +227,18 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       // Add a small delay to ensure auth is settled
       await new Promise(resolve => setTimeout(resolve, 200));
       
-      // Fetch transaction history only (balance fetching is problematic)
-      const apiTransactions = await fetchTransactionHistory();
+      // Fetch both balance and transaction history
+      const [apiBalance, apiTransactions] = await Promise.all([
+        fetchBalance(),
+        fetchTransactionHistory()
+      ]);
 
       // Update state with API data if available
-      if (apiTransactions !== null && apiTransactions.length > 0) {
+      if (apiBalance !== null) {
+        setBalance(apiBalance);
+      }
+      
+      if (apiTransactions !== null) {
         setTransactions(apiTransactions);
       }
     } catch (error) {
