@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { SpotifyTrack } from "../../services/SpotifyService";
+import { SpotifyTrack } from "../services/SpotifyService";
 import { Music, Loader2 } from "lucide-react";
 
 interface SpotifySearchProps {
@@ -66,7 +66,7 @@ export function SpotifySearch({ results, onSelect, isLoading = false }: SpotifyS
             <div className="flex-1 overflow-hidden">
               <p className="truncate font-medium">{track.name}</p>
               <p className="truncate text-sm text-muted-foreground">
-                {track.artists.map((artist) => artist.name).join(", ")}
+                {track.artists.map((artist: { name: string }) => artist.name).join(", ")}
               </p>
             </div>
             <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-accent/10">
