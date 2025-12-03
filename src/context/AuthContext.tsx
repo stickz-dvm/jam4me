@@ -227,6 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           username: response.data.user.username,
           userType: user_status,
           email: response.data.user.email,
+          avatar: response.data.user.profile_picture,
         };
 
         console.log("Saving auth data...");

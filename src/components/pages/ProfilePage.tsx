@@ -52,7 +52,7 @@ export function ProfilePage() {
       const endpoint = user?.userType === "user" ? "/user_wallet/edit/profile/" : "/dj_wallet/dj/edit/profile/";
 
       console.log("edit profile name payload: ", {old: user?.username, new: username})
-      const response = api.post(endpoint, {dj_name: user?.username, new_username: username});
+      const response = api.post(endpoint, {dj_name: user?.username, new_username: username, profile_picture: imagePreviewUrl});
 
       console.log("update username: ", response);
 
