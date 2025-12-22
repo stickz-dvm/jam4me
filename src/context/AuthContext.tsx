@@ -11,8 +11,8 @@ const USER_KEY = "jam4me-user";
 const USER_TYPE_KEY = "jam4me-user-type";
 const TOKEN_EXPIRY_KEY = "jam4me-token-expiry";
 
-// Token expiry duration (30 mins in milliseconds)
-const TOKEN_EXPIRY_DURATION = 30 * 60 * 1000;
+// Token expiry duration (60 mins in milliseconds)
+const TOKEN_EXPIRY_DURATION = 60 * 60 * 1000;
 
 console.log("Auth Configuration:", {
   tokenExpiryDays: TOKEN_EXPIRY_DURATION / (24 * 60 * 60 * 1000),
