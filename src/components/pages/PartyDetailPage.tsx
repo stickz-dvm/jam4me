@@ -11,17 +11,17 @@ import { Input } from "../ui/input";
 import { Badge } from "../ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
-import { 
-  ArrowLeft, 
-  Music, 
-  Search, 
-  QrCode, 
-  Loader2, 
-  Clock, 
-  CheckCircle, 
-  ListMusic, 
-  XCircle, 
-  AlertCircle, 
+import {
+  ArrowLeft,
+  Music,
+  Search,
+  QrCode,
+  Loader2,
+  Clock,
+  CheckCircle,
+  ListMusic,
+  XCircle,
+  AlertCircle,
   Play,
   Ban,
   Settings,
@@ -36,11 +36,11 @@ import { toast } from "sonner";
 import { SpotifyTrack } from "../../services/SpotifyService";
 
 // This is my new price stepper component for the user side.
-function PriceStepper({ 
-  minPrice, 
-  value, 
-  onValueChange 
-}: { 
+function PriceStepper({
+  minPrice,
+  value,
+  onValueChange
+}: {
   minPrice: number;
   value: number;
   onValueChange: (newValue: number) => void;
@@ -59,7 +59,7 @@ function PriceStepper({
       setInputValue(value.toString());
     }
   };
-  
+
   useEffect(() => {
     setInputValue(value.toString());
   }, [value]);
@@ -70,17 +70,17 @@ function PriceStepper({
         <label htmlFor="price" className="text-sm text-white">
           Your Offer
         </label>
-        
+
         <div className="flex items-center gap-2 w-1/2">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => handleStep(-100)} 
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handleStep(-100)}
             className="h-9 w-9 shrink-0 glow-blue"
           >
             -
           </Button>
-          
+
           <div className="relative flex-grow">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₦</span>
             <Input
@@ -93,11 +93,11 @@ function PriceStepper({
               inputMode="numeric"
             />
           </div>
-          
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => handleStep(100)} 
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handleStep(100)}
             className="h-9 w-9 shrink-0 glow-blue"
           >
             +
@@ -115,13 +115,13 @@ export function PartyDetailPage() {
   const { passcode } = useParams();
   const navigate = useNavigate();
   const { user, isDj } = useAuth();
-  const { 
-    currentParty, 
+  const {
+    currentParty,
     joinedParties,
-    requestSong, 
-    leaveParty, 
-    isLoading, 
-    approveSong, 
+    requestSong,
+    leaveParty,
+    isLoading,
+    approveSong,
     declineSong,
     playSong,
     markSongAsPlayed,
@@ -133,7 +133,7 @@ export function PartyDetailPage() {
   } = useParty();
   const { balance } = useWallet();
   const { searchTracks } = useSpotify();
-  
+
   const [price, setPrice] = useState(1000);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SpotifyTrack[]>([]);
@@ -148,7 +148,7 @@ export function PartyDetailPage() {
   const [showPriceDialog, setShowPriceDialog] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [activeTab, setActiveTab] = useState("queue");
-  
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -157,7 +157,7 @@ export function PartyDetailPage() {
       .toUpperCase()
       .substring(0, 2);
   };
-  
+
   const isDjParty = isDj && currentParty?.djId === user?.id;
 
   const getDjAvatarUrl = () => {
@@ -212,7 +212,7 @@ export function PartyDetailPage() {
       try {
         const party = await fetchPartyByPasscode(passcode);
         if (party) {
-          setCurrentParty(party);
+          // setCurrentParty(party); // Already set in fetchPartyByPasscode
           setPrice(party.minRequestPrice || 1000);
           setMinRequestPrice(party.minRequestPrice || 1000);
         } else {
@@ -247,7 +247,7 @@ export function PartyDetailPage() {
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-    
+
     try {
       setIsSearching(true);
       setSearchPerformed(true);
@@ -261,7 +261,7 @@ export function PartyDetailPage() {
       setIsSearching(false);
     }
   };
-  
+
   const handleTrackSelect = (track: SpotifyTrack) => {
     setSelectedTrack(track);
     setSearchResults([]);
@@ -269,14 +269,14 @@ export function PartyDetailPage() {
     setSearchPerformed(false);
     toast.success(`Selected "${track.name}" by ${track.artists.map((a) => a.name).join(", ")}`);
   };
-  
+
   const handleRequestSong = async () => {
     if (!selectedTrack) return;
-    
+
     try {
       await requestSong(
-        selectedTrack.name, 
-        selectedTrack.artists[0]?.name || "Unknown Artist", 
+        selectedTrack.name,
+        selectedTrack.artists[0]?.name || "Unknown Artist",
         price,
         selectedTrack.album?.images?.[0]?.url
       );
@@ -319,7 +319,7 @@ export function PartyDetailPage() {
 
   const handleCloseParty = async () => {
     if (!currentParty) return;
-    
+
     setIsClosing(true);
     try {
       await closeParty(currentParty.id);
@@ -369,14 +369,14 @@ export function PartyDetailPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={() => navigate(isDj ? "/dj/dashboard" : "/parties")}
         >
-          <ArrowLeft className="mr-2 h-4 w-4" /> 
+          <ArrowLeft className="mr-2 h-4 w-4" />
           {isDj ? "Back to Dashboard" : "Back to Parties"}
         </Button>
-        
+
         {isDj ? (
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setShowQRDialog(true)}>
@@ -387,7 +387,7 @@ export function PartyDetailPage() {
               <Settings className="mr-2 h-4 w-4" />
               Settings
             </Button>
-            <Button 
+            <Button
               variant="destructive"
               onClick={handleCloseParty}
               disabled={isClosing || hasPendingAcceptedSongs}
@@ -402,7 +402,7 @@ export function PartyDetailPage() {
           </Button>
         )}
       </div>
-      
+
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-8">
         <div className="flex justify-between items-start">
           <div>
@@ -430,7 +430,7 @@ export function PartyDetailPage() {
           {isDj && <Badge className="bg-accent text-accent-foreground">DJ MODE</Badge>}
         </div>
       </motion.div>
-      
+
       {currentlyPlaying && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="mb-8">
           <h2 className="mb-4 flex items-center text-xl font-semibold">
@@ -447,7 +447,7 @@ export function PartyDetailPage() {
           )}
         </motion.div>
       )}
-      
+
       {!isDj && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="mb-8">
           <h2 className="mb-4 text-xl font-semibold">Request a Song</h2>
@@ -492,8 +492,8 @@ export function PartyDetailPage() {
                     <div className="flex items-center gap-4">
                       {selectedTrack.album?.images?.[0]?.url ? (
                         <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
-                          <img 
-                            src={selectedTrack.album.images[0].url} 
+                          <img
+                            src={selectedTrack.album.images[0].url}
                             alt={selectedTrack.album.name || "Album cover"}
                             className="h-20 w-20 object-cover rounded-md shadow-lg"
                           />
@@ -520,7 +520,7 @@ export function PartyDetailPage() {
             </CardContent>
             {selectedTrack && (
               <CardFooter className="flex-col space-y-4 relative z-10">
-                <PriceStepper 
+                <PriceStepper
                   minPrice={currentParty.minRequestPrice || 500}
                   value={price}
                   onValueChange={setPrice}
@@ -554,22 +554,22 @@ export function PartyDetailPage() {
           </Card>
         </motion.div>
       )}
-      
+
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className="space-y-8">
         <div>
           <h2 className="mb-4 flex items-center text-xl font-semibold">
-            <ListMusic className="mr-2 h-5 w-5 text-accent" /> 
+            <ListMusic className="mr-2 h-5 w-5 text-accent" />
             Playlist ({currentParty.songs?.length || 0})
           </h2>
           {currentParty.songs && currentParty.songs.length > 0 ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList>
                 <TabsTrigger value="queue" className="flex items-center gap-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
-                  <Clock className="h-4 w-4" /> 
+                  <Clock className="h-4 w-4" />
                   In Queue ({queuedSongs.length})
                 </TabsTrigger>
                 <TabsTrigger value="played" className="flex items-center gap-2 data-[state=active]:bg-green-500/20 data-[state=active]:text-green-500">
-                  <CheckCircle className="h-4 w-4" /> 
+                  <CheckCircle className="h-4 w-4" />
                   Played Songs ({playedSongs.length})
                 </TabsTrigger>
               </TabsList>
@@ -579,7 +579,7 @@ export function PartyDetailPage() {
                     {queuedSongs.map((song) => (
                       <Card key={song.id} className="bg-card/80 backdrop-blur-sm border-border/50">
                         <CardContent className="p-4">
-                          <SongCard song={{...song, status: "queued"}} currentlyPlaying={false} />
+                          <SongCard song={{ ...song, status: "queued" }} currentlyPlaying={false} />
                           {isDj && (
                             <div className="mt-4 pt-4 border-t border-border/50 flex justify-between">
                               <Button size="sm" variant="destructive" onClick={() => handleDeclineSong(song.id)} className="flex-1 mr-2">
@@ -609,7 +609,7 @@ export function PartyDetailPage() {
                     {playedSongs.map((song) => (
                       <Card key={song.id} className="bg-card/80 backdrop-blur-sm border-border/50">
                         <CardContent className="p-4">
-                          <SongCard song={{...song, status: "played"}} currentlyPlaying={false} />
+                          <SongCard song={{ ...song, status: "played" }} currentlyPlaying={false} />
                         </CardContent>
                       </Card>
                     ))}

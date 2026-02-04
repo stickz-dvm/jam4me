@@ -102,7 +102,7 @@ export function WalletPage() {
       try {
         // Add a small delay to ensure auth is fully initialized
         await new Promise(resolve => setTimeout(resolve, 200));
-        
+
         const response = await apiClient.get("/user_wallet/list_banks/");
         if (response.data && Array.isArray(response.data.data)) {
           setBanks(response.data.data);
@@ -131,7 +131,7 @@ export function WalletPage() {
         }
       }
     };
-    
+
     fetchBanks();
   }, []);
 
@@ -154,7 +154,7 @@ export function WalletPage() {
         setIsVerifying(false);
         return;
       }
-      
+
       const response = await apiClient.post("/user_wallet/verify_account/", {
         account_number: accountToVerify,
         bank_code: bank.code,
@@ -188,7 +188,7 @@ export function WalletPage() {
       toast.error("Please enter a valid amount");
       return;
     }
-    
+
     if (!user || !user.id) {
       toast.error("You need to be logged in to fund your wallet.");
       return;
@@ -197,16 +197,18 @@ export function WalletPage() {
     setIsProcessing(true);
 
     try {
-      const amountAsString = fundAmount.toString();
-      const payload = {
+      const amountAsNumber = parseFloat(fundAmount);
+      // Confirmed endpoint from endpoint.txt
+      const response = await apiClient.post('/create_paystack_checkout_session/', {
         user_id: user.id,
-        amount: amountAsString,
-        user_status: 'hub_user' 
-      };
-      
-      const response = await apiClient.post('/fund_wallet/', payload);
+        amount: amountAsNumber,
+      });
 
-      if (response.data && response.data.checkout_url) {
+      if (response.data && response.data.authorization_url) {
+        toast.success("Redirecting to Paystack...");
+        window.location.href = response.data.authorization_url;
+      } else if (response.data && response.data.checkout_url) {
+        // Fallback or alternative field name
         toast.success("Redirecting to Paystack...");
         window.location.href = response.data.checkout_url;
       } else {
@@ -220,7 +222,7 @@ export function WalletPage() {
       setIsProcessing(false);
     }
   };
-  
+
   const handleWithdraw = async () => {
     if (!isVerified || !withdrawAmount || !accountName || !selectedBank) {
       toast.error("Please ensure your account is verified and you have entered an amount.");
@@ -488,6 +490,7 @@ export function WalletPage() {
                           onChange={(e) => {
                             const value = e.target.value.replace(/\D/g, "").slice(0, 10);
                             setAccountNumber(value);
+                            // Seamless verification: trigger when 10 digits are entered
                             if (value.length === 10 && selectedBank) {
                               handleVerifyAccount(value);
                             }
@@ -498,7 +501,7 @@ export function WalletPage() {
                         />
                       </div>
                     </div>
-                    { (isVerifying || isVerified || verificationError) && (
+                    {(isVerifying || isVerified || verificationError) && (
                       <div className="grid grid-cols-4 items-center gap-4">
                         <div className="col-start-2 col-span-3 text-sm">
                           {isVerifying && (
@@ -678,13 +681,12 @@ export function WalletPage() {
                       >
                         <div className="flex items-center space-x-4">
                           <div
-                            className={`p-2 rounded-full ${
-                              tx.type === "fund"
-                                ? "bg-green-500/20 text-green-500"
-                                : tx.type === "withdrawal"
-                                  ? "bg-yellow-accent/20 text-yellow-accent"
-                                  : "bg-primary/20 text-primary"
-                            }`}
+                            className={`p-2 rounded-full ${tx.type === "fund"
+                              ? "bg-green-500/20 text-green-500"
+                              : tx.type === "withdrawal"
+                                ? "bg-yellow-accent/20 text-yellow-accent"
+                                : "bg-primary/20 text-primary"
+                              }`}
                           >
                             {tx.type === "fund" ? (
                               <ArrowDownIcon className="h-5 w-5" />
@@ -710,13 +712,12 @@ export function WalletPage() {
                         </div>
                         <div className="text-right">
                           <p
-                            className={`font-bold ${
-                              tx.type === "fund"
-                                ? "text-green-500"
-                                : tx.type === "withdrawal"
-                                  ? "text-yellow-accent"
-                                  : ""
-                            }`}
+                            className={`font-bold ${tx.type === "fund"
+                              ? "text-green-500"
+                              : tx.type === "withdrawal"
+                                ? "text-yellow-accent"
+                                : ""
+                              }`}
                           >
                             {tx.type === "fund" ? "+" : "-"}₦
                             {tx.amount.toLocaleString()}
@@ -791,11 +792,10 @@ export function WalletPage() {
                       >
                         <div className="flex items-center space-x-4">
                           <div
-                            className={`p-2 rounded-full ${
-                              tx.type === "fund"
-                                ? "bg-green-500/20 text-green-500"
-                                : "bg-yellow-accent/20 text-yellow-accent"
-                            }`}
+                            className={`p-2 rounded-full ${tx.type === "fund"
+                              ? "bg-green-500/20 text-green-500"
+                              : "bg-yellow-accent/20 text-yellow-accent"
+                              }`}
                           >
                             {tx.type === "fund" ? (
                               <ArrowDownIcon className="h-5 w-5" />
