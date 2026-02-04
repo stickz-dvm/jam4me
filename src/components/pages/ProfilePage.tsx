@@ -45,31 +45,43 @@ export function ProfilePage() {
       return;
     }
 
-    console.log("edit button clicked!");
-
     setIsLoading(true);
     try {
-      const endpoint = user?.userType === "user" ? "/user_wallet/edit/profile/" : "/dj_wallet/dj/edit/profile/";
+      // 1. Update Profile Information (Text)
+      const textEndpoint = user?.userType === "user" ? "/user_wallet/edit/profile/" : "dj/edit/profile/";
+      // Payload based on endpoint description
+      const textPayload = { dj_name: user?.username, new_username: username };
 
-      console.log("edit profile name payload: ", {old: user?.username, new: username})
-      const response = api.post(endpoint, {dj_name: user?.username, new_username: username, profile_picture: imagePreviewUrl});
+      await api.post(textEndpoint, textPayload);
 
-      console.log("update username: ", response);
+      // 2. Update Profile Picture (if changed)
+      if (imagePreviewUrl && selectedImage) {
+        const photoEndpoint = "dj/edit/profile/photo/"; // Using the documented endpoint
+        // NOTE: Endpoint expects a URL string according to doc, but usually file upload needs FormData or pre-upload.
+        // Assuming strict adherence to doc: "profile_picture": "string (URL)". 
+        // If the backend expects a file upload, this might need FormData.
+        // Given existing context hint "In a real app, you would upload... for now we'll just use local preview",
+        // I will honor the explicit USER REQ to use the endpoint.
 
-      // Create updatedProfile object with name and phone
+        // Since the doc says "string (URL)", one strategy is we might need to upload to cloud first or send base64?
+        // IF the backend actually handles a file, we usually use FormData. 
+        // Let's assume for now we send the base64 string or null if not handled, 
+        // BUT strictly following the doc: {'dj_name': 'string', 'profile_picture': 'string (URL)'}
+
+        // Let's try sending the data URL directly as 'profile_picture' as a best guess for "string (URL)" 
+        // without an actual S3 uploader present in instructions.
+        await api.post(photoEndpoint, {
+          dj_name: username, // Use the NEW username as we just updated it
+          profile_picture: imagePreviewUrl
+        });
+      }
+
+      // Update local state
       const updatedProfile = {
         username,
-        // phone,
+        avatar: imagePreviewUrl || user?.avatar // Optimistic update
       };
 
-      // If there's a selected image, add it to the updated profile
-      // if (selectedImage) {
-      //   // In a real app, you would upload the image to a server and get a URL back
-      //   // For now, we'll just use the local preview URL as if it was uploaded
-      //   updatedProfile.avatar = imagePreviewUrl;
-      // } 
-
-      // Update the user profile
       updateUserProfile(updatedProfile);
       setShowEditDialog(false);
       setSelectedImage(null);
@@ -85,7 +97,7 @@ export function ProfilePage() {
 
   const handleEmailChange = async () => {
     setError("");
-    
+
     // Basic email validation
     if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
       setError("Please enter a valid email address");
@@ -171,7 +183,7 @@ export function ProfilePage() {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
-    
+
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -199,7 +211,7 @@ export function ProfilePage() {
     reader.readAsDataURL(file);
 
   };
-  
+
   useEffect(() => {
     console.log("image url: ", imagePreviewUrl);
   }, [imagePreviewUrl])
@@ -237,7 +249,7 @@ export function ProfilePage() {
   return (
     <div className="space-y-6">
       <h2>Profile</h2>
-      
+
       <div className="flex flex-col items-center justify-center py-6">
         <div className="relative group">
           <Avatar className="w-24 h-24 mb-4 cursor-pointer" onClick={triggerFileInput}>
@@ -247,8 +259,8 @@ export function ProfilePage() {
               <Camera className="w-6 h-6 text-white" />
             </div>
           </Avatar>
-          <input 
-            type="file" 
+          <input
+            type="file"
             ref={fileInputRef}
             className="hidden"
             accept="image/jpeg, image/png, image/gif, image/webp"
@@ -256,7 +268,7 @@ export function ProfilePage() {
           />
         </div>
         <h2>{user.username}</h2>
-        
+
         {phone && (
           <p className="text-muted-foreground flex items-center mt-1">
             <Phone className="w-3 h-3 mr-1" />
@@ -264,7 +276,7 @@ export function ProfilePage() {
           </p>
         )}
       </div>
-      
+
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Personal Information</CardTitle>
@@ -274,15 +286,15 @@ export function ProfilePage() {
             <span className="text-muted-foreground">Username</span>
             <span>{user.username}</span>
           </div>
-         
+
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Phone</span>
             <span>{phone || "Not provided"}</span>
           </div>
         </CardContent>
         <CardFooter>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="w-full"
             onClick={() => {
               setUsername(user.username);
@@ -297,7 +309,7 @@ export function ProfilePage() {
           </Button>
         </CardFooter>
       </Card>
-      
+
       {/* New Security Card */}
       <Card>
         <CardHeader className="pb-2">
@@ -317,8 +329,8 @@ export function ProfilePage() {
               <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
               <span className="text-muted-foreground">Email Address</span>
             </div>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => {
                 setEmail(user.email!);
@@ -336,9 +348,9 @@ export function ProfilePage() {
               <Lock className="w-4 h-4 mr-2 text-muted-foreground" />
               <span className="text-muted-foreground">Password</span>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 setCurrentPassword("");
                 setNewPassword("");
@@ -352,23 +364,23 @@ export function ProfilePage() {
           </div>
         </CardContent>
       </Card>
-      
-      <Button 
-        variant="destructive" 
+
+      <Button
+        variant="destructive"
         className="w-full"
         onClick={handleLogoutClick}
       >
         <LogOut className="w-4 h-4 mr-2" />
         Logout
       </Button>
-      
+
       {/* Logout confirmation dialog */}
-      <LogoutConfirmDialog 
-        isOpen={showLogoutDialog} 
-        onClose={handleCancelLogout} 
-        onConfirm={handleConfirmLogout} 
+      <LogoutConfirmDialog
+        isOpen={showLogoutDialog}
+        onClose={handleCancelLogout}
+        onConfirm={handleConfirmLogout}
       />
-      
+
       {/* Profile Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent>
@@ -378,7 +390,7 @@ export function ProfilePage() {
               Update your personal information
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             {error && (
               <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm">
@@ -390,27 +402,27 @@ export function ProfilePage() {
               <div className="relative group mb-4">
                 <div className="w-24 h-24 rounded-full overflow-hidden bg-muted flex items-center justify-center cursor-pointer" onClick={triggerFileInput}>
                   {imagePreviewUrl ? (
-                    <img 
-                      src={imagePreviewUrl} 
-                      alt="Profile preview" 
+                    <img
+                      src={imagePreviewUrl}
+                      alt="Profile preview"
                       className="w-full h-full object-cover"
                     />
                   ) : user.avatar ? (
-                    <img 
-                      src={user.avatar} 
-                      alt={user.username} 
+                    <img
+                      src={user.avatar}
+                      alt={user.username}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <span className="text-xl">{getInitials(user.username)}</span>
                   )}
-                  
+
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Camera className="w-6 h-6 text-white" />
                   </div>
 
                   {imagePreviewUrl && (
-                    <button 
+                    <button
                       className="absolute top-0 right-0 bg-destructive rounded-full p-1"
                       onClick={(e) => removeSelectedImage(e)}
                     >
@@ -419,7 +431,7 @@ export function ProfilePage() {
                   )}
                 </div>
                 <p className="text-sm text-center mt-1 text-muted-foreground">Click to change profile picture</p>
-                
+
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -429,7 +441,7 @@ export function ProfilePage() {
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <label htmlFor="username">Username</label>
               <Input
@@ -441,7 +453,7 @@ export function ProfilePage() {
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <label htmlFor="phone">Phone Number</label>
               <Input
@@ -454,7 +466,7 @@ export function ProfilePage() {
               />
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button onClick={handleEditProfile} disabled={isLoading}>
               {isLoading ? "Saving..." : "Save Changes"}
@@ -462,7 +474,7 @@ export function ProfilePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Email Change Dialog */}
       <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
         <DialogContent>
@@ -472,14 +484,14 @@ export function ProfilePage() {
               Enter your new email address and current password
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             {error && (
               <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm">
                 {error}
               </div>
             )}
-            
+
             <div className="space-y-2">
               <label htmlFor="email">New Email Address</label>
               <Input
@@ -492,7 +504,7 @@ export function ProfilePage() {
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <label htmlFor="currentPassword">Current Password</label>
               <Input
@@ -509,7 +521,7 @@ export function ProfilePage() {
               </p>
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEmailDialog(false)} disabled={isLoading}>
               Cancel
@@ -520,7 +532,7 @@ export function ProfilePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Password Change Dialog */}
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
         <DialogContent>
@@ -530,14 +542,14 @@ export function ProfilePage() {
               Update your password to secure your account
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             {error && (
               <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm">
                 {error}
               </div>
             )}
-            
+
             <div className="space-y-2">
               <label htmlFor="currentPasswordChange">Current Password</label>
               <Input
@@ -550,7 +562,7 @@ export function ProfilePage() {
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <label htmlFor="newPassword">New Password</label>
               <Input
@@ -566,7 +578,7 @@ export function ProfilePage() {
                 Password must be at least 8 characters
               </p>
             </div>
-            
+
             <div className="space-y-2">
               <label htmlFor="confirmPassword">Confirm New Password</label>
               <Input
@@ -580,7 +592,7 @@ export function ProfilePage() {
               />
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowPasswordDialog(false)} disabled={isLoading}>
               Cancel

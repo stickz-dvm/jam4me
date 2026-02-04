@@ -25,6 +25,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { WalletProvider } from "./context/WalletContext";
 import { PartyProvider } from "./context/PartyContext";
 import { SpotifyProvider } from "./context/SpotifyContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 // Protected route component for general users
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -84,67 +85,69 @@ function DjProtectedRoute({ children }: { children: React.ReactNode }) {
 // Main app with providers
 function AppWithProviders() {
   return (
-    <AuthProvider>
-      <WalletProvider>
-        <PartyProvider>
-          <SpotifyProvider>
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/music-demo" element={<MusicPosterDemo />} />
-                
-                {/* User protected routes */}
-                <Route element={
-                  <ProtectedRoute>
-                    <Layout />
-                  </ProtectedRoute>
-                }>
-                  <Route path="/onboarding" element={<OnboardingPage />} />
-                  <Route path="/home" element={<PartiesPage />} />
-                  <Route path="/parties" element={<PartiesPage />} />
-                  <Route path="/party/:passcode" element={<PartyDetailPage />} />
-                  <Route path="/wallet" element={<WalletPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/support" element={<SupportPage />} />
-                </Route>
-                
-                {/* DJ protected routes */}
-                <Route element={
-                  <DjProtectedRoute>
-                    <DjLayout />
-                  </DjProtectedRoute>
-                }>
-                  <Route path="/dj/onboarding" element={<DjOnboardingPage />} />
-                  <Route path="/dj/dashboard" element={<DjDashboardPage />} />
-                  <Route path="/dj/party/:partyId" element={<DjPartyManagementPage />} />
-                  <Route path="/dj/wallet" element={<DjWalletPage />} />
-                  <Route path="/dj/profile" element={<ProfilePage />} />
-                  <Route path="/dj/support" element={<DjSupportPage />} />
-                </Route>
-                
-                {/* Fallback route */}
-                <Route path="*" element={<Navigate to="/" />} />
-              </Routes>
-            </BrowserRouter>
-            <Toaster 
-              position="top-center"
-              toastOptions={{
-                style: {
-                  background: 'var(--card)',
-                  color: 'var(--card-foreground)',
-                  border: '1px solid var(--border)'
-                },
-                className: 'glass'
-              }}
-              expand  
-            />
-          </SpotifyProvider>
-        </PartyProvider>
-      </WalletProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <WalletProvider>
+          <PartyProvider>
+            <SpotifyProvider>
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/music-demo" element={<MusicPosterDemo />} />
+
+                  {/* User protected routes */}
+                  <Route element={
+                    <ProtectedRoute>
+                      <Layout />
+                    </ProtectedRoute>
+                  }>
+                    <Route path="/onboarding" element={<OnboardingPage />} />
+                    <Route path="/home" element={<PartiesPage />} />
+                    <Route path="/parties" element={<PartiesPage />} />
+                    <Route path="/party/:passcode" element={<PartyDetailPage />} />
+                    <Route path="/wallet" element={<WalletPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/support" element={<SupportPage />} />
+                  </Route>
+
+                  {/* DJ protected routes */}
+                  <Route element={
+                    <DjProtectedRoute>
+                      <DjLayout />
+                    </DjProtectedRoute>
+                  }>
+                    <Route path="/dj/onboarding" element={<DjOnboardingPage />} />
+                    <Route path="/dj/dashboard" element={<DjDashboardPage />} />
+                    <Route path="/dj/party/:partyId" element={<DjPartyManagementPage />} />
+                    <Route path="/dj/wallet" element={<DjWalletPage />} />
+                    <Route path="/dj/profile" element={<ProfilePage />} />
+                    <Route path="/dj/support" element={<DjSupportPage />} />
+                  </Route>
+
+                  {/* Fallback route */}
+                  <Route path="*" element={<Navigate to="/" />} />
+                </Routes>
+              </BrowserRouter>
+              <Toaster
+                position="top-center"
+                toastOptions={{
+                  style: {
+                    background: 'var(--card)',
+                    color: 'var(--card-foreground)',
+                    border: '1px solid var(--border)'
+                  },
+                  className: 'glass'
+                }}
+                expand
+              />
+            </SpotifyProvider>
+          </PartyProvider>
+        </WalletProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

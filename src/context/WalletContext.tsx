@@ -48,10 +48,7 @@ export type WalletContextType = {
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
-const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
-  { id: "pm-1", type: "paystack", lastFour: "N/A", name: "Paystack (Default)", isDefault: true },
-  { id: "pm-2", type: "bankAccount", lastFour: "1234", name: "GTBank Account", isDefault: false }
-];
+const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [];
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -130,21 +127,22 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       return null;
     }
 
-    // Only DJs have the balance endpoint
-    if (user.userType !== "HUB_DJ") {
-      return null;
-    }
+    // Fetching balance for both Users and DJs based on userType
+    const isDj = user.userType === "HUB_DJ";
+    const endpoint = isDj
+      ? "/dj_wallet/dj/check/wal_bal/user/"
+      : "/user_wallet/user/check/wal_bal/user/";
 
     try {
       // Add a small delay to ensure token is properly set
       await new Promise(resolve => setTimeout(resolve, 100));
-      
-      const response = await api.get("/dj_wallet/dj/check/wal/223/");
-      
+
+      const response = await api.post(endpoint, { user_id: user.id });
+
       if (response.data && typeof response.data.balance === "number") {
         return response.data.balance;
       }
-      
+
       console.warn("Balance not found in API response:", response.data);
       return null;
     } catch (error: any) {
@@ -154,7 +152,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         // Retry once after a delay
         await new Promise(resolve => setTimeout(resolve, 500));
         try {
-          const retryResponse = await api.get("/dj_wallet/dj/check/wal/223/");
+          const retryResponse = await api.post(endpoint, { user_id: user.id });
           if (retryResponse.data && typeof retryResponse.data.balance === "number") {
             return retryResponse.data.balance;
           }
@@ -163,15 +161,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         }
         return null;
       }
-      
+
       if (error.status === 403) {
         console.warn("⚠️ 403 when fetching balance - permission issue");
         return null;
       }
-      
+
       console.error("Error fetching wallet balance:", error);
       toast.error("Failed to fetch wallet balance");
-      
+
       return null;
     }
   };
@@ -185,31 +183,31 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       return null;
     }
 
-    // Only DJs have the transaction history endpoint
-    if (user.userType !== "HUB_DJ") {
-      return null;
-    }
+    const isDj = user.userType === "HUB_DJ";
+    const endpoint = isDj
+      ? "/dj_wallet/transaction_history/"
+      : "/user_wallet/transaction_history/";
 
     try {
-      const response = await api.get("/dj_wallet/transaction_history/");
-      
+      const response = await api.post(endpoint, { user_id: user.id });
+
       if (response.data && Array.isArray(response.data.transactions)) {
         return response.data.transactions.map((t: any) => ({
           ...t,
           date: new Date(t.date || t.created_at)
         }));
       }
-      
+
       console.warn("Transactions not found in API response:", response.data);
       return null;
     } catch (error: any) {
       console.error("Error fetching transaction history:", error);
-      
+
       // Don't show error toast on 401 (handled by interceptor)
       if (error.status !== 401) {
         toast.error("Failed to fetch transaction history");
       }
-      
+
       return null;
     }
   };
@@ -226,7 +224,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     try {
       // Add a small delay to ensure auth is settled
       await new Promise(resolve => setTimeout(resolve, 200));
-      
+
       // Fetch both balance and transaction history
       const [apiBalance, apiTransactions] = await Promise.all([
         fetchBalance(),
@@ -237,7 +235,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       if (apiBalance !== null) {
         setBalance(apiBalance);
       }
-      
+
       if (apiTransactions !== null) {
         setTransactions(apiTransactions);
       }
@@ -278,14 +276,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     // This prevents 401 errors immediately after login
     if (!hasFetchedDataRef.current) {
       hasFetchedDataRef.current = true;
-      
+
       // Wait 500ms for token to be properly set in axios interceptor
       const timer = setTimeout(() => {
         refreshWalletData().finally(() => {
           setIsInitialized(true);
         });
       }, 500);
-      
+
       return () => clearTimeout(timer);
     } else {
       setIsInitialized(true);
@@ -312,7 +310,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     try {
       // TODO: Replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       const newTransaction: Transaction = {
         id: `trx-${Date.now()}`,
         amount,
@@ -321,10 +319,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         date: new Date(),
         status: "completed"
       };
-      
+
       setBalance(prev => prev + amount);
       setTransactions(prev => [newTransaction, ...prev]);
-      
+
       toast.success(`Successfully added ₦${amount.toLocaleString()} to your wallet`);
     } finally {
       setIsLoading(false);
@@ -342,7 +340,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       toast.error("Insufficient funds");
       throw new Error("Insufficient funds");
     }
-    
+
     setIsLoading(true);
     try {
       const payload = {
@@ -352,7 +350,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         bank_code: bankDetails.bankCode,
         Transfer_currency: "NGN",
       };
-      
+
       await api.post("/transfer_out/", payload);
 
       const newTransaction: Transaction = {
@@ -363,10 +361,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         date: new Date(),
         status: "processing"
       };
-      
+
       setBalance(prev => prev - amount);
       setTransactions(prev => [newTransaction, ...prev]);
-      
+
       toast.success(`Withdrawal of ₦${amount.toLocaleString()} initiated successfully!`);
 
     } catch (error: any) {
@@ -388,12 +386,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       toast.error("Insufficient funds");
       throw new Error("Insufficient funds");
     }
-    
+
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Simulated pay logic until backed is fully integrated for direct payments
+      // await new Promise(resolve => setTimeout(resolve, 1000));
+
+
       const newTransaction: Transaction = {
         id: `trx-${Date.now()}`,
         amount,
@@ -405,10 +404,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         partyName,
         status: "completed"
       };
-      
+
       setBalance(prev => prev - amount);
       setTransactions(prev => [newTransaction, ...prev]);
-      
+
       return Promise.resolve();
     } finally {
       setIsLoading(false);
@@ -416,22 +415,22 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
 
   const receiveSongPayment = async (
-    amount: number, 
-    partyName: string, 
-    songTitle: string, 
-    artist: string, 
+    amount: number,
+    partyName: string,
+    songTitle: string,
+    artist: string,
     requestedBy: string
   ) => {
     if (!isAuthenticated || !user || user.userType !== "HUB_DJ") {
       toast.error("Only DJs can receive song payments");
       throw new Error("Only DJs can receive song payments");
     }
-    
+
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Simulated receive logic until backed is fully integrated
+      // await new Promise(resolve => setTimeout(resolve, 1000));
+
       const newTransaction: Transaction = {
         id: `trx-${Date.now()}`,
         amount,
@@ -444,10 +443,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         requestedBy,
         status: "completed"
       };
-      
+
       setBalance(prev => prev + amount);
       setTransactions(prev => [newTransaction, ...prev]);
-      
+
       return Promise.resolve();
     } finally {
       setIsLoading(false);
@@ -455,27 +454,27 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
 
   const refundSongPayment = async (
-    amount: number, 
-    partyName: string, 
-    songTitle: string, 
-    artist: string, 
+    amount: number,
+    partyName: string,
+    songTitle: string,
+    artist: string,
     requestedBy: string
   ) => {
     if (!isAuthenticated || !user || user.userType !== "HUB_DJ") {
       toast.error("Only DJs can issue refunds");
       throw new Error("Only DJs can issue refunds");
     }
-    
+
     if (amount > balance) {
       toast.error("Insufficient funds for refund");
       throw new Error("Insufficient funds for refund");
     }
-    
+
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Simulated refund logic until backed is fully integrated
+      // await new Promise(resolve => setTimeout(resolve, 1000));
+
       const newTransaction: Transaction = {
         id: `trx-${Date.now()}`,
         amount,
@@ -488,16 +487,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         requestedBy,
         status: "completed"
       };
-      
+
       setBalance(prev => prev - amount);
       setTransactions(prev => [newTransaction, ...prev]);
-      
+
       return Promise.resolve();
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const addFunds = async (amount: number) => {
     if (!isAuthenticated) {
       toast.error("Please login to add funds");
@@ -512,7 +511,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   };
-  
+
   const deductFunds = async (amount: number) => {
     if (!isAuthenticated) {
       toast.error("Please login to deduct funds");
@@ -523,7 +522,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       toast.error("Insufficient funds");
       throw new Error("Insufficient funds");
     }
-    
+
     setIsLoading(true);
     try {
       setBalance(prev => prev - amount);
@@ -543,20 +542,20 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     try {
       // TODO: Replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       const newMethod: PaymentMethod = {
         ...method,
         id: `pm-${Date.now()}`
       };
-      
+
       if (newMethod.isDefault) {
-        setPaymentMethods(prev => 
+        setPaymentMethods(prev =>
           prev.map(pm => ({ ...pm, isDefault: false })).concat(newMethod)
         );
       } else {
         setPaymentMethods(prev => [...prev, newMethod]);
       }
-      
+
       toast.success("Payment method added successfully");
     } finally {
       setIsLoading(false);
@@ -573,23 +572,23 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     try {
       // TODO: Replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       const method = paymentMethods.find(m => m.id === methodId);
       if (!method) {
         throw new Error("Payment method not found");
       }
-      
+
       setPaymentMethods(prev => prev.filter(m => m.id !== methodId));
-      
+
       if (method.isDefault && paymentMethods.length > 1) {
         const remaining = paymentMethods.filter(m => m.id !== methodId);
         if (remaining.length > 0) {
-          setPaymentMethods(prev => 
+          setPaymentMethods(prev =>
             prev.map((m, i) => i === 0 ? { ...m, isDefault: true } : m)
           );
         }
       }
-      
+
       toast.success("Payment method removed successfully");
     } finally {
       setIsLoading(false);
@@ -604,18 +603,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // TODO: Implement API call for setting default payment method if available
       const method = paymentMethods.find(m => m.id === methodId);
       if (!method) {
         throw new Error("Payment method not found");
       }
-      
-      setPaymentMethods(prev => 
+
+      setPaymentMethods(prev =>
         prev.map(m => ({ ...m, isDefault: m.id === methodId }))
       );
-      
+
       toast.success(`${method.name} set as default payment method`);
     } finally {
       setIsLoading(false);

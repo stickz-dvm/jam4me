@@ -23,7 +23,7 @@ export function PartiesPage() {
 
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const containerRef = useRef(null);
-  
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -32,11 +32,11 @@ export function PartiesPage() {
       .toUpperCase()
       .substring(0, 2);
   };
-  
+
   const getDjAvatarUrl = (djId: string) => {
     return `https://api.dicebear.com/7.x/avataaars/svg?seed=${djId}`;
   };
-  
+
   if (!user) {
     navigate("/login");
     return null;
@@ -59,7 +59,7 @@ export function PartiesPage() {
     )
 
     const onScanSuccess: QrcodeSuccessCallback = (decodedText, decodedResult) => {
-      const partyId = decodedText.match(/party\/([a-z0-9]+)/)?.[1] || decodedText;
+      const partyId = decodedText.match(/(?:party\/|jam4me-party-)([a-z0-9]+)/)?.[1] || decodedText;
 
       if (partyId) {
         setScanResult(partyId);
@@ -93,19 +93,19 @@ export function PartiesPage() {
       setJoinError("Please enter a passcode");
       return;
     }
-    
+
     try {
       setJoinError("");
-      
+
       // Wait for the party to be joined and state to update
       await joinParty(passcode);
-      
+
       // Add a small delay to ensure state has propagated
       setTimeout(() => {
         console.log("Navigating to party:", passcode);
         navigate(`/party/${passcode}`);
       }, 1000);
-      
+
       // Close the dialog
       setShowJoinDialog(false);
     } catch (err: any) {
@@ -142,13 +142,13 @@ export function PartiesPage() {
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="space-y-6"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      <motion.div 
+      <motion.div
         className="flex justify-between items-center"
         variants={itemVariants}
       >
@@ -160,18 +160,18 @@ export function PartiesPage() {
       </motion.div>
 
       {joinedParties.length > 0 ? (
-        <motion.div 
+        <motion.div
           className="grid gap-4 grid-cols-1 md:grid-cols-2"
           variants={containerVariants}
         >
           {joinedParties.map((party) => (
-            <motion.div 
-              key={party.id} 
+            <motion.div
+              key={party.id}
               variants={itemVariants}
               whileHover={{ y: -5 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
-              <Card 
+              <Card
                 className="cursor-pointer hover:shadow-md transition-shadow glass border-border/50"
                 onClick={() => navigate(`/party/${party.id}`)}
               >
@@ -217,7 +217,7 @@ export function PartiesPage() {
           ))}
         </motion.div>
       ) : (
-        <motion.div 
+        <motion.div
           className="flex flex-col items-center justify-center py-12 text-center glass rounded-xl p-8 border border-border/50"
           variants={itemVariants}
         >
@@ -246,14 +246,14 @@ export function PartiesPage() {
               Enter the party passcode or scan the QR code to join
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             {joinError && (
               <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm">
                 {joinError}
               </div>
             )}
-            
+
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label htmlFor="passcode">Party Passcode</label>
@@ -277,7 +277,7 @@ export function PartiesPage() {
               </div>
               <p className="text-xs text-muted-foreground">Available codes for demo: "123456", "654321"</p>
             </div>
-            
+
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-border" />
@@ -288,7 +288,7 @@ export function PartiesPage() {
                 </span>
               </div>
             </div>
-            
+
             <Button variant="outline" className="w-full" onClick={() => setShowScanner(!showScanner)}>
               <QrCode className="w-4 h-4 mr-2" />
               {showScanner ? "Hide Scanner" : "Scan QR Code"}
@@ -302,9 +302,9 @@ export function PartiesPage() {
           </div>
 
           <DialogFooter>
-            <Button 
-              onClick={handleJoinParty} 
-              disabled={isLoading || passcode.length !== 6} 
+            <Button
+              onClick={handleJoinParty}
+              disabled={isLoading || passcode.length !== 6}
               className={`${passcode.length === 6 ? 'glow' : ''}`}
             >
               {isLoading ? "Joining..." : "Join Party"}

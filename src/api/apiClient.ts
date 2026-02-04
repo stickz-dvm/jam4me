@@ -4,6 +4,7 @@ import axios, {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
+import { toast } from "sonner";
 import { ApiError } from "./types";
 
 const apiClient: AxiosInstance = axios.create({
@@ -50,8 +51,8 @@ const clearAuthData = () => {
 const PUBLIC_ROUTES = [
   "/user_wallet/crt_ur/",
   "/dj_wallet/crt_ur/",
-  "/user_wallet/us_log/", 
-  "/dj_wallet/us_log/",   
+  "/user_wallet/us_log/",
+  "/dj_wallet/us_log/",
   "/user_wallet/forgot_password/",
   "/auth/login",
   "/auth/register",
@@ -87,18 +88,9 @@ apiClient.interceptors.request.use(
 
     // Add token to headers
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
-    
-    console.log("Request interceptor:", {
-      url: config.url,
-      method: config.method,
-      hasToken: !!token,
-      tokenPreview: token ? token.substring(0, 10) + "..." : "null",
-      tokenLength: token?.length || 0
-    });
-    
+
     if (token && config.headers) {
       config.headers.Authorization = `Token ${token}`;
-      console.log("Token added to request headers");
     } else if (!isPublicRoute(config.url)) {
       // Token missing for protected route
       console.warn("No auth token found for protected route:", config.url);
@@ -147,28 +139,33 @@ apiClient.interceptors.response.use(
         customError.message = data.message as string;
       } else {
         switch (status) {
+          case 400:
+            customError.message = "Bad Request - Please check your input";
+            break;
           case 401:
             customError.message = "Session expired - Please login again";
-            
-            const isAuthEndpoint = error.config?.url?.includes("/log/") || 
-                                   error.config?.url?.includes("/auth/");
-            
+
+            const isAuthEndpoint = error.config?.url?.includes("/log/") ||
+              error.config?.url?.includes("/auth/");
+
             if (!isPublicRoute(error.config?.url) && !isAuthEndpoint) {
               console.warn("401 error but NOT clearing auth (might be permission issue)");
-              // Don't clear auth - this might just be a permission error
               break;
             }
-            
+
             // Only clear and redirect for actual auth failures
             clearAuthData();
-            
+
             // Prevent redirect loop
             if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
-              console.log("401 on auth endpoint - redirecting to login");
               setTimeout(() => {
                 window.location.href = "/login";
               }, 100);
             }
+            break;
+
+          case 402:
+            customError.message = "Payment Failed - Please verify your payment details";
             break;
 
           case 403:
@@ -191,7 +188,9 @@ apiClient.interceptors.response.use(
             customError.message = "Server error - Please try again later";
             break;
 
+          case 502:
           case 503:
+          case 504:
             customError.message = "Service unavailable - Please try again later";
             break;
 
@@ -199,25 +198,25 @@ apiClient.interceptors.response.use(
             customError.message = error.message || "An unexpected error occurred";
         }
       }
+
+      // Global Toast for critical errors
+      if (status >= 500 || status === 402 || status === 0) {
+        toast.error(customError.message);
+      }
+
     } else if (error.request) {
       // Network error
       customError.message = "Network error - Please check your connection";
       customError.code = "NETWORK_ERROR";
+      toast.error(customError.message);
     } else {
-      // Other errors (setup, etc.)
+      // Other errors
       customError.message = error.message || "Request failed";
+      toast.error(customError.message);
     }
 
-    // Enhanced logging in development
     if (import.meta.env.DEV) {
-      console.error("API Error:", {
-        url: error.config?.url,
-        method: error.config?.method,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        customError,
-      });
+      console.error("API Error:", { ...customError });
     }
 
     return Promise.reject(customError);

@@ -20,7 +20,7 @@ export function DjWalletPage() {
   const [accountNumber, setAccountNumber] = useState("");
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  
+
   // My new states for handling the withdrawal form
   const [banks, setBanks] = useState<{ name: string; code: string }[]>([]);
   const [selectedBankCode, setSelectedBankCode] = useState("");
@@ -35,7 +35,7 @@ export function DjWalletPage() {
       try {
         // Add a small delay to ensure auth is fully initialized
         await new Promise(resolve => setTimeout(resolve, 200));
-        
+
         const response = await apiClient.get("/user_wallet/list_banks/");
         if (response.data && Array.isArray(response.data.data)) {
           setBanks(response.data.data);
@@ -116,7 +116,7 @@ export function DjWalletPage() {
     }
 
     setIsWithdrawing(true);
-    
+
     try {
       // Call the real 'withdrawFunds' function from the WalletContext
       await withdrawFunds(parseFloat(withdrawAmount), {
@@ -132,7 +132,7 @@ export function DjWalletPage() {
       setAccountNumber("");
       setAccountName("");
       setIsVerified(false);
-      
+
     } catch (error) {
       console.error("Withdrawal failed:", error);
       toast.error("Withdrawal failed. Please try again.");
@@ -154,11 +154,11 @@ export function DjWalletPage() {
   const totalEarned = transactions
     .filter(tx => tx.type === "songPayment")
     .reduce((sum, tx) => sum + tx.amount, 0);
-  
+
   const totalWithdrawn = transactions
     .filter(tx => tx.type === "withdrawal" && tx.status === "completed")
     .reduce((sum, tx) => sum + tx.amount, 0);
-  
+
   const pendingWithdrawals = transactions
     .filter(tx => tx.type === "withdrawal" && tx.status === "processing")
     .reduce((sum, tx) => sum + tx.amount, 0);
@@ -257,6 +257,7 @@ export function DjWalletPage() {
                           onChange={(e) => {
                             const value = e.target.value.replace(/\D/g, '');
                             setAccountNumber(value);
+                            // Seamless verification: trigger when 10 digits are entered
                             if (value.length === 10 && selectedBankCode) {
                               handleVerifyAccount(value);
                             }
@@ -269,7 +270,7 @@ export function DjWalletPage() {
                     </div>
 
                     {/* Verification Status Display */}
-                    { (isVerifying || isVerified || verificationError) && (
+                    {(isVerifying || isVerified || verificationError) && (
                       <div className="grid grid-cols-4 items-center gap-4">
                         <div className="col-start-2 col-span-3 text-sm">
                           {isVerifying && (
@@ -293,18 +294,18 @@ export function DjWalletPage() {
                     )}
                   </div>
                   <DialogFooter>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => setIsDialogOpen(false)}
                     >
                       Cancel
                     </Button>
-                    <Button 
-                      onClick={handleWithdraw} 
+                    <Button
+                      onClick={handleWithdraw}
                       disabled={
-                        isWithdrawing || 
-                        !isVerified || 
-                        !withdrawAmount || 
+                        isWithdrawing ||
+                        !isVerified ||
+                        !withdrawAmount ||
                         parseFloat(withdrawAmount) > balance
                       }
                     >
@@ -360,7 +361,7 @@ export function DjWalletPage() {
             <TabsTrigger value="earnings">Earnings</TabsTrigger>
             <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="all">
             <Card className="bg-card/80 backdrop-blur-sm border-border/50">
               <CardHeader>
@@ -370,16 +371,15 @@ export function DjWalletPage() {
               <CardContent>
                 <div className="space-y-4">
                   {transactions.map((tx) => (
-                    <div 
-                      key={tx.id} 
+                    <div
+                      key={tx.id}
                       className="flex items-center justify-between p-4 rounded-lg bg-muted/30 backdrop-blur-sm"
                     >
                       <div className="flex items-center space-x-4">
-                        <div className={`p-2 rounded-full ${
-                          tx.type === "songPayment" 
-                            ? "bg-green-500/20 text-green-500" 
+                        <div className={`p-2 rounded-full ${tx.type === "songPayment"
+                            ? "bg-green-500/20 text-green-500"
                             : "bg-primary/20 text-primary"
-                        }`}>
+                          }`}>
                           {tx.type === "songPayment" ? (
                             <ArrowDownIcon className="h-5 w-5" />
                           ) : (
@@ -421,7 +421,7 @@ export function DjWalletPage() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="earnings">
             <Card className="bg-card/80 backdrop-blur-sm border-border/50">
               <CardHeader>
@@ -433,8 +433,8 @@ export function DjWalletPage() {
                   {transactions
                     .filter(tx => tx.type === "songPayment")
                     .map((tx) => (
-                      <div 
-                        key={tx.id} 
+                      <div
+                        key={tx.id}
                         className="flex items-center justify-between p-4 rounded-lg bg-muted/30 backdrop-blur-sm"
                       >
                         <div className="flex items-center space-x-4">
@@ -462,7 +462,7 @@ export function DjWalletPage() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="withdrawals">
             <Card className="bg-card/80 backdrop-blur-sm border-border/50">
               <CardHeader>
@@ -474,8 +474,8 @@ export function DjWalletPage() {
                   {transactions
                     .filter(tx => tx.type === "withdrawal")
                     .map((tx) => (
-                      <div 
-                        key={tx.id} 
+                      <div
+                        key={tx.id}
                         className="flex items-center justify-between p-4 rounded-lg bg-muted/30 backdrop-blur-sm"
                       >
                         <div className="flex items-center space-x-4">
