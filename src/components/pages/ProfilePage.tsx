@@ -47,39 +47,54 @@ export function ProfilePage() {
 
     setIsLoading(true);
     try {
-      // 1. Update Profile Information (Text)
-      const textEndpoint = user?.userType === "user" ? "/user_wallet/edit/profile/" : "dj/edit/profile/";
-      // Payload based on endpoint description
-      const textPayload = { dj_name: user?.username, new_username: username };
+      const isDj = user?.userType === "HUB_DJ";
 
+      // 1. Update Profile Information (Text)
+      const textEndpoint = isDj ? "dj/edit/profile/" : "/user_wallet/edit/profile/";
+      const textPayload = isDj
+        ? { dj_name: user?.username, new_username: username }
+        : { username: user?.username, new_username: username };
+
+      console.log(`Updating profile text at ${textEndpoint}`, textPayload);
       await api.post(textEndpoint, textPayload);
 
       // 2. Update Profile Picture (if changed)
       if (imagePreviewUrl && selectedImage) {
-        const photoEndpoint = "dj/edit/profile/photo/"; // Using the documented endpoint
-        // NOTE: Endpoint expects a URL string according to doc, but usually file upload needs FormData or pre-upload.
-        // Assuming strict adherence to doc: "profile_picture": "string (URL)". 
-        // If the backend expects a file upload, this might need FormData.
-        // Given existing context hint "In a real app, you would upload... for now we'll just use local preview",
-        // I will honor the explicit USER REQ to use the endpoint.
+        // Use dj endpoint or guess user endpoint following the pattern
+        const photoEndpoint = isDj ? "dj/edit/profile/photo/" : "/user_wallet/edit/profile/photo/";
 
-        // Since the doc says "string (URL)", one strategy is we might need to upload to cloud first or send base64?
-        // IF the backend actually handles a file, we usually use FormData. 
-        // Let's assume for now we send the base64 string or null if not handled, 
-        // BUT strictly following the doc: {'dj_name': 'string', 'profile_picture': 'string (URL)'}
+        console.log(`Updating profile photo at ${photoEndpoint}`);
 
-        // Let's try sending the data URL directly as 'profile_picture' as a best guess for "string (URL)" 
-        // without an actual S3 uploader present in instructions.
-        await api.post(photoEndpoint, {
-          dj_name: username, // Use the NEW username as we just updated it
-          profile_picture: imagePreviewUrl
-        });
+        // We'll try BOTH FormData and JSON to be safe, but usually files need FormData
+        const formData = new FormData();
+        if (isDj) {
+          formData.append('dj_name', username);
+        } else {
+          formData.append('username', username);
+        }
+        formData.append('profile_picture', selectedImage);
+
+        try {
+          await api.post(photoEndpoint, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+        } catch (photoError: any) {
+          console.error("Photo upload failed with FormData, trying JSON with Base64 as fallback...", photoError);
+          // Fallback to JSON with base64 if FormData fails (some backends are weird)
+          const fallbackPayload = isDj
+            ? { dj_name: username, profile_picture: imagePreviewUrl }
+            : { username: username, profile_picture: imagePreviewUrl };
+
+          await api.post(photoEndpoint, fallbackPayload);
+        }
       }
 
       // Update local state
       const updatedProfile = {
         username,
-        avatar: imagePreviewUrl || user?.avatar // Optimistic update
+        avatar: imagePreviewUrl || user?.avatar
       };
 
       updateUserProfile(updatedProfile);
@@ -87,9 +102,11 @@ export function ProfilePage() {
       setSelectedImage(null);
       setImagePreviewUrl(null);
       toast.success("Profile updated successfully!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating profile:", error);
-      setError("Failed to update profile. Please try again.");
+      const msg = error.response?.data?.message || "Failed to update profile. Please try again.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }

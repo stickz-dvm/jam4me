@@ -160,8 +160,14 @@ export function WalletPage() {
         bank_code: bank.code,
       });
 
-      if (response.data && response.data.account_name) {
-        setAccountName(response.data.account_name);
+      const accountNameFromApi =
+        response.data?.account_name ||
+        response.data?.data?.account_name ||
+        response.data?.accountName ||
+        response.data?.data?.accountName;
+
+      if (response.data && accountNameFromApi) {
+        setAccountName(accountNameFromApi);
         setIsVerified(true);
         toast.success("Account verified!");
       } else {
@@ -215,9 +221,10 @@ export function WalletPage() {
         toast.error("Could not create a payment session. Please try again.");
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating Paystack session:", error);
-      toast.error("Something went wrong. Could not connect to payment service.");
+      const errorMessage = error.response?.data?.message || error.message || "Could not connect to payment service.";
+      toast.error(`Payment Service Error: ${errorMessage}`);
     } finally {
       setIsProcessing(false);
     }

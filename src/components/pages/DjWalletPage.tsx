@@ -86,8 +86,14 @@ export function DjWalletPage() {
         bank_code: selectedBankCode,
       });
 
-      if (response.data && response.data.account_name) {
-        setAccountName(response.data.account_name);
+      const accountNameFromApi =
+        response.data?.account_name ||
+        response.data?.data?.account_name ||
+        response.data?.accountName ||
+        response.data?.data?.accountName;
+
+      if (response.data && accountNameFromApi) {
+        setAccountName(accountNameFromApi);
         setIsVerified(true);
         toast.success("Account verified!");
       } else {
@@ -377,8 +383,8 @@ export function DjWalletPage() {
                     >
                       <div className="flex items-center space-x-4">
                         <div className={`p-2 rounded-full ${tx.type === "songPayment"
-                            ? "bg-green-500/20 text-green-500"
-                            : "bg-primary/20 text-primary"
+                          ? "bg-green-500/20 text-green-500"
+                          : "bg-primary/20 text-primary"
                           }`}>
                           {tx.type === "songPayment" ? (
                             <ArrowDownIcon className="h-5 w-5" />
