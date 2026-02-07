@@ -22,6 +22,7 @@ export const api = {
     headers: res.headers,
     config: res.config
   })),
+
     
   put: <T = any>(url: string, data?: any, config?: any): Promise<ApiResponse<T>> =>
     apiClient.put<T>(url, data, config).then(res => ({
