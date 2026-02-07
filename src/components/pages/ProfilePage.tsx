@@ -51,44 +51,27 @@ export function ProfilePage() {
 
       // 1. Update Profile Information (Text)
       const textEndpoint = isDj ? "dj/edit/profile/" : "/user_wallet/edit/profile/";
-      const textPayload = isDj
-        ? { dj_name: user?.username, new_username: username }
-        : { username: user?.username, new_username: username };
+      // Use user_id as it seems to be the backend standard
+      const textPayload = {
+        user_id: user?.id,
+        new_username: username
+      };
 
       console.log(`Updating profile text at ${textEndpoint}`, textPayload);
       await api.post(textEndpoint, textPayload);
 
       // 2. Update Profile Picture (if changed)
-      if (imagePreviewUrl && selectedImage) {
-        // Use dj endpoint or guess user endpoint following the pattern
+      if (imagePreviewUrl) {
+        // Use dj endpoint or user endpoint
         const photoEndpoint = isDj ? "dj/edit/profile/photo/" : "/user_wallet/edit/profile/photo/";
 
-        console.log(`Updating profile photo at ${photoEndpoint}`);
+        const photoPayload = {
+          user_id: user?.id,
+          profile_picture: imagePreviewUrl // This is the base64 string
+        };
 
-        // We'll try BOTH FormData and JSON to be safe, but usually files need FormData
-        const formData = new FormData();
-        if (isDj) {
-          formData.append('dj_name', username);
-        } else {
-          formData.append('username', username);
-        }
-        formData.append('profile_picture', selectedImage);
-
-        try {
-          await api.post(photoEndpoint, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
-        } catch (photoError: any) {
-          console.error("Photo upload failed with FormData, trying JSON with Base64 as fallback...", photoError);
-          // Fallback to JSON with base64 if FormData fails (some backends are weird)
-          const fallbackPayload = isDj
-            ? { dj_name: username, profile_picture: imagePreviewUrl }
-            : { username: username, profile_picture: imagePreviewUrl };
-
-          await api.post(photoEndpoint, fallbackPayload);
-        }
+        console.log(`Updating profile photo at ${photoEndpoint}`, { ...photoPayload, profile_picture: "base64..." });
+        await api.post(photoEndpoint, photoPayload);
       }
 
       // Update local state
