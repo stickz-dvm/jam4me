@@ -553,15 +553,20 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
 
     try {
-      const response = await api.post("/user_wallet/jo/_hub/", {
+      // NOTE: Using 'join_hub/' endpoint from endpoint.txt for better compliance
+      // Payload: {'user_id': 'int', 'hub_id': 'int'}
+      // We send both hub_id and join_code just in case the backend uses either
+      const response = await api.post("join_hub/", {
         user_id: Number(user.id),
+        hub_id: Number(passcode),
         join_code: Number(passcode)
       });
 
-      console.log("API Response:", response);
+      console.log("Join Hub Response:", response);
 
-      if (response.status === 200 && response.data.data) {
-        const data = response.data.data;
+      if (response.status === 200) {
+        // Handle both response.data and response.data.data mapping
+        const data = response.data.data || response.data;
 
         // Create the party object
         const newParty: Party = {
