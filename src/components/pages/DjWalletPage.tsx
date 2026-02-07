@@ -86,21 +86,35 @@ export function DjWalletPage() {
         bank_code: selectedBankCode,
       });
 
-      const accountNameFromApi =
-        response.data?.account_name ||
-        response.data?.data?.account_name ||
-        response.data?.accountName ||
-        response.data?.data?.accountName;
+      // Log the full response for debugging
+      console.log("Full DJ Verification Response Object:", response);
+      console.log("Response Body (data):", response.data);
 
-      if (response.data && accountNameFromApi) {
+      const responseBody = response.data;
+
+      // The dev confirmed the structure is { "data": { "account_name": "..." } }
+      // So we check responseBody.data.account_name first
+      const accountNameFromApi =
+        responseBody?.data?.account_name ||
+        responseBody?.account_name ||
+        responseBody?.data?.name ||
+        responseBody?.name ||
+        responseBody?.accountName ||
+        responseBody?.data?.accountName;
+
+      if (responseBody && accountNameFromApi) {
         setAccountName(accountNameFromApi);
         setIsVerified(true);
-        toast.success("Account verified!");
+        toast.success("Account verified: " + accountNameFromApi);
       } else {
-        setVerificationError("Verification successful, but no account name was returned.");
+        console.warn("Could not find account name in response body:", responseBody);
+        // If we got a 200 but couldn't find the name, let's show what we DID get
+        const rawInfo = responseBody?.data ? JSON.stringify(responseBody.data) : JSON.stringify(responseBody);
+        setVerificationError(`Account found but name hidden. Response: ${rawInfo.substring(0, 50)}...`);
       }
     } catch (error: any) {
-      const message = error.message || "Verification failed. Please check the details.";
+      console.error("DJ Verification Error:", error);
+      const message = error.response?.data?.message || error.message || "Verification failed. Please check the details.";
       setVerificationError(message);
       toast.error(message);
     } finally {
