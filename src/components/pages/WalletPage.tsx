@@ -160,21 +160,32 @@ export function WalletPage() {
         bank_code: bank.code,
       });
 
-      const accountNameFromApi =
-        response.data?.account_name ||
-        response.data?.data?.account_name ||
-        response.data?.accountName ||
-        response.data?.data?.accountName;
+      // Log the full response for debugging
+      console.log("Full Verification Response Object:", response);
+      console.log("Response Body (data):", response.data);
 
-      if (response.data && accountNameFromApi) {
+      const responseBody = response.data;
+
+      // The dev confirmed the structure is { "data": { "account_name": "..." } }
+      const accountNameFromApi =
+        responseBody?.data?.account_name ||
+        responseBody?.account_name ||
+        responseBody?.data?.accountName ||
+        responseBody?.accountName ||
+        responseBody?.name ||
+        responseBody?.data?.name;
+
+      if (responseBody && accountNameFromApi) {
         setAccountName(accountNameFromApi);
         setIsVerified(true);
-        toast.success("Account verified!");
+        toast.success("Account verified: " + accountNameFromApi);
       } else {
-        setVerificationError("Verification successful, but no account name was returned.");
+        console.warn("Could not find account name in response body:", responseBody);
+        const rawInfo = responseBody?.data ? JSON.stringify(responseBody.data) : JSON.stringify(responseBody);
+        setVerificationError(`Account found but name hidden. Body: ${rawInfo.substring(0, 50)}...`);
       }
     } catch (error: any) {
-      const message = error.message || "Verification failed. Please check the details.";
+      const message = error.response?.data?.message || error.message || "Verification failed. Please check the details.";
       setVerificationError(message);
       toast.error(message);
     } finally {
@@ -206,7 +217,7 @@ export function WalletPage() {
       const amountAsNumber = parseFloat(fundAmount);
       // Confirmed endpoint from endpoint.txt
       const response = await apiClient.post('/create_paystack_checkout_session/', {
-        user_id: user.id,
+        user_id: parseInt(user.id.toString(), 10), // Ensure it's an integer
         amount: amountAsNumber,
       });
 
