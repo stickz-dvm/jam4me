@@ -58,36 +58,52 @@ export function ProfilePage() {
       };
 
       console.log(`Updating profile text at ${textEndpoint}`, textPayload);
-      await api.post(textEndpoint, textPayload);
+      const textResponse = await api.post(textEndpoint, textPayload);
+      console.log("Profile text update response:", textResponse);
 
       // 2. Update Profile Picture (if changed)
       if (imagePreviewUrl) {
         // Use dj endpoint or user endpoint
         const photoEndpoint = isDj ? "dj/edit/profile/photo/" : "/user_wallet/edit/profile/photo/";
 
-        const photoPayload = {
+        // Some backends might want user_id, others might want dj_name/username
+        // We'll prepare a broad payload to be safe
+        const photoPayload: any = {
           user_id: user?.id,
           profile_picture: imagePreviewUrl // This is the base64 string
         };
 
+        if (isDj) {
+          photoPayload.dj_name = username || user?.username;
+        } else {
+          photoPayload.username = username || user?.username;
+        }
+
         console.log(`Updating profile photo at ${photoEndpoint}`, { ...photoPayload, profile_picture: "base64..." });
-        await api.post(photoEndpoint, photoPayload);
+        const photoResponse = await api.post(photoEndpoint, photoPayload);
+        console.log("Profile photo update response:", photoResponse);
       }
 
-      // Update local state
+      // Update local state - ensure avatar is updated from imagePreviewUrl if it was set
       const updatedProfile = {
-        username,
+        username: username,
         avatar: imagePreviewUrl || user?.avatar
       };
 
+      console.log("Updating local profile state:", updatedProfile);
       updateUserProfile(updatedProfile);
-      setShowEditDialog(false);
-      setSelectedImage(null);
-      setImagePreviewUrl(null);
+
       toast.success("Profile updated successfully!");
+
+      // Small delay for better UX and state flush
+      setTimeout(() => {
+        setShowEditDialog(false);
+        setSelectedImage(null);
+        setImagePreviewUrl(null);
+      }, 500);
     } catch (error: any) {
       console.error("Error updating profile:", error);
-      const msg = error.response?.data?.message || "Failed to update profile. Please try again.";
+      const msg = error.response?.data?.message || error.message || "Failed to update profile. Please try again.";
       setError(msg);
       toast.error(msg);
     } finally {

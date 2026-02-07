@@ -28,7 +28,7 @@ const storage = {
       const userString = JSON.stringify(user);
       localStorage.setItem(USER_KEY, userString);
       localStorage.setItem(USER_TYPE_KEY, user.userType);
-      
+
       // Verify write succeeded
       const verification = localStorage.getItem(USER_KEY);
       if (!verification) {
@@ -65,7 +65,7 @@ const storage = {
       localStorage.setItem(AUTH_TOKEN_KEY, token);
       const expiry = Date.now() + TOKEN_EXPIRY_DURATION;
       localStorage.setItem(TOKEN_EXPIRY_KEY, expiry.toString());
-      
+
       // Verify write succeeded
       const verification = localStorage.getItem(AUTH_TOKEN_KEY);
       if (!verification) {
@@ -95,7 +95,7 @@ const storage = {
     try {
       const expiry = localStorage.getItem(TOKEN_EXPIRY_KEY);
       if (!expiry) return true;
-      
+
       const isExpired = Date.now() > parseInt(expiry, 10);
       if (isExpired) {
         console.log("⏰ Token has expired");
@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initializeAuth = () => {
       console.log("AuthContext: Initializing...");
-      
+
       try {
         const token = storage.getToken();
         const isExpired = storage.isTokenExpired();
@@ -222,16 +222,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return response;
         }
 
+        const apiUser = response.data.user;
+        const profilePicture = apiUser.profile_picture || apiUser.avatar || apiUser.photo || apiUser.image || apiUser.avatar_url || apiUser.profile_photo;
+
         const userData: User = {
-          id: response.data.user.id,
-          username: response.data.user.username,
+          id: apiUser.id,
+          username: apiUser.username,
           userType: user_status,
-          email: response.data.user.email,
-          avatar: response.data.user.profile_picture,
+          email: apiUser.email,
+          avatar: profilePicture,
         };
 
-        console.log("Saving auth data...");
-        console.log("User:", userData);
+        console.log("Login User Data mapped:", userData);
+        console.log("Full API User object:", apiUser);
 
         // CRITICAL: Save to localStorage FIRST (synchronous)
         storage.setUser(userData);
@@ -241,7 +244,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const savedUser = storage.getUser();
         const savedToken = storage.getToken();
         const savedUserType = localStorage.getItem(USER_TYPE_KEY);
-        
+
         console.log("Verification:", {
           userSaved: !!savedUser,
           tokenSaved: !!savedToken,
@@ -324,7 +327,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   //     return response;
   //   } catch (error: any) {
   //     console.error("Registration error:", error);
-      
+
   //     if (
   //       error.status === 400 &&
   //       error.originalError?.error === "username already exists"
@@ -348,7 +351,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ): Promise<ApiResponse> => {
     console.log("Registration attempt:", { username, email, user_status });
     setIsLoading(true);
-    
+
     try {
       const endpoint =
         user_status === "user"
@@ -399,7 +402,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return response;
     } catch (error: any) {
       console.error("Registration error:", error);
-      
+
       if (
         error.status === 400 &&
         error.originalError?.error === "username already exists"
