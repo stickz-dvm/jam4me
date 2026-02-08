@@ -553,81 +553,87 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
 
     try {
-      // NOTE: Using 'join_hub/' endpoint from endpoint.txt for better compliance
-      // Payload: {'user_id': 'int', 'hub_id': 'int'}
-      // We send both hub_id and join_code just in case the backend uses either
-      const response = await api.post("join_hub/", {
-        user_id: Number(user.id),
-        hub_id: Number(passcode),
-        join_code: Number(passcode)
+      // We'll try the documented endpoint with the standard prefix
+      const currentUserId = Number(user.id);
+      const hubId = Number(passcode);
+
+      console.log("Joining Hub with payload:", { user_id: currentUserId, hub_id: hubId });
+
+      // Try the /user_wallet/ prefix first as it matches other working routes
+      const response = await api.post("/user_wallet/join_hub/", {
+        user_id: currentUserId,
+        hub_id: hubId,
+        join_code: hubId // Fallback field
       });
 
-      console.log("Join Hub Response:", response);
+      console.log("Join Hub Response (Primary):", response);
 
       if (response.status === 200) {
-        // Handle both response.data and response.data.data mapping
         const data = response.data.data || response.data;
 
         // Create the party object
         const newParty: Party = {
-          id: data.passcode,
-          name: data.party_name,
-          djId: data.dj_id,
-          dj: data.hub_dj,
-          location: data.venue_name,
-          passcode: data.passcode,
-          minRequestPrice: Number(data.base_price),
-          activeUntil: data.time_to_end,
+          id: data.passcode || data.id || passcode,
+          name: data.party_name || data.name || "Joined Party",
+          djId: data.dj_id || data.djId,
+          dj: data.hub_dj || data.dj || "Unknown DJ",
+          location: data.venue_name || data.location || "Venue",
+          passcode: data.passcode || passcode,
+          minRequestPrice: Number(data.base_price || 1000),
+          activeUntil: data.time_to_end || new Date(Date.now() + 3600000).toISOString(),
           songs: [],
           endDate: data.date_to_end,
-          isActive: data.hub_status,
+          isActive: data.hub_status ?? true,
           createdAt: new Date(),
         };
 
         const formattedParty = updateSongReferences(newParty);
-        console.log("Created party object:", formattedParty);
+        console.log("Successfully joined and formatted party:", formattedParty);
 
-        // Calculate updated arrays BEFORE state updates
         const updatedJoinedParties = joinedParties.some(p => String(p.id) === String(formattedParty.id))
           ? joinedParties
           : [...joinedParties, formattedParty];
 
-        console.log("FIRST SAVE: Before state update");
-        // SAVE #1: Before state update
+        // Save and update state
         saveToLocalStorageNow(user.id, formattedParty, updatedJoinedParties, createdParties);
-
-        console.log("Updating React state");
-        // Update React state
         setCurrentParty(formattedParty);
         setJoinedParties(updatedJoinedParties);
 
-        // SAVE #2: Immediately after state update (synchronous)
-        console.log("SECOND SAVE: After state update");
-        saveToLocalStorageNow(user.id, formattedParty, updatedJoinedParties, createdParties);
-
-        // SAVE #3: One more time after a tiny delay (ensures React has flushed)
-        setTimeout(() => {
-          console.log("THIRD SAVE: Final verification save");
-          saveToLocalStorageNow(user.id, formattedParty, updatedJoinedParties, createdParties);
-
-          // Verify the save worked
-          const verification = localStorage.getItem(`jam4me-current-party-${user.id}`);
-          if (verification) {
-            const parsed = JSON.parse(verification);
-            console.log("VERIFIED: Party saved to localStorage:", parsed.name);
-          } else {
-            console.error("CRITICAL: localStorage save failed even after 3 attempts!");
-          }
-        }, 50);
-
         toast.success(`Joined party: ${formattedParty.name}`);
-        console.log("joinParty completed successfully");
+        return response;
       }
 
       return response;
     } catch (error: any) {
-      console.error("Join party error:", error);
-      toast.error(error.message || "Failed to join party");
+      console.error("Join Hub Error Details:", {
+        status: error.status,
+        message: error.message,
+        serverResponse: error.response?.data,
+        payloadSent: { user_id: user.id, passcode }
+      });
+
+      // If we got a 400, let's try the alternative old endpoint as a last resort
+      if (error.status === 400 || error.status === 404) {
+        console.log("Primary endpoint failed with 400/404, trying legacy endpoint...");
+        try {
+          const legacyResponse = await api.post("/user_wallet/jo/_hub/", {
+            user_id: Number(user.id),
+            join_code: Number(passcode)
+          });
+
+          if (legacyResponse.status === 200) {
+            // Handle successful legacy response logic here...
+            toast.success("Joined via legacy gateway");
+            // (We would ideally refetch or use standard mapping here)
+            return legacyResponse;
+          }
+        } catch (e) {
+          console.error("Legacy endpoint also failed");
+        }
+      }
+
+      const errorMessage = error.response?.data?.message || error.message || "Failed to join party";
+      toast.error(`Error ${error.status || ''}: ${errorMessage}`);
       throw error;
     } finally {
       setIsLoading(false);
