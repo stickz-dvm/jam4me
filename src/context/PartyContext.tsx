@@ -560,7 +560,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       console.log("Joining Hub with payload:", { user_id: currentUserId, hub_id: hubId });
 
       // Try the /user_wallet/ prefix first as it matches other working routes
-      const response = await api.post("/user_wallet/join_hub/", {
+      const response = await api.post("/user_wallet/jo/_hub/", {
         user_id: currentUserId,
         hub_id: hubId,
         join_code: hubId // Fallback field
