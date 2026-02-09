@@ -632,6 +632,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         }
       }
 
+
       const errorMessage = error.response?.data?.message || error.message || "Failed to join party";
       toast.error(`Error ${error.status || ''}: ${errorMessage}`);
       throw error;
