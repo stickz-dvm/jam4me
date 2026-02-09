@@ -554,7 +554,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
 
     try {
       // We'll try the documented endpoint with the standard prefix
-      const currentUserId = Number(user.id);
+      const currentUserId = user.id;
       const hubId = Number(passcode);
 
       console.log("Joining Hub with payload:", { user_id: currentUserId, hub_id: hubId });
