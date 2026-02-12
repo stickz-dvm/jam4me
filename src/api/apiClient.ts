@@ -77,14 +77,14 @@ apiClient.interceptors.request.use(
     }
 
     // Check if token is expired before making request
-//     if (isTokenExpired()) {
-//       clearAuthData();
-//       // Redirect to login if not already there
-//       if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
-//         window.location.href = "/login";
-//       }
-//       return Promise.reject(new Error("Token expired"));
-//     }
+    if (isTokenExpired()) {
+      clearAuthData();
+      // Redirect to login if not already there
+      if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
+        window.location.href = "/login";
+      }
+      return Promise.reject(new Error("Token expired"));
+    }
 
     // Add token to headers
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
