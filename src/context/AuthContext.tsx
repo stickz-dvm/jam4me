@@ -343,80 +343,171 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   //   }
   // };
 
-  const register = async (
-    username: string,
-    email: string,
-    password: string,
-    user_status: UserType = "user"
-  ): Promise<ApiResponse> => {
-    console.log("Registration attempt:", { username, email, user_status });
-    setIsLoading(true);
+const register = async (
+  username: string,
+  email: string,
+  password: string,
+  user_status: UserType = "user"
+): Promise<ApiResponse> => {
+  console.log("Registration attempt:", { username, email, user_status });
+  setIsLoading(true);
 
-    try {
-      const endpoint =
-        user_status === "user"
-          ? "/user_wallet/crt_ur/us_hub_er/"
-          : "/dj_wallet/crt_ur/d_hub_j/";
+  try {
+    const endpoint =
+      user_status === "user"
+        ? "/user_wallet/crt_ur/us_hub_er/"
+        : "/dj_wallet/crt_ur/d_hub_j/";
 
-      const response = await api.post(endpoint, {
+    const response = await api.post(endpoint, {
+      username,
+      email,
+      password,
+      user_status,
+    });
+
+    console.log("Registration response:", {
+      status: response.status,
+      message: response.data.message,
+      hasUser: !!response.data.user,
+      hasToken: !!response.data.user?.token
+    });
+
+    if (response.status === 200 && response.data.message.includes("Welcome")) {
+      const apiUser = response.data.user;
+
+      if (!apiUser?.token) {
+        console.warn("⚠️ Registration succeeded but no token returned");
+      }
+
+      const profilePicture =
+        apiUser?.profile_picture ||
+        apiUser?.avatar ||
+        apiUser?.photo ||
+        apiUser?.image ||
+        apiUser?.avatar_url ||
+        apiUser?.profile_photo;
+
+      const userData: User = {
+        id: apiUser?.id,
         username,
+        userType: user_status,
         email,
-        password,
-        user_status,
-      });
+        avatar: profilePicture,
+      };
 
-      console.log("Registration response:", {
-        status: response.status,
-        message: response.data.message,
-        hasUser: !!response.data.user,
-        hasToken: !!response.data.user?.token
-      });
+      // ✅ Save user and token just like login
+      storage.setUser(userData);
 
-      if (response.status === 200 && response.data.message.includes("Welcome")) {
-        const userData: User = {
-          id: response.data.user?.id,
-          username: username,
-          userType: user_status,
-          email: email,
-        };
-
-        console.log("Saving user data after registration...");
-
-        // Save user to localStorage after successful registration
-        storage.setUser(userData);
-
-        // If token is provided, save it too
-        if (response.data.user?.token) {
-          console.log("Token provided, saving token");
-          storage.setToken(response.data.user.token);
-        } else {
-          console.log("No token in registration response");
-        }
-
-        // Update React state
-        setUser(userData);
-
-        toast.success("Registration successful!");
+      if (apiUser?.token) {
+        storage.setToken(apiUser.token);
       }
 
-      return response;
-    } catch (error: any) {
-      console.error("Registration error:", error);
+      // Update React state
+      setUser(userData);
 
-      if (
-        error.status === 400 &&
-        error.originalError?.error === "username already exists"
-      ) {
-        toast.error("Username already exists");
-      } else {
-        toast.error(error.message || "Registration failed");
-      }
+      // Debugging: confirm token & expiry
+      console.log("Saved token:", localStorage.getItem(AUTH_TOKEN_KEY));
+      console.log(
+        "Token expiry:",
+        new Date(parseInt(localStorage.getItem(TOKEN_EXPIRY_KEY) || "0"))
+      );
 
-      throw error;
-    } finally {
-      setIsLoading(false);
+      toast.success("Registration successful!");
     }
-  };
+
+    return response;
+  } catch (error: any) {
+    console.error("Registration error:", error);
+
+    if (
+      error.status === 400 &&
+      error.originalError?.error === "username already exists"
+    ) {
+      toast.error("Username already exists");
+    } else {
+      toast.error(error.message || "Registration failed");
+    }
+
+    throw error;
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+//   const register = async (
+//     username: string,
+//     email: string,
+//     password: string,
+//     user_status: UserType = "user"
+//   ): Promise<ApiResponse> => {
+//     console.log("Registration attempt:", { username, email, user_status });
+//     setIsLoading(true);
+//
+//     try {
+//       const endpoint =
+//         user_status === "user"
+//           ? "/user_wallet/crt_ur/us_hub_er/"
+//           : "/dj_wallet/crt_ur/d_hub_j/";
+//
+//       const response = await api.post(endpoint, {
+//         username,
+//         email,
+//         password,
+//         user_status,
+//       });
+//
+//       console.log("Registration response:", {
+//         status: response.status,
+//         message: response.data.message,
+//         hasUser: !!response.data.user,
+//         hasToken: !!response.data.user?.token
+//       });
+//
+//       if (response.status === 200 && response.data.message.includes("Welcome")) {
+//         const userData: User = {
+//           id: response.data.user?.id,
+//           username: username,
+//           userType: user_status,
+//           email: email,
+//         };
+//
+//         console.log("Saving user data after registration...");
+//
+//         // Save user to localStorage after successful registration
+//         storage.setUser(userData);
+//
+//         // If token is provided, save it too
+//         if (response.data.user?.token) {
+//           console.log("Token provided, saving token");
+//           storage.setToken(response.data.user.token);
+//         } else {
+//           console.log("No token in registration response");
+//         }
+//
+//         // Update React state
+//         setUser(userData);
+//
+//         toast.success("Registration successful!");
+//       }
+//
+//       return response;
+//     } catch (error: any) {
+//       console.error("Registration error:", error);
+//
+//       if (
+//         error.status === 400 &&
+//         error.originalError?.error === "username already exists"
+//       ) {
+//         toast.error("Username already exists");
+//       } else {
+//         toast.error(error.message || "Registration failed");
+//       }
+//
+//       throw error;
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
 
   /**
    * Reset password function
