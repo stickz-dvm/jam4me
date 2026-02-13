@@ -41,6 +41,7 @@ export type AuthContextType = {
   isDj: boolean;
   getUserType: () => UserType | null;
   getHomeRoute: () => string;
+  refreshUserProfile: () => Promise<void>;
 };
 
 // Party

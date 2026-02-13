@@ -10,15 +10,15 @@ import { Badge } from "../ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, DialogClose } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { 
-  ArrowLeft, 
-  Music2, 
-  QrCode, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  Settings, 
-  Play, 
+import {
+  ArrowLeft,
+  Music2,
+  QrCode,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Settings,
+  Play,
   Pause,
   BarChart3,
   Share2,
@@ -40,7 +40,7 @@ export function DjPartyManagementPage() {
   const { user } = useAuth();
   const {
     currentParty,
-    createdParties, 
+    createdParties,
     approveSong,
     declineSong,
     playSong,
@@ -49,6 +49,7 @@ export function DjPartyManagementPage() {
     getPartyQrCode,
     hasPendingSongs,
     handleExpiredParties,
+    updatePartySettings,
     isLoading
   } = useParty();
 
@@ -61,29 +62,30 @@ export function DjPartyManagementPage() {
   const [activeTab, setActiveTab] = useState("queue");
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<any | null>(null);
-  
-  // Get the relevant party - either current party or from createdParties
+
+  // Parse partyId as string to avoid type issues
   const partyIdStr = normalizeId(partyId);
+
+  // Safely find the current party in context
   const party = normalizeId(currentParty?.id) === partyIdStr
     ? currentParty
     : createdParties.find(p => normalizeId(p.id) === partyIdStr);
 
-  // Navigate away if party not found
+  // Initialize minRequestPrice from party data
   useEffect(() => {
-    if (!isLoading && !party && partyId) {
-      toast.error("Party not found");
-      navigate("/dj/dashboard");
+    if (party) {
+      setMinRequestPrice(party.minRequestPrice);
     }
-  }, [party, partyId, navigate, isLoading]);
+  }, [party]);
 
   // Initialize state from party data
   useEffect(() => {
     if (party) {
       setMinRequestPrice(party.minRequestPrice || 1000);
-      
+
       // Find currently playing song
       const playingSong = party.songs?.find(song => song.status === "playing");
-      
+
       // Only update if there's a change (different song is playing or no song is playing)
       if (playingSong) {
         // Check if it's a different song than what's currently displayed
@@ -147,14 +149,14 @@ export function DjPartyManagementPage() {
       if (!songToPlay) {
         throw new Error("Song not found");
       }
-      
+
       // Pass the partyId explicitly to the playSong function
       await playSong(songId, partyId);
-      
+
       // Manually update the currentlyPlaying state for immediate UI update
       setCurrentlyPlaying(songToPlay);
       setIsPlaying(true);
-      
+
       toast.success(`Now playing: ${songToPlay.title} by ${songToPlay.artist}`);
     } catch (error: any) {
       console.error("Error playing song:", error);
@@ -187,14 +189,16 @@ export function DjPartyManagementPage() {
   const handleUpdateMinPrice = async () => {
     setIsSaving(true);
     try {
-      // Simulate API call for updating min price
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      toast.success(`Minimum request price updated to ₦${minRequestPrice.toLocaleString()}`);
+      if (!partyId) throw new Error("Party ID missing");
+
+      await updatePartySettings(partyId, {
+        minRequestPrice: minRequestPrice
+      });
+
       setShowSettingsDialog(false);
     } catch (error: any) {
       console.error("Error updating party settings:", error);
-      toast.error("Failed to update settings. Please try again.");
+      // Success/error toasts are handled in updatePartySettings
     } finally {
       setIsSaving(false);
     }
@@ -244,34 +248,34 @@ export function DjPartyManagementPage() {
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center">
-          <Button 
-            variant="ghost" 
-            className="mr-2" 
+          <Button
+            variant="ghost"
+            className="mr-2"
             onClick={() => navigate("/dj/dashboard")}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>
         </div>
-        
+
         <div className="flex flex-wrap gap-2">
-          <Button 
+          <Button
             variant="outline"
             onClick={() => setShowQRDialog(true)}
           >
             <QrCode className="h-4 w-4 mr-2" />
             QR Code
           </Button>
-          
-          <Button 
+
+          <Button
             variant="outline"
             onClick={() => setShowSettingsDialog(true)}
           >
             <Settings className="h-4 w-4 mr-2" />
             Settings
           </Button>
-          
-          <Button 
+
+          <Button
             variant="destructive"
             onClick={() => setShowClosePartyDialog(true)}
           >
@@ -333,7 +337,7 @@ export function DjPartyManagementPage() {
         <h2 className="text-2xl font-semibold mb-4 flex items-center">
           <Music2 className="mr-2 h-5 w-5 text-accent" /> Now Playing
         </h2>
-        
+
         {currentlyPlaying ? (
           <div className="mb-6">
             <MusicPlayer
@@ -346,7 +350,7 @@ export function DjPartyManagementPage() {
               }}
               isPlaying={isPlaying}
             />
-            
+
             <div className="flex justify-end mt-4">
               <Button
                 variant="outline"
@@ -357,7 +361,7 @@ export function DjPartyManagementPage() {
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Mark as Played
               </Button>
-              
+
               <Button
                 variant={isPlaying ? "default" : "ghost"}
                 size="sm"
@@ -421,7 +425,7 @@ export function DjPartyManagementPage() {
               <TabsTrigger value="stats">Stats</TabsTrigger>
             </TabsList>
           </div>
-          
+
           {/* Queue Tab */}
           <TabsContent value="queue" className="mt-0">
             <Card className="bg-card/70 backdrop-blur-sm">
@@ -443,8 +447,8 @@ export function DjPartyManagementPage() {
                           <div className="flex items-center gap-4 mb-4">
                             <div className="w-16 h-16 overflow-hidden rounded-md shrink-0 bg-muted/30">
                               {song.albumArt ? (
-                                <img 
-                                  src={song.albumArt} 
+                                <img
+                                  src={song.albumArt}
                                   alt={`${song.title} cover`}
                                   className="w-full h-full object-cover"
                                 />
@@ -467,18 +471,18 @@ export function DjPartyManagementPage() {
                               </div>
                             </div>
                           </div>
-                          
+
                           <div className="flex space-x-2 justify-end">
-                            <Button 
-                              variant="destructive" 
+                            <Button
+                              variant="destructive"
                               size="sm"
                               onClick={() => handleDeclineSong(song.id)}
                             >
                               <Ban className="h-4 w-4 mr-2" />
                               Decline
                             </Button>
-                            <Button 
-                              variant="default" 
+                            <Button
+                              variant="default"
                               size="sm"
                               onClick={() => handlePlaySong(song.id)}
                             >
@@ -504,7 +508,7 @@ export function DjPartyManagementPage() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           {/* History Tab */}
           <TabsContent value="history" className="mt-0">
             <Card className="bg-card/70 backdrop-blur-sm">
@@ -526,8 +530,8 @@ export function DjPartyManagementPage() {
                           <div className="flex items-center gap-4">
                             <div className="w-16 h-16 overflow-hidden rounded-md shrink-0 bg-muted/30">
                               {song.albumArt ? (
-                                <img 
-                                  src={song.albumArt} 
+                                <img
+                                  src={song.albumArt}
                                   alt={`${song.title} cover`}
                                   className="w-full h-full object-cover opacity-80"
                                 />
@@ -568,7 +572,7 @@ export function DjPartyManagementPage() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           {/* Stats Tab */}
           <TabsContent value="stats" className="mt-0">
             <Card className="bg-card/70 backdrop-blur-sm">
@@ -605,7 +609,7 @@ export function DjPartyManagementPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div>
                   <h3 className="text-lg font-medium mb-3">Top Requesters</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -659,9 +663,9 @@ export function DjPartyManagementPage() {
           </DialogHeader>
           <div className="flex flex-col items-center justify-center p-4">
             <div className="w-64 h-64 bg-white p-3 rounded-lg shadow-lg mb-6">
-              <img 
-                src={getPartyQrCode(party.id)} 
-                alt="Party QR Code" 
+              <img
+                src={getPartyQrCode(party.id)}
+                alt="Party QR Code"
                 className="w-full h-full object-contain"
               />
             </div>
@@ -705,7 +709,7 @@ export function DjPartyManagementPage() {
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                       <NairaSign className="h-5 w-5 text-muted-foreground" />
                     </div>
-                    <input 
+                    <input
                       type="text"
                       value={minRequestPrice.toLocaleString()}
                       onChange={(e) => {
@@ -731,29 +735,29 @@ export function DjPartyManagementPage() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  <Badge 
-                    className="cursor-pointer px-3 py-1 hover:bg-primary/30" 
+                  <Badge
+                    className="cursor-pointer px-3 py-1 hover:bg-primary/30"
                     variant="outline"
                     onClick={() => setMinRequestPrice(500)}
                   >
                     ₦500
                   </Badge>
-                  <Badge 
-                    className="cursor-pointer px-3 py-1 hover:bg-primary/30" 
+                  <Badge
+                    className="cursor-pointer px-3 py-1 hover:bg-primary/30"
                     variant="outline"
                     onClick={() => setMinRequestPrice(1000)}
                   >
                     ₦1,000
                   </Badge>
-                  <Badge 
-                    className="cursor-pointer px-3 py-1 hover:bg-primary/30" 
+                  <Badge
+                    className="cursor-pointer px-3 py-1 hover:bg-primary/30"
                     variant="outline"
                     onClick={() => setMinRequestPrice(2000)}
                   >
                     ₦2,000
                   </Badge>
-                  <Badge 
-                    className="cursor-pointer px-3 py-1 hover:bg-primary/30" 
+                  <Badge
+                    className="cursor-pointer px-3 py-1 hover:bg-primary/30"
                     variant="outline"
                     onClick={() => setMinRequestPrice(5000)}
                   >
@@ -770,8 +774,8 @@ export function DjPartyManagementPage() {
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button 
-              onClick={handleUpdateMinPrice} 
+            <Button
+              onClick={handleUpdateMinPrice}
               disabled={isSaving || minRequestPrice === party.minRequestPrice}
             >
               {isSaving ? (
@@ -820,9 +824,9 @@ export function DjPartyManagementPage() {
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button 
-              variant="destructive" 
-              onClick={handleCloseParty} 
+            <Button
+              variant="destructive"
+              onClick={handleCloseParty}
               disabled={isClosing || hasPendingSongs(partyId as string)}
             >
               {isClosing ? (

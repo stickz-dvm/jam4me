@@ -25,14 +25,14 @@ export function DjDashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { balance } = useWallet();
-  const { 
-    createParty, 
+  const {
+    createParty,
     createdParties,
     currentParty,
     isLoading: contextLoading,
     getPartyQrCode,
     hasPendingSongs,
-    handleExpiredParties, 
+    handleExpiredParties,
   } = useParty();
 
   // Component state
@@ -49,7 +49,7 @@ export function DjDashboardPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [selectedParty, setSelectedParty] = useState<any>();
-  
+
   // Create a ref for focusing, but we won't pass it directly to Input
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const priceInputRef = useRef<HTMLInputElement>(null);
@@ -75,7 +75,7 @@ export function DjDashboardPage() {
     // Only allow numbers
     const value = e.target.value.replace(/\D/g, '');
     setCustomPriceInput(value);
-    
+
     // Update price value 
     const numValue = parseInt(value);
     if (!isNaN(numValue)) {
@@ -127,13 +127,13 @@ export function DjDashboardPage() {
           // Check for undefined properties to avoid errors
           const partyEarnings = party.earnings || 0;
           const partySongs = party.songs || [];
-          
+
           totalEarnings += partyEarnings;
           totalRequests += partySongs.length;
-          
+
           // Count played songs
           songsPlayed += partySongs.filter(s => s.status === "played" || s.status === "playing").length;
-          
+
           // Track song request frequency
           partySongs.forEach(song => {
             const key = `${song.title}-${song.artist}`;
@@ -185,12 +185,12 @@ export function DjDashboardPage() {
   // Combine date and time into a single Date object
   const getCombinedDateTime = () => {
     if (!partyEndDate) return "23:59";
-    
+
     const endDate = new Date(partyEndDate);
     endDate.setHours(parseInt(partyEndHour || "23", 10));
     endDate.setMinutes(parseInt(partyEndMinute || "59", 10));
     endDate.setSeconds(0);
-    
+
     return format(endDate, "HH:mm");
   };
 
@@ -215,10 +215,9 @@ export function DjDashboardPage() {
 
     // Get the combined date and time
     const endDateTime = getCombinedDateTime();
-    
+
     // Make sure end time is in the future
-    if (endDateTime <= new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })) 
-    {
+    if (endDateTime <= new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })) {
       toast.error("Party end time must be in the future");
       return;
     }
@@ -285,12 +284,15 @@ export function DjDashboardPage() {
   };
 
   // Navigate to party management page
-  const navigateToPartyManagement = (partyId: string) => {
-    if (!partyId) {
-      console.error("Invalid party ID for navigation");
+  const navigateToPartyManagement = (partyId: string, fallbackPasscode?: string) => {
+    const id = partyId || fallbackPasscode;
+    if (!id) {
+      console.error("Invalid party ID for navigation", { partyId, fallbackPasscode });
+      toast.error("Could not find party ID for navigation");
       return;
     }
-    navigate(`/dj/party/${partyId}`);
+    console.log(`Navigating to party management: /dj/party/${id}`);
+    navigate(`/dj/party/${id}`);
   };
 
   // Copy party passcode to clipboard
@@ -300,7 +302,7 @@ export function DjDashboardPage() {
       toast.success("Passcode copied to clipboard!");
     }
   };
-  
+
   // Get initials from name for avatar fallback
   const getInitials = (name: string) => {
     return name
@@ -311,12 +313,8 @@ export function DjDashboardPage() {
       .substring(0, 2);
   };
 
-  // Prepare default top songs if none exist
-  const displayTopSongs = stats.topSongs && stats.topSongs.length > 0 ? stats.topSongs : [
-    { title: "No songs requested yet", artist: "Start a party to see popular requests", requestCount: 0 },
-    { title: "Create your first party", artist: "And start receiving song requests", requestCount: 0 },
-    { title: "Share your party code", artist: "Let party-goers connect with you", requestCount: 0 }
-  ];
+  // Get top songs from stats
+  const topSongs = stats.topSongs || [];
 
   // Combine loading states
   const showLoading = isLoading || contextLoading;
@@ -344,8 +342,8 @@ export function DjDashboardPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Badge 
-            className="cursor-pointer px-3 py-1 hover:bg-primary/30" 
+          <Badge
+            className="cursor-pointer px-3 py-1 hover:bg-primary/30"
             variant="outline"
             onClick={() => {
               setMinSongRequestPrice(500);
@@ -355,8 +353,8 @@ export function DjDashboardPage() {
           >
             ₦500
           </Badge>
-          <Badge 
-            className="cursor-pointer px-3 py-1 hover:bg-primary/30" 
+          <Badge
+            className="cursor-pointer px-3 py-1 hover:bg-primary/30"
             variant="outline"
             onClick={() => {
               setMinSongRequestPrice(1000);
@@ -366,8 +364,8 @@ export function DjDashboardPage() {
           >
             ₦1,000
           </Badge>
-          <Badge 
-            className="cursor-pointer px-3 py-1 hover:bg-primary/30" 
+          <Badge
+            className="cursor-pointer px-3 py-1 hover:bg-primary/30"
             variant="outline"
             onClick={() => {
               setMinSongRequestPrice(2000);
@@ -377,8 +375,8 @@ export function DjDashboardPage() {
           >
             ₦2,000
           </Badge>
-          <Badge 
-            className="cursor-pointer px-3 py-1 hover:bg-primary/30" 
+          <Badge
+            className="cursor-pointer px-3 py-1 hover:bg-primary/30"
             variant="outline"
             onClick={() => {
               setMinSongRequestPrice(5000);
@@ -388,8 +386,8 @@ export function DjDashboardPage() {
           >
             ₦5,000
           </Badge>
-          <Badge 
-            className="cursor-pointer px-3 py-1 hover:bg-primary/30" 
+          <Badge
+            className="cursor-pointer px-3 py-1 hover:bg-primary/30"
             variant="outline"
             onClick={() => {
               setMinSongRequestPrice(10000);
@@ -399,8 +397,8 @@ export function DjDashboardPage() {
           >
             ₦10,000
           </Badge>
-          <Badge 
-            className="cursor-pointer px-3 py-1 hover:bg-primary/30" 
+          <Badge
+            className="cursor-pointer px-3 py-1 hover:bg-primary/30"
             variant="outline"
             onClick={() => {
               setMinSongRequestPrice(20000);
@@ -462,12 +460,88 @@ export function DjDashboardPage() {
                     }}
                   />
                 </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Party Venue</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <Input
+                      placeholder="Enter venue location"
+                      value={partyVenue}
+                      onChange={(e) => setPartyVenue(e.target.value)}
+                      className="bg-input/50 backdrop-blur-sm pl-10"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Party End Time</label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="flex-1">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal bg-input/50 backdrop-blur-sm"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {partyEndDate ? format(partyEndDate, "PPP") : "Select date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={partyEndDate}
+                            onSelect={setPartyEndDate}
+                            initialFocus
+                            disabled={(date) => date < new Date().setHours(0, 0, 0, 0)}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Select value={partyEndHour} onValueChange={setPartyEndHour}>
+                        <SelectTrigger className="w-[80px] bg-input/50 backdrop-blur-sm">
+                          <SelectValue placeholder="Hour" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
+                            <SelectItem key={hour} value={hour.toString().padStart(2, "0")}>
+                              {hour.toString().padStart(2, "0")}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <span className="flex items-center text-muted-foreground">:</span>
+
+                      <Select value={partyEndMinute} onValueChange={setPartyEndMinute}>
+                        <SelectTrigger className="w-[80px] bg-input/50 backdrop-blur-sm">
+                          <SelectValue placeholder="Min" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 60 }, (_, i) => i).filter(i => i % 5 === 0).map((minute) => (
+                            <SelectItem key={minute} value={minute.toString().padStart(2, "0")}>
+                              {minute.toString().padStart(2, "0")}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Set when the party will end. Guests won't be able to join or request songs after this time.
+                  </p>
+                </div>
+
                 <PriceSelector />
               </div>
               <DialogFooter>
                 <DialogClose asChild>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => {
                       setPartyName("");
                       setPartyVenue("");
@@ -481,8 +555,8 @@ export function DjDashboardPage() {
                     Cancel
                   </Button>
                 </DialogClose>
-                <Button 
-                  onClick={() => handleCreateParty(() => setDialogOpen(false))} 
+                <Button
+                  onClick={() => handleCreateParty(() => setDialogOpen(false))}
                   disabled={isCreatingParty}
                   data-create-party="true"
                 >
@@ -513,9 +587,9 @@ export function DjDashboardPage() {
               {selectedParty && (
                 <>
                   <div className="w-64 h-64 bg-white p-3 rounded-lg shadow-lg mb-6">
-                    <img 
-                      src={getPartyQrCode(selectedParty.id)} 
-                      alt="Party QR Code" 
+                    <img
+                      src={getPartyQrCode(selectedParty.id)}
+                      alt="Party QR Code"
                       className="w-full h-full object-contain"
                     />
                   </div>
@@ -552,7 +626,7 @@ export function DjDashboardPage() {
               <TabsTrigger value="ongoing">Active Parties</TabsTrigger>
               <TabsTrigger value="past">Past Parties</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="ongoing">
               {showLoading ? (
                 <div className="flex justify-center py-8">
@@ -561,192 +635,64 @@ export function DjDashboardPage() {
               ) : ongoingParty ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {/* {ongoingParties.map((party) => ( */}
-                    <Card 
-                      key={ongoingParty?.id} 
-                      className="bg-card/80 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-colors"
-                    >
-                      <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <CardTitle>{ongoingParty?.name}</CardTitle>
-                          <Badge>Active</Badge>
+                  <Card
+                    key={ongoingParty?.id}
+                    className="bg-card/80 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-colors"
+                  >
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <CardTitle>{ongoingParty?.name}</CardTitle>
+                        <Badge>Active</Badge>
+                      </div>
+                      <CardDescription>
+                        Created {new Date(ongoingParty!.createdAt).toLocaleDateString()}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Passcode:</span>
+                          <span className="font-mono bg-muted/30 px-2 rounded">{ongoingParty?.passcode}</span>
                         </div>
-                        <CardDescription>
-                          Created {new Date(ongoingParty!.createdAt).toLocaleDateString()}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Passcode:</span>
-                            <span className="font-mono bg-muted/30 px-2 rounded">{ongoingParty?.passcode}</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Min. Request:</span>
-                            <span>₦{ongoingParty?.minRequestPrice || 0}</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Requests:</span>
-                            <span>{ongoingParty?.songs?.length || 0}</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Earnings:</span>
-                            <span className="text-spotify-green">₦{ongoingParty?.earnings || 0}</span>
-                          </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Min. Request:</span>
+                          <span>₦{ongoingParty?.minRequestPrice || 0}</span>
                         </div>
-                      </CardContent>
-                      <CardFooter className="flex justify-between">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={(e) => handleShowQRCode(ongoingParty, e)}
-                        >
-                          <QrCode className="h-4 w-4 mr-2" />
-                          QR Code
-                        </Button>
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log("clicked: ", ongoingParty.id);
-                            navigateToPartyManagement(ongoingParty.id);
-                          }}
-                        >
-                          Manage
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  {/* // ))} */}
-                  
-                  {/* <Card className="bg-muted/10 border-dashed backdrop-blur-sm border-border/50 hover:border-primary/50 transition-colors">
-                    <CardContent className="flex flex-col items-center justify-center h-full min-h-[240px] cursor-pointer">
-                      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                        <DialogTrigger className="flex flex-col items-center justify-center w-full h-full">
-                          <div className="rounded-full bg-muted/20 p-4 mb-3">
-                            <Plus className="h-6 w-6 text-muted-foreground" />
-                          </div>
-                          <p className="text-muted-foreground">Create New Party</p>
-                        </DialogTrigger>
-                        <DialogContent className="bg-card/95 backdrop-blur-md">
-                          <DialogHeader>
-                            <DialogTitle>Create a New Party</DialogTitle>
-                            <DialogDescription>
-                              Set up your party details and share the code with party-goers.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium">Party Name</label>
-                              <Input
-                                placeholder="Enter party name"
-                                value={partyName}
-                                onChange={(e) => setPartyName(e.target.value)}
-                                className="bg-input/50 backdrop-blur-sm"
-                              />
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium">Party Venue</label>
-                              <div className="relative">
-                                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                                <Input
-                                  placeholder="Enter venue location"
-                                  value={partyVenue}
-                                  onChange={(e) => setPartyVenue(e.target.value)}
-                                  className="bg-input/50 backdrop-blur-sm pl-10"
-                                />
-                              </div>
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium">Party End Time</label>
-                              <div className="flex flex-col sm:flex-row gap-2">
-                                <div className="flex-1">
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <Button
-                                        variant="outline"
-                                        className="w-full justify-start text-left font-normal bg-input/50 backdrop-blur-sm"
-                                      >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {partyEndDate ? format(partyEndDate, "PPP") : "Select date"}
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                      <Calendar
-                                        mode="single"
-                                        selected={partyEndDate}
-                                        onSelect={setPartyEndDate}
-                                        initialFocus
-                                        disabled={(date) => date < new Date()}
-                                      />
-                                    </PopoverContent>
-                                  </Popover>
-                                </div>
-                                
-                                <div className="flex gap-2">
-                                  <Select value={partyEndHour} onValueChange={setPartyEndHour}>
-                                    <SelectTrigger className="w-[80px] bg-input/50 backdrop-blur-sm">
-                                      <SelectValue placeholder="Hour" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
-                                        <SelectItem key={hour} value={hour.toString().padStart(2, "0")}>
-                                          {hour.toString().padStart(2, "0")}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  
-                                  <span className="flex items-center text-muted-foreground">:</span>
-                                  
-                                  <Select value={partyEndMinute} onValueChange={setPartyEndMinute}>
-                                    <SelectTrigger className="w-[80px] bg-input/50 backdrop-blur-sm">
-                                      <SelectValue placeholder="Min" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {Array.from({ length: 60 }, (_, i) => i).filter(i => i % 5 === 0).map((minute) => (
-                                        <SelectItem key={minute} value={minute.toString().padStart(2, "0")}>
-                                          {minute.toString().padStart(2, "0")}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                Set when the party will end. Guests won't be able to join or request songs after this time.
-                              </p>
-                            </div>
-                            
-                            <PriceSelector />
-                          </div>
-                          <DialogFooter>
-                            <DialogClose asChild>
-                              <Button variant="outline">Cancel</Button>
-                            </DialogClose>
-                            <Button 
-                              onClick={() => handleCreateParty(() => setDialogOpen(false))} 
-                              disabled={isCreatingParty}
-                              data-create-party="true"
-                            >
-                              {isCreatingParty ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Creating...
-                                </>
-                              ) : (
-                                "Create Party"
-                              )}
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Requests:</span>
+                          <span>{ongoingParty?.songs?.length || 0}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Earnings:</span>
+                          <span className="text-spotify-green">₦{ongoingParty?.earnings || 0}</span>
+                        </div>
+                      </div>
                     </CardContent>
-                  </Card> */}
+                    <CardFooter className="flex justify-between">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => handleShowQRCode(ongoingParty, e)}
+                      >
+                        <QrCode className="h-4 w-4 mr-2" />
+                        QR Code
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log("clicked: ", ongoingParty.id, ongoingParty.passcode);
+                          navigateToPartyManagement(ongoingParty.id, ongoingParty.passcode);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                  {/* // ))} */}
+
                 </div>
               ) : (
                 <Card className="bg-muted/10 backdrop-blur-sm">
@@ -782,7 +728,7 @@ export function DjDashboardPage() {
                               className="bg-input/50 backdrop-blur-sm"
                             />
                           </div>
-                          
+
                           <div className="space-y-2">
                             <label className="text-sm font-medium">Party Venue</label>
                             <div className="relative">
@@ -797,7 +743,7 @@ export function DjDashboardPage() {
                               />
                             </div>
                           </div>
-                          
+
                           <div className="space-y-2">
                             <label className="text-sm font-medium">Party End Time</label>
                             <div className="flex flex-col sm:flex-row gap-2">
@@ -823,7 +769,7 @@ export function DjDashboardPage() {
                                   </PopoverContent>
                                 </Popover>
                               </div>
-                              
+
                               <div className="flex gap-2">
                                 <Select value={partyEndHour} onValueChange={setPartyEndHour}>
                                   <SelectTrigger className="w-[80px] bg-input/50 backdrop-blur-sm">
@@ -837,9 +783,9 @@ export function DjDashboardPage() {
                                     ))}
                                   </SelectContent>
                                 </Select>
-                                
+
                                 <span className="flex items-center text-muted-foreground">:</span>
-                                
+
                                 <Select value={partyEndMinute} onValueChange={setPartyEndMinute}>
                                   <SelectTrigger className="w-[80px] bg-input/50 backdrop-blur-sm">
                                     <SelectValue placeholder="Min" />
@@ -858,15 +804,15 @@ export function DjDashboardPage() {
                               Set when the party will end. Guests won't be able to join or request songs after this time.
                             </p>
                           </div>
-                          
+
                           <PriceSelector />
                         </div>
                         <DialogFooter>
                           <DialogClose asChild>
                             <Button variant="outline">Cancel</Button>
                           </DialogClose>
-                          <Button 
-                            onClick={() => handleCreateParty(() => setDialogOpen(false))} 
+                          <Button
+                            onClick={() => handleCreateParty(() => setDialogOpen(false))}
                             disabled={isCreatingParty}
                             data-create-party="true"
                           >
@@ -886,7 +832,7 @@ export function DjDashboardPage() {
                 </Card>
               )}
             </TabsContent>
-            
+
             <TabsContent value="past">
               {showLoading ? (
                 <div className="flex justify-center py-8">
@@ -918,11 +864,11 @@ export function DjDashboardPage() {
                         </div>
                       </CardContent>
                       <CardFooter>
-                        <Button 
+                        <Button
                           variant="outline"
-                          size="sm" 
+                          size="sm"
                           className="w-full"
-                          onClick={() => navigateToPartyManagement(party.id)}
+                          onClick={() => navigateToPartyManagement(party.id, party.passcode)}
                         >
                           View Details
                         </Button>
@@ -949,30 +895,40 @@ export function DjDashboardPage() {
 
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Popular Song Requests</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {displayTopSongs.map((song, index) => (
-              <Card key={index} className="bg-card/80 backdrop-blur-sm border-border/50">
-                <CardContent className="pt-6">
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mr-4">
-                      <Music2 className="h-6 w-6 text-primary" />
+          {topSongs.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {topSongs.map((song, index) => (
+                <Card key={index} className="bg-card/80 backdrop-blur-sm border-border/50">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mr-4">
+                        <Music2 className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium line-clamp-1">{song.title}</h4>
+                        <p className="text-sm text-muted-foreground line-clamp-1">{song.artist}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-medium line-clamp-1">{song.title}</h4>
-                      <p className="text-sm text-muted-foreground line-clamp-1">{song.artist}</p>
-                    </div>
-                  </div>
-                  {song.requestCount > 0 && (
-                    <div className="mt-4 flex justify-between items-center">
-                      <Badge variant="outline" className="bg-muted/30">
-                        {song.requestCount} {song.requestCount === 1 ? 'request' : 'requests'}
-                      </Badge>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    {song.requestCount > 0 && (
+                      <div className="mt-4 flex justify-between items-center">
+                        <Badge variant="outline" className="bg-muted/30">
+                          {song.requestCount} {song.requestCount === 1 ? 'request' : 'requests'}
+                        </Badge>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="bg-muted/5 border-dashed border-border/40">
+              <CardContent className="flex flex-col items-center justify-center py-10 opacity-60">
+                <Music2 className="h-10 w-10 mb-2 text-muted-foreground" />
+                <p className="text-muted-foreground">No popular requests yet</p>
+                <p className="text-xs text-muted-foreground/60">Requests will appear here as guests join your parties</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </motion.div>
     </div>
