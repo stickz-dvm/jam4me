@@ -6,26 +6,43 @@
 
 :root {
   --font-size: 14px;
-  --background: #0f172a; /* Dark blue background */
-  --foreground: #f8fafc; /* Light text color for contrast */
-  --card: #1e293b; /* Darker blue card background */
-  --card-foreground: #f8fafc; /* Light text on cards */
-  --popover: #1e293b; /* Darker blue popover background */
-  --popover-foreground: #f8fafc; /* Light text on popovers */
-  --primary: #3b82f6; /* Blue primary color */
+  --background: #0f172a;
+  /* Dark blue background */
+  --foreground: #f8fafc;
+  /* Light text color for contrast */
+  --card: #1e293b;
+  /* Darker blue card background */
+  --card-foreground: #f8fafc;
+  /* Light text on cards */
+  --popover: #1e293b;
+  /* Darker blue popover background */
+  --popover-foreground: #f8fafc;
+  /* Light text on popovers */
+  --primary: #3b82f6;
+  /* Blue primary color */
   --primary-foreground: #ffffff;
-  --secondary: #334155; /* Medium dark blue secondary */
-  --secondary-foreground: #f8fafc; /* Light text on secondary */
-  --muted: #334155; /* Medium dark blue muted */
-  --muted-foreground: #94a3b8; /* Lighter blue muted text */
-  --accent: #ffd60a; /* Yellow accent color */
-  --accent-foreground: #0f172a; /* Dark text on yellow accent */
+  --secondary: #334155;
+  /* Medium dark blue secondary */
+  --secondary-foreground: #f8fafc;
+  /* Light text on secondary */
+  --muted: #334155;
+  /* Medium dark blue muted */
+  --muted-foreground: #94a3b8;
+  /* Lighter blue muted text */
+  --accent: #ffd60a;
+  /* Yellow accent color */
+  --accent-foreground: #0f172a;
+  /* Dark text on yellow accent */
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #334155; /* Medium dark blue border */
-  --input: #334155; /* Medium dark blue input */
-  --input-background: #334155; /* Medium dark blue input background */
-  --switch-background: #334155; /* Medium dark blue switch background */
+  --border: #334155;
+  /* Medium dark blue border */
+  --input: #334155;
+  /* Medium dark blue input */
+  --input-background: #334155;
+  /* Medium dark blue input background */
+  --switch-background: #334155;
+  /* Medium dark blue switch background */
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --ring: #3b82f6;
@@ -35,19 +52,27 @@
   --chart-4: #c084fc;
   --chart-5: #f472b6;
   --radius: 0.625rem;
-  --sidebar: #1e293b; /* Darker blue sidebar */
-  --sidebar-foreground: #f8fafc; /* Light text on sidebar */
+  --sidebar: #1e293b;
+  /* Darker blue sidebar */
+  --sidebar-foreground: #f8fafc;
+  /* Light text on sidebar */
   --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #334155; /* Medium dark blue sidebar accent */
-  --sidebar-accent-foreground: #f8fafc; /* Light text on sidebar accent */
-  --sidebar-border: #475569; /* Medium-light blue sidebar border */
+  --sidebar-accent: #334155;
+  /* Medium dark blue sidebar accent */
+  --sidebar-accent-foreground: #f8fafc;
+  /* Light text on sidebar accent */
+  --sidebar-border: #475569;
+  /* Medium-light blue sidebar border */
   --sidebar-ring: #3b82f6;
   --spotify-green: #1DB954;
   --spotify-black: #191414;
-  --yellow-accent: #ffd60a; /* Yellow accent color */
-  --electric-blue: #0284c7; /* Electric blue for high-visibility */
-  --bright-blue: #3b82f6; /* Bright blue accent */
+  --yellow-accent: #ffd60a;
+  /* Yellow accent color */
+  --electric-blue: #0284c7;
+  /* Electric blue for high-visibility */
+  --bright-blue: #3b82f6;
+  /* Bright blue accent */
 }
 
 /* Light theme values - not used by default but kept for reference */
@@ -138,7 +163,8 @@
     @apply border-border outline-ring/50;
   }
 
-  html, body {
+  html,
+  body {
     @apply bg-background text-foreground;
     background-color: var(--background) !important;
     color: var(--foreground) !important;
@@ -233,7 +259,8 @@ html {
 
 /* Glassmorphism for cards */
 .glass {
-  background: rgba(30, 41, 59, 0.7); /* Dark blue with transparency */
+  background: rgba(30, 41, 59, 0.7);
+  /* Dark blue with transparency */
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -303,9 +330,12 @@ html {
 }
 
 @keyframes equalize {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scaleY(0.3);
   }
+
   50% {
     transform: scaleY(1);
   }
@@ -317,10 +347,13 @@ html {
 }
 
 @keyframes pulse-music {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.8;
   }
+
   50% {
     transform: scale(1.05);
     opacity: 1;
@@ -347,9 +380,12 @@ html {
 }
 
 @keyframes glow-poster {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 15px rgba(255, 214, 10, 0.3);
   }
+
   50% {
     box-shadow: 0 0 25px rgba(255, 214, 10, 0.5);
   }
@@ -361,9 +397,12 @@ html {
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-10px);
   }
@@ -402,18 +441,48 @@ html {
   animation: wave 1s ease-in-out infinite;
 }
 
-.wave-bar:nth-child(1) { height: 30%; animation-delay: 0.0s; }
-.wave-bar:nth-child(2) { height: 60%; animation-delay: 0.1s; }
-.wave-bar:nth-child(3) { height: 80%; animation-delay: 0.2s; }
-.wave-bar:nth-child(4) { height: 100%; animation-delay: 0.3s; }
-.wave-bar:nth-child(5) { height: 80%; animation-delay: 0.4s; }
-.wave-bar:nth-child(6) { height: 60%; animation-delay: 0.5s; }
-.wave-bar:nth-child(7) { height: 30%; animation-delay: 0.6s; }
+.wave-bar:nth-child(1) {
+  height: 30%;
+  animation-delay: 0.0s;
+}
+
+.wave-bar:nth-child(2) {
+  height: 60%;
+  animation-delay: 0.1s;
+}
+
+.wave-bar:nth-child(3) {
+  height: 80%;
+  animation-delay: 0.2s;
+}
+
+.wave-bar:nth-child(4) {
+  height: 100%;
+  animation-delay: 0.3s;
+}
+
+.wave-bar:nth-child(5) {
+  height: 80%;
+  animation-delay: 0.4s;
+}
+
+.wave-bar:nth-child(6) {
+  height: 60%;
+  animation-delay: 0.5s;
+}
+
+.wave-bar:nth-child(7) {
+  height: 30%;
+  animation-delay: 0.6s;
+}
 
 @keyframes wave {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scaleY(0.5);
   }
+
   50% {
     transform: scaleY(1);
   }
@@ -442,6 +511,7 @@ html {
   0% {
     box-shadow: 0 0 8px rgba(255, 214, 10, 0.4);
   }
+
   100% {
     box-shadow: 0 0 12px rgba(255, 214, 10, 0.7);
   }
@@ -449,9 +519,12 @@ html {
 
 /* Pulsing blue animation for the request song section */
 @keyframes pulse-blue {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(2, 132, 199, 0.3);
   }
+
   50% {
     box-shadow: 0 0 30px rgba(2, 132, 199, 0.6);
   }
@@ -459,4 +532,46 @@ html {
 
 .animate-pulse-blue {
   animation: pulse-blue 4s infinite alternate;
+}
+
+/* Premium Slider Styles */
+.premium-slider [data-slot="slider-track"] {
+  background-color: #0A2B5B !important;
+  height: 8px !important;
+}
+
+.premium-slider [data-slot="slider-range"] {
+  background-color: #1a3c6d !important;
+}
+
+.premium-slider [data-slot="slider-thumb"] {
+  height: 24px !important;
+  width: 24px !important;
+  background-color: #001C3D !important;
+  border: 4px solid #3b82f6 !important;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5) !important;
+  cursor: grab;
+}
+
+.premium-slider [data-slot="slider-thumb"]:active {
+  cursor: grabbing;
+  transform: scale(1.1);
+}
+
+/* Custom scrollbar for search results */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(10, 43, 91, 0.3);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.5);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.8);
 }

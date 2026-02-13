@@ -14,7 +14,7 @@ import { api } from "@/api/apiMethods";
 
 export function ProfilePage() {
   const navigate = useNavigate();
-  const { user, updateUserProfile, logout } = useAuth();
+  const { user, updateUserProfile, logout, refreshUserProfile } = useAuth();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
@@ -30,6 +30,13 @@ export function ProfilePage() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Initial load of user details from backend
+  useEffect(() => {
+    if (user?.id) {
+      refreshUserProfile();
+    }
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -50,48 +57,44 @@ export function ProfilePage() {
       const isDj = user?.userType === "HUB_DJ";
 
       // 1. Update Profile Information (Text)
-      const textEndpoint = isDj ? "dj/edit/profile/" : "/user_wallet/edit/profile/";
-      // Use user_id as it seems to be the backend standard
-      const textPayload = {
+      // DJs use a slightly different path structure matching the balance endpoint
+      const textEndpoint = isDj ? "/dj_wallet/dj/edit/profile/" : "/user_wallet/edit/profile/";
+      const textPayload: any = {
         user_id: user?.id,
         new_username: username
       };
 
+      // Ensure dj_id is present for DJ accounts
+      if (isDj) {
+        textPayload.dj_id = user?.id;
+      }
+
       console.log(`Updating profile text at ${textEndpoint}`, textPayload);
-      const textResponse = await api.post(textEndpoint, textPayload);
-      console.log("Profile text update response:", textResponse);
+      await api.post(textEndpoint, textPayload);
 
       // 2. Update Profile Picture (if changed)
       if (imagePreviewUrl) {
-        // Use dj endpoint or user endpoint
-        const photoEndpoint = isDj ? "dj/edit/profile/photo/" : "/user_wallet/edit/profile/photo/";
+        const photoEndpoint = isDj ? "/dj_wallet/dj/edit/profile/photo/" : "/user_wallet/edit/profile/photo/";
 
-        // Some backends might want user_id, others might want dj_name/username
-        // We'll prepare a broad payload to be safe
         const photoPayload: any = {
           user_id: user?.id,
           profile_picture: imagePreviewUrl // This is the base64 string
         };
 
         if (isDj) {
+          photoPayload.dj_id = user?.id;
           photoPayload.dj_name = username || user?.username;
         } else {
           photoPayload.username = username || user?.username;
         }
 
-        console.log(`Updating profile photo at ${photoEndpoint}`, { ...photoPayload, profile_picture: "base64..." });
-        const photoResponse = await api.post(photoEndpoint, photoPayload);
-        console.log("Profile photo update response:", photoResponse);
+        console.log(`Updating profile photo at ${photoEndpoint}`);
+        await api.post(photoEndpoint, photoPayload);
       }
 
-      // Update local state - ensure avatar is updated from imagePreviewUrl if it was set
-      const updatedProfile = {
-        username: username,
-        avatar: imagePreviewUrl || user?.avatar
-      };
-
-      console.log("Updating local profile state:", updatedProfile);
-      updateUserProfile(updatedProfile);
+      // 3. Refresh from backend to get the actual permanent URL
+      console.log("Refreshing user details from backend...");
+      await refreshUserProfile();
 
       toast.success("Profile updated successfully!");
 

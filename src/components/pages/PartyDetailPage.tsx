@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { SpotifySearch } from "../SpotifySearch";
 import { SongCard } from "../SongCard";
+import { RequestSongCard } from "../RequestSongCard";
 import { MusicPlayer } from "../MusicPlayer";
 import { toast } from "sonner";
 import { SpotifyTrack } from "../../services/SpotifyService";
@@ -270,14 +271,14 @@ export function PartyDetailPage() {
     toast.success(`Selected "${track.name}" by ${track.artists.map((a) => a.name).join(", ")}`);
   };
 
-  const handleRequestSong = async () => {
+  const handleRequestSong = async (requestPrice: number) => {
     if (!selectedTrack) return;
 
     try {
       await requestSong(
         selectedTrack.name,
         selectedTrack.artists[0]?.name || "Unknown Artist",
-        price,
+        requestPrice,
         selectedTrack.album?.images?.[0]?.url
       );
       setSelectedTrack(null);
@@ -449,109 +450,75 @@ export function PartyDetailPage() {
       )}
 
       {!isDj && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="mb-8">
-          <h2 className="mb-4 text-xl font-semibold">Request a Song</h2>
-          <Card className="relative overflow-hidden border-2 border-primary shadow-[0_0_25px_rgba(59,130,246,0.5)]" style={{ background: "linear-gradient(135deg, #0c4a6e 0%, #0284c7 100%)" }}>
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-400 via-blue-500/50 to-transparent transform rotate-45 translate-x-12 -translate-y-12 z-0 opacity-80"></div>
-            <CardHeader className="relative z-10">
-              <CardTitle className="flex items-center text-white"><Music className="mr-2 h-5 w-5 text-blue-300" />Find a Song</CardTitle>
-              <CardDescription className="text-blue-100">Search for a song to request</CardDescription>
-            </CardHeader>
-            <CardContent className="relative z-10">
-              <div className="mb-4 p-3 bg-blue-950/70 rounded-md flex items-start gap-3 shadow-inner border border-blue-400/30">
-                <AlertCircle className="h-5 w-5 text-blue-300 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-white">DJ Minimum: ₦{currentParty.minRequestPrice?.toLocaleString() || "1,000"}</p>
-                  <p className="text-xs text-blue-200 mt-1">Higher bids get priority in the queue.</p>
-                </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">Request a Song</h2>
+            {!selectedTrack && (
+              <div className="flex items-center gap-1 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
+                <AlertCircle className="h-3 w-3 text-blue-400" />
+                <span className="text-xs font-semibold text-blue-300">Min: ₦{currentParty.minRequestPrice?.toLocaleString() || "1,000"}</span>
               </div>
-              <div className="space-y-4">
-                <div className="flex gap-2">
+            )}
+          </div>
+
+          <div className="relative overflow-hidden rounded-[2rem] bg-[#001C3D] border border-blue-400/20 shadow-[0_0_40px_rgba(59,130,246,0.1)]">
+            {!selectedTrack ? (
+              <div className="p-8 space-y-6">
+                <div className="relative group">
                   <Input
-                    placeholder="Search for songs, artists, or albums..."
+                    placeholder="Search for Nigerian hits, artists..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    className="bg-blue-900/80 backdrop-blur-sm shadow-inner text-white border-blue-500/30 placeholder:text-blue-300/70"
+                    className="h-16 pl-6 pr-32 rounded-2xl bg-[#0A2B5B]/50 backdrop-blur-md border-blue-500/20 text-white placeholder:text-blue-300/30 text-lg shadow-inner focus:ring-yellow-accent/40 focus:border-yellow-accent/40 transition-all outline-none"
                   />
-                  <Button onClick={handleSearch} disabled={isSearching || !searchQuery.trim()} className="bg-blue-500 text-white hover:bg-blue-600 shadow-md">
-                    {isSearching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-                    Search
-                  </Button>
-                </div>
-                {searchPerformed && searchResults.length === 0 && !isSearching && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-md bg-blue-950/80 text-center">
-                    <XCircle className="mx-auto mb-2 h-8 w-8 text-blue-300" />
-                    <h4 className="font-medium text-white">No songs found</h4>
-                    <p className="text-sm text-blue-200">Try different keywords or check the spelling.</p>
-                  </motion.div>
-                )}
-                <SpotifySearch results={searchResults} onSelect={handleTrackSelect} isLoading={isSearching} />
-                {selectedTrack && (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 overflow-hidden rounded-lg bg-blue-900/80 p-4 backdrop-blur-sm border border-blue-400/30 shadow-lg">
-                    <div className="flex items-center gap-4">
-                      {selectedTrack.album?.images?.[0]?.url ? (
-                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
-                          <img
-                            src={selectedTrack.album.images[0].url}
-                            alt={selectedTrack.album.name || "Album cover"}
-                            className="h-20 w-20 object-cover rounded-md shadow-lg"
-                          />
-                        </motion.div>
-                      ) : (
-                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="flex h-20 w-20 items-center justify-center rounded-md bg-blue-800">
-                          <Music className="h-8 w-8 text-blue-300" />
-                        </motion.div>
-                      )}
-                      <div>
-                        <h3 className="font-medium text-white text-lg">{selectedTrack.name}</h3>
-                        <p className="text-sm text-blue-200">{selectedTrack.artists.map(a => a.name).join(", ")}</p>
-                        <div className="mt-1 flex items-center text-xs text-blue-300">
-                          <Music className="mr-1 h-3 w-3 text-blue-400" />
-                          <span>{selectedTrack.album?.name || "Unknown Album"}</span>
-                          <span className="mx-1">•</span>
-                          <span>{Math.floor(selectedTrack.duration_ms / 60000)}:{((selectedTrack.duration_ms % 60000) / 1000).toFixed(0).padStart(2, '0')}</span>
-                        </div>
+                  <div className="absolute inset-y-2 right-2 flex items-center">
+                    {isSearching ? (
+                      <div className="mr-6">
+                        <Loader2 className="h-6 w-6 animate-spin text-yellow-accent" />
                       </div>
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-            </CardContent>
-            {selectedTrack && (
-              <CardFooter className="flex-col space-y-4 relative z-10">
-                <PriceStepper
-                  minPrice={currentParty.minRequestPrice || 500}
-                  value={price}
-                  onValueChange={setPrice}
-                />
-                <div className="w-full">
-                  <div className="mb-2 flex justify-between text-sm text-white">
-                    <span>Your balance:</span>
-                    <span className={price > balance ? "text-red-300 font-medium" : ""}>₦{balance.toLocaleString()}</span>
-                  </div>
-                  <Button onClick={handleRequestSong} disabled={isLoading || price > balance} className="w-full glow-blue" variant="default">
-                    Request for ₦{price.toLocaleString()}
-                  </Button>
-                  {price > balance && (
-                    <div className="mt-2">
-                      <div className="mb-2 p-2 rounded-md bg-red-900/30 border border-red-500/30 flex items-start gap-2">
-                        <AlertCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-xs text-red-300 font-medium">Insufficient Funds</p>
-                          <p className="text-xs text-blue-200">You need ₦{(price - balance).toLocaleString()} more.</p>
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm" onClick={() => navigate("/wallet")} className="w-full gap-2 border-blue-400/50 text-blue-300 hover:bg-blue-800/50">
-                        <Wallet className="h-4 w-4" />
-                        Add Funds
+                    ) : (
+                      <Button
+                        onClick={handleSearch}
+                        disabled={!searchQuery.trim()}
+                        className="h-full px-6 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-bold transition-all active:scale-95 shadow-lg flex items-center gap-2"
+                      >
+                        <Search className="h-5 w-5" />
+                        <span>Search</span>
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </CardFooter>
+
+                {searchPerformed && searchResults.length === 0 && !isSearching && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-12 rounded-[1.5rem] bg-[#0A2B5B]/30 border border-blue-500/10 text-center">
+                    <XCircle className="mx-auto mb-3 h-10 w-10 text-blue-400/30" />
+                    <h4 className="font-semibold text-white/60 text-lg">No hits found</h4>
+                    <p className="text-blue-300/40 text-sm">Try searching for something else</p>
+                  </motion.div>
+                )}
+
+                <div className="custom-scrollbar overflow-y-auto max-h-[450px] rounded-2xl pr-2">
+                  <SpotifySearch results={searchResults} onSelect={handleTrackSelect} isLoading={false} />
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-center p-4">
+                <RequestSongCard
+                  track={selectedTrack}
+                  balance={balance}
+                  minPrice={currentParty.minRequestPrice || 1000}
+                  onRequest={handleRequestSong}
+                  onCancel={() => setSelectedTrack(null)}
+                />
+              </div>
             )}
-          </Card>
+          </div>
         </motion.div>
       )}
 

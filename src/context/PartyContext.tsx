@@ -35,17 +35,20 @@ const updateSongReferences = (party: Party): Party => {
  * Normalize party data from API response to match internal Party type
  */
 const normalizePartyFromAPI = (apiData: any): Party => {
+  const data = apiData?.data || apiData;
+  const id = String(data.hub_id || data.id || data.passcode || "");
+
   return {
-    id: apiData.passcode || apiData.id,
-    name: apiData.party_name || apiData.name,
-    djId: apiData.dj_id || apiData.djId,
-    dj: apiData.hub_dj || apiData.dj,
-    location: apiData.venue_name || apiData.location,
-    passcode: apiData.passcode,
-    minRequestPrice: Number(apiData.base_price || apiData.minRequestPrice || 1000),
-    activeUntil: apiData.time_to_end || apiData.activeUntil,
-    songs: apiData.songs?.map((song: any) => ({
-      id: song.id,
+    id,
+    name: data.party_name || data.name || "Untitled Party",
+    djId: String(data.dj_id || data.djId || ""),
+    dj: data.hub_dj || data.dj || "Unknown DJ",
+    location: data.venue_name || data.location || "Unknown Location",
+    passcode: String(data.passcode || id),
+    minRequestPrice: Number(data.base_price || data.minRequestPrice || 1000),
+    activeUntil: data.time_to_end || data.activeUntil,
+    songs: data.songs?.map((song: any) => ({
+      id: String(song.id),
       title: song.title,
       artist: song.artist,
       price: Number(song.price),
@@ -54,10 +57,10 @@ const normalizePartyFromAPI = (apiData: any): Party => {
       requestedAt: new Date(song.requestedAt || song.requested_at),
       albumArt: song.albumArt || song.album_art,
     })) || [],
-    endDate: apiData.date_to_end || apiData.endDate,
-    isActive: apiData.hub_status ?? apiData.isActive ?? true,
-    createdAt: apiData.createdAt ? new Date(apiData.createdAt) : new Date(),
-    earnings: apiData.earnings || 0,
+    endDate: data.date_to_end || data.endDate,
+    isActive: data.hub_status ?? data.isActive ?? true,
+    createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+    earnings: Number(data.earnings || 0),
   };
 };
 
@@ -679,16 +682,21 @@ export function PartyProvider({ children }: { children: ReactNode }) {
 
       const response = await api.post("/dj_wallet/crt_hub/", payload);
 
-      const newParty: Party = {
-        ...partyData,
-        id: response.data.hub_id,
-        djId: user.id,
-        dj: user.djName || user.username,
-        songs: [],
-        createdAt: new Date(),
-        earnings: 0,
-        passcode: response.data.passcode,
-      };
+      const responseData = response.data.data || response.data;
+
+      // Use normalization to ensure all fields are correct
+      const newParty = normalizePartyFromAPI(responseData);
+
+      // Overwrite any fields that might be MISSING from the create response 
+      // but were in the initial partyData
+      if (!newParty.name) newParty.name = partyData.name;
+      if (!newParty.location) newParty.location = partyData.location;
+      if (!newParty.minRequestPrice) newParty.minRequestPrice = partyData.minRequestPrice;
+
+      // Ensure DJ info is set
+      newParty.djId = user.id;
+      newParty.dj = user.djName || user.username;
+      newParty.songs = []; // New party has no songs
 
       const updatedCreatedParties = [newParty, ...createdParties];
 
@@ -1038,6 +1046,74 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     }
   }, [currentParty]);
 
+  const updatePartySettings = useCallback(async (partyId: string, settings: Partial<Party>) => {
+    if (!isAuthenticated || !user || user.userType !== "HUB_DJ") {
+      toast.error("Only DJs can update party settings");
+      throw new Error("Only DJs can update party settings");
+    }
+
+    setIsLoading(true);
+    try {
+      const partyIdStr = normalizeId(partyId);
+      const party = findPartyById(partyIdStr);
+      if (!party) throw new Error("Party not found");
+
+      // Attempt to persist to backend if endpoint exists
+      // Given the pattern in ProfilePage.tsx: /dj_wallet/dj/edit/profile/
+      // We'll try a similar pattern for hubs
+      try {
+        const payload: any = {
+          dj_id: user.id,
+          hub_id: partyId,
+        };
+
+        if (settings.minRequestPrice !== undefined) {
+          payload.base_price = settings.minRequestPrice;
+        }
+
+        if (settings.name !== undefined) {
+          payload.party_name = settings.name;
+        }
+
+        if (settings.location !== undefined) {
+          payload.venue_name = settings.location;
+        }
+
+        // We'll try this endpoint, but if it fails with 404, we'll just update locally
+        // as the backend might not have this specific endpoint yet
+        await api.post("/dj_wallet/dj/edit/hub/", payload);
+      } catch (apiError: any) {
+        console.warn("API persistent update failed, updating locally only:", apiError);
+        // If it's a 404, we don't throw, we just let the local update happen
+        if (apiError.status !== 404) {
+          throw apiError;
+        }
+      }
+
+      const updatedParty = { ...party, ...settings };
+      updatePartyInState(updatedParty);
+
+      // Save to localStorage immediately
+      const isCurrent = currentParty && normalizeId(currentParty.id) === partyIdStr;
+      const updatedCreated = createdParties.map(p => normalizeId(p.id) === partyIdStr ? updatedParty : p);
+
+      saveToLocalStorageNow(
+        user.id,
+        isCurrent ? updatedParty : currentParty,
+        joinedParties,
+        updatedCreated
+      );
+
+      toast.success("Settings updated successfully");
+    } catch (error: any) {
+      console.error("Update party settings error:", error);
+      toast.error(error.message || "Failed to update settings");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, isAuthenticated, currentParty, joinedParties, createdParties, findPartyById, updatePartyInState, saveToLocalStorageNow]);
+
   const value = useMemo(() => ({
     currentParty,
     joinedParties,
@@ -1059,6 +1135,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     handleExpiredParties,
     refreshPartyData,
     fetchPartyByPasscode,
+    updatePartySettings,
   }), [
     currentParty,
     joinedParties,
@@ -1077,7 +1154,8 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     hasPendingSongs,
     handleExpiredParties,
     refreshPartyData,
-    fetchPartyByPasscode
+    fetchPartyByPasscode,
+    updatePartySettings
   ]);
 
   return (

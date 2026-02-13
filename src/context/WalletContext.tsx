@@ -139,8 +139,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
       const response = await api.post(endpoint, { user_id: user.id });
 
-      if (response.data && typeof response.data.balance === "number") {
-        return response.data.balance;
+      if (response.data) {
+        // Handle both 'balance' and 'wallet_balance' keys
+        const balanceVal = response.data.balance ?? response.data.wallet_balance;
+
+        if (balanceVal !== undefined) {
+          // Convert string to number if necessary (e.g. "0.00")
+          return typeof balanceVal === "string" ? parseFloat(balanceVal) : Number(balanceVal);
+        }
       }
 
       console.warn("Balance not found in API response:", response.data);
@@ -153,8 +159,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         await new Promise(resolve => setTimeout(resolve, 500));
         try {
           const retryResponse = await api.post(endpoint, { user_id: user.id });
-          if (retryResponse.data && typeof retryResponse.data.balance === "number") {
-            return retryResponse.data.balance;
+          if (retryResponse.data) {
+            const balanceVal = retryResponse.data.balance ?? retryResponse.data.wallet_balance;
+            if (balanceVal !== undefined) {
+              return typeof balanceVal === "string" ? parseFloat(balanceVal) : Number(balanceVal);
+            }
           }
         } catch (retryError) {
           console.warn("Retry failed:", retryError);
@@ -189,7 +198,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       : "/user_wallet/transaction_history/";
 
     try {
-      const response = await api.post(endpoint, { user_id: user.id });
+      // Use dj_id for Hub DJs, user_id for regular users
+      const payload = isDj ? { dj_id: user.id } : { user_id: user.id };
+      const response = await api.post(endpoint, payload);
 
       if (response.data && Array.isArray(response.data.transactions)) {
         return response.data.transactions.map((t: any) => ({

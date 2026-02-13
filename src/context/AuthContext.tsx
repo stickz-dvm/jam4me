@@ -120,6 +120,48 @@ const storage = {
   },
 };
 
+/**
+ * Ensures a profile picture string is a valid URL or Data URI.
+ * If the string is raw Base64 content from the backend, it adds the necessary prefix.
+ */
+const sanitizeAvatarUrl = (url: string | undefined): string | undefined => {
+  if (!url || typeof url !== 'string') return url;
+
+  // If it already has a protocol or data prefix, it's likely correct
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+
+  // Common Base64 start patterns for images
+  // /9j/ is JPEG
+  // iVBOR is PNG
+  // R0lGOD is GIF
+  // UklGR is WebP
+  const isBase64 = url.startsWith('/9j/') ||
+    url.startsWith('iVBOR') ||
+    url.startsWith('R0lGOD') ||
+    url.startsWith('UklGR');
+
+  if (isBase64) {
+    // Default to JPEG if we aren't sure, as it's most common for /9j/
+    const mimeType = url.startsWith('iVBOR') ? 'image/png' :
+      url.startsWith('R0lGOD') ? 'image/gif' :
+        url.startsWith('UklGR') ? 'image/webp' : 'image/jpeg';
+
+    return `data:${mimeType};base64,${url}`;
+  }
+
+  // If it's a relative path, prefix it with the base URL
+  if (url.startsWith('/')) {
+    const baseUrl = import.meta.env.VITE_BASE_URL;
+    // Clean up double slashes if necessary
+    const cleanedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    return `${cleanedBaseUrl}${url}`;
+  }
+
+  return url;
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -213,16 +255,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         (response.data.message.includes("Login successful") ||
           response.data.message.includes("login success"))
       ) {
-        // Validate token exists
-        if (!response.data.user?.token) {
+        const apiUser = response.data.user || response.data.dj || response.data;
+        const apiToken = response.data.token || response.data.user?.token || response.data.dj?.token;
+
+        if (!apiToken) {
           console.error("CRITICAL: No token in response!");
           toast.error("Login failed: No authentication token received");
-          // Clear any existing auth data
           storage.clearAuth();
           return response;
         }
 
-        const apiUser = response.data.user;
         const profilePicture = apiUser.profile_picture || apiUser.avatar || apiUser.photo || apiUser.image || apiUser.avatar_url || apiUser.profile_photo;
 
         const userData: User = {
@@ -230,7 +272,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           username: apiUser.username,
           userType: user_status,
           email: apiUser.email,
-          avatar: profilePicture,
+          avatar: sanitizeAvatarUrl(profilePicture),
         };
 
         console.log("Login User Data mapped:", userData);
@@ -238,7 +280,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // CRITICAL: Save to localStorage FIRST (synchronous)
         storage.setUser(userData);
-        storage.setToken(response.data.user.token);
+        storage.setToken(apiToken);
 
         // Verify it was saved
         const savedUser = storage.getUser();
@@ -368,13 +410,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("Registration response:", {
         status: response.status,
         message: response.data.message,
-        hasUser: !!response.data.user,
-        hasToken: !!response.data.user?.token
       });
 
-      if (response.status === 200 && response.data.message.includes("Welcome")) {
+      if (response.status === 200 && response.data.message?.toLowerCase().includes("welcome")) {
+        const apiUser = response.data.user || response.data.dj || response.data;
+        const apiToken = response.data.token || response.data.user?.token || response.data.dj?.token;
+
         const userData: User = {
-          id: response.data.user?.id,
+          id: apiUser.id,
           username: username,
           userType: user_status,
           email: email,
@@ -386,9 +429,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         storage.setUser(userData);
 
         // If token is provided, save it too
-        if (response.data.user?.token) {
+        if (apiToken) {
           console.log("Token provided, saving token");
-          storage.setToken(response.data.user.token);
+          storage.setToken(apiToken);
         } else {
           console.log("No token in registration response");
         }
@@ -447,7 +490,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser((currentUser) => {
       if (!currentUser) return null;
 
-      const updatedUser = { ...currentUser, ...userData };
+      // Sanitize avatar if it's being updated
+      const dataToUpdate = { ...userData };
+      if (dataToUpdate.avatar) {
+        dataToUpdate.avatar = sanitizeAvatarUrl(dataToUpdate.avatar);
+      }
+
+      const updatedUser = { ...currentUser, ...dataToUpdate };
       storage.setUser(updatedUser);
 
       return updatedUser;
@@ -479,6 +528,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return userType === "HUB_DJ" ? "/dj/dashboard" : "/parties";
   }, [getUserType]);
 
+  /**
+   * Refresh user profile from backend
+   */
+  const refreshUserProfile = useCallback(async () => {
+    if (!user) {
+      console.warn("AuthContext: refreshUserProfile called but no user is logged in");
+      return;
+    }
+
+    try {
+      // Use the endpoint suggested by the user
+      // Payload: { user_id: user.id }
+      // This endpoint seems to be for standard users
+      const endpoint = user.userType === "HUB_DJ"
+        ? "/dj_wallet/get_user_details/" // Guessing DJ equivalent
+        : "/user_wallet/get_user_details/";
+
+      console.log(`AuthContext: Refreshing user details from ${endpoint} for ID ${user.id}`);
+
+      const response = await api.post(endpoint, {
+        user_id: user.id
+      });
+
+      console.log("AuthContext: Refresh response:", response.data);
+
+      const apiUser = response.data.user || response.data.dj || response.data;
+
+      if (apiUser) {
+        // Try all possible avatar field names
+        const profilePicture = apiUser.profile_picture ||
+          apiUser.avatar ||
+          apiUser.photo ||
+          apiUser.image ||
+          apiUser.avatar_url ||
+          apiUser.profile_photo;
+
+        const updatedData: Partial<User> = {
+          username: apiUser.username || apiUser.dj_name || user.username,
+          email: apiUser.email || user.email,
+          avatar: sanitizeAvatarUrl(profilePicture),
+          phone: apiUser.phone || user.phone,
+        };
+
+        if (profilePicture) {
+          console.log("AuthContext: Found profile picture in refresh response:", profilePicture);
+        }
+
+        updateUserProfile(updatedData);
+      }
+    } catch (error) {
+      console.error("AuthContext: Failed to refresh user profile:", error);
+    }
+  }, [user, updateUserProfile]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -493,6 +596,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isDj: user?.userType === "HUB_DJ",
         getUserType,
         getHomeRoute,
+        refreshUserProfile,
       }}
     >
       {children}
