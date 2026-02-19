@@ -20,6 +20,7 @@ import { ImageWithFallback } from "../figma/ImageWithFallback";
 import { MusicPlayer } from "../MusicPlayer";
 import { NairaSign } from "../icons/NairaSign";
 import { format } from "date-fns";
+import { NowPlayingCard } from "../NowPlayingCard";
 
 export function DjDashboardPage() {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ export function DjDashboardPage() {
     getPartyQrCode,
     hasPendingSongs,
     handleExpiredParties,
+    nowPlaying,
   } = useParty();
 
   // Component state
@@ -224,13 +226,13 @@ export function DjDashboardPage() {
 
     setIsCreatingParty(true);
     try {
-      console.log("creating party payload in component: ", {
-        name: partyName,
-        minRequestPrice: minSongRequestPrice,
-        // passcode: Math.floor(100000 + Math.random() * 900000).toString(), // Generate a 6-digit passcode
-        location: partyVenue,
-        dj: user?.username || "DJ Anonymous",
-        activeUntil: endDateTime,
+      console.log("creating party payload (mapped for API): ", {
+        dj_id: user?.id,
+        party_name: partyName,
+        base_price: price,
+        venue_name: partyVenue,
+        date_to_end: format(partyEndDate!, "yyyy-MM-dd"),
+        time_to_end: endDateTime,
       });
 
       await createParty({
@@ -239,7 +241,7 @@ export function DjDashboardPage() {
         location: partyVenue,
         dj: user?.username || "DJ Anonymous",
         activeUntil: endDateTime,
-        endDate: format(partyEndDate!, "PPP"),
+        endDate: format(partyEndDate!, "yyyy-MM-dd"),
         isActive: true
       });
 
@@ -495,7 +497,7 @@ export function DjDashboardPage() {
                             selected={partyEndDate}
                             onSelect={setPartyEndDate}
                             initialFocus
-                            disabled={(date) => date < new Date().setHours(0, 0, 0, 0)}
+                            disabled={(date) => date.getTime() < new Date().setHours(0, 0, 0, 0)}
                           />
                         </PopoverContent>
                       </Popover>
@@ -618,6 +620,16 @@ export function DjDashboardPage() {
         </Dialog>
 
         {/* Dashboard stats cards have been completely removed */}
+
+        {nowPlaying && nowPlaying.now_playing && (
+          <div className="mb-8 max-w-md">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              Live Now
+            </h2>
+            <NowPlayingCard data={nowPlaying} />
+          </div>
+        )}
 
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Your Parties</h2>
@@ -764,7 +776,7 @@ export function DjDashboardPage() {
                                       selected={partyEndDate}
                                       onSelect={setPartyEndDate}
                                       initialFocus
-                                      disabled={(date) => date < new Date()}
+                                      disabled={(date) => date.getTime() < new Date().setHours(0, 0, 0, 0)}
                                     />
                                   </PopoverContent>
                                 </Popover>

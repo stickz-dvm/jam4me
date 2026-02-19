@@ -124,8 +124,10 @@ const storage = {
  * Ensures a profile picture string is a valid URL or Data URI.
  * If the string is raw Base64 content from the backend, it adds the necessary prefix.
  */
-const sanitizeAvatarUrl = (url: string | undefined): string | undefined => {
-  if (!url || typeof url !== 'string') return url;
+const sanitizeAvatarUrl = (url: any): string | undefined => {
+  if (!url || typeof url !== 'string' || url === 'null' || url === 'undefined' || url.trim() === '') {
+    return undefined;
+  }
 
   // If it already has a protocol or data prefix, it's likely correct
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
@@ -410,34 +412,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("Registration response:", {
         status: response.status,
         message: response.data.message,
+        hasUser: !!response.data.user,
+        hasToken: !!response.data.user?.token
       });
 
-      if (response.status === 200 && response.data.message?.toLowerCase().includes("welcome")) {
-        const apiUser = response.data.user || response.data.dj || response.data;
-        const apiToken = response.data.token || response.data.user?.token || response.data.dj?.token;
-
+      if (response.status === 200 && response.data.message.includes("Welcome")) {
         const userData: User = {
-          id: apiUser.id,
+          id: response.data.user?.id,
           username: username,
           userType: user_status,
           email: email,
         };
 
-        console.log("Saving user data after registration...");
-
-        // Save user to localStorage after successful registration
+        // ✅ Save user and token just like login
         storage.setUser(userData);
 
         // If token is provided, save it too
-        if (apiToken) {
+        if (response.data.user?.token) {
           console.log("Token provided, saving token");
-          storage.setToken(apiToken);
+          storage.setToken(response.data.user.token);
         } else {
           console.log("No token in registration response");
         }
 
         // Update React state
         setUser(userData);
+
+        // Debugging: confirm token & expiry
+        console.log("Saved token:", localStorage.getItem(AUTH_TOKEN_KEY));
+        console.log(
+          "Token expiry:",
+          new Date(parseInt(localStorage.getItem(TOKEN_EXPIRY_KEY) || "0"))
+        );
 
         toast.success("Registration successful!");
       }
@@ -460,6 +466,81 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   };
+
+  //   const register = async (
+  //     username: string,
+  //     email: string,
+  //     password: string,
+  //     user_status: UserType = "user"
+  //   ): Promise<ApiResponse> => {
+  //     console.log("Registration attempt:", { username, email, user_status });
+  //     setIsLoading(true);
+  //
+  //     try {
+  //       const endpoint =
+  //         user_status === "user"
+  //           ? "/user_wallet/crt_ur/us_hub_er/"
+  //           : "/dj_wallet/crt_ur/d_hub_j/";
+  //
+  //       const response = await api.post(endpoint, {
+  //         username,
+  //         email,
+  //         password,
+  //         user_status,
+  //       });
+  //
+  //       console.log("Registration response:", {
+  //         status: response.status,
+  //         message: response.data.message,
+  //         hasUser: !!response.data.user,
+  //         hasToken: !!response.data.user?.token
+  //       });
+  //
+  //       if (response.status === 200 && response.data.message.includes("Welcome")) {
+  //         const userData: User = {
+  //           id: response.data.user?.id,
+  //           username: username,
+  //           userType: user_status,
+  //           email: email,
+  //         };
+  //
+  //         console.log("Saving user data after registration...");
+  //
+  //         // Save user to localStorage after successful registration
+  //         storage.setUser(userData);
+  //
+  //         // If token is provided, save it too
+  //         if (response.data.user?.token) {
+  //           console.log("Token provided, saving token");
+  //           storage.setToken(response.data.user.token);
+  //         } else {
+  //           console.log("No token in registration response");
+  //         }
+  //
+  //         // Update React state
+  //         setUser(userData);
+  //
+  //         toast.success("Registration successful!");
+  //       }
+  //
+  //       return response;
+  //     } catch (error: any) {
+  //       console.error("Registration error:", error);
+  //
+  //       if (
+  //         error.status === 400 &&
+  //         error.originalError?.error === "username already exists"
+  //       ) {
+  //         toast.error("Username already exists");
+  //       } else {
+  //         toast.error(error.message || "Registration failed");
+  //       }
+  //
+  //       throw error;
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
 
   /**
    * Reset password function

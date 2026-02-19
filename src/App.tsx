@@ -20,6 +20,7 @@ import { ProfilePage } from "./components/pages/ProfilePage";
 import { SupportPage } from "./components/pages/SupportPage";
 import { DjSupportPage } from "./components/pages/DjSupportPage";
 import { MusicPosterDemo } from "./components/pages/MusicPosterDemo";
+import { NowPlayingPage } from "./components/pages/NowPlayingPage";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { WalletProvider } from "./context/WalletContext";
@@ -111,6 +112,7 @@ function AppWithProviders() {
                     <Route path="/wallet" element={<WalletPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/support" element={<SupportPage />} />
+                    <Route path="/now-playing" element={<NowPlayingPage />} />
                   </Route>
 
                   {/* DJ protected routes */}
@@ -125,6 +127,7 @@ function AppWithProviders() {
                     <Route path="/dj/wallet" element={<DjWalletPage />} />
                     <Route path="/dj/profile" element={<ProfilePage />} />
                     <Route path="/dj/support" element={<DjSupportPage />} />
+                    <Route path="/dj/now-playing" element={<NowPlayingPage />} />
                   </Route>
 
                   {/* Fallback route */}

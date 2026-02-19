@@ -93,7 +93,11 @@ export type PartyContextType = {
   setCreatedParties: Dispatch<SetStateAction<Party[]>>;
   handleExpiredParties: () => void;
   refreshPartyData: () => Promise<void>;
-  fetchPartyByPasscode: (passcode: string) => Promise<Party | null>
+  fetchPartyByPasscode: (passcode: string) => Promise<Party | null>;
+  updatePartySettings: (partyId: string, settings: Partial<Party>) => Promise<void>;
+  fetchSongList: (hubId: string) => Promise<void>;
+  fetchNowPlaying: (hubId: string) => Promise<void>;
+  nowPlaying: any | null;
 };
 
 // Wallet

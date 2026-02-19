@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Wallet, User, PartyPopper, HelpCircle, LogOut } from "lucide-react";
+import { Wallet, User, PartyPopper, HelpCircle, LogOut, PlayCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogoPlaceholder } from "./LogoPlaceholder";
 import { useState, useEffect, useRef } from "react";
@@ -15,13 +15,13 @@ export function Layout() {
 
   // Determine if current navigation is between navbar pages
   const isNavbarNavigation = () => {
-    const navbarPaths = ['/parties', '/wallet', '/profile', '/support'];
+    const navbarPaths = ['/parties', '/wallet', '/profile', '/support', '/now-playing'];
     const prevPath = prevLocationRef.current;
     const currentPath = location.pathname;
-    
+
     // Update the ref for next comparison
     prevLocationRef.current = currentPath;
-    
+
     // Check if both previous and current paths are navbar paths
     return navbarPaths.includes(prevPath) && navbarPaths.includes(currentPath);
   };
@@ -55,9 +55,9 @@ export function Layout() {
               <span className="text-xs text-primary font-medium -mt-1">User Mode</span>
             </div>
           </Link>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleLogoutClick}
             className="hidden md:flex items-center gap-1 text-muted-foreground hover:text-foreground"
           >
@@ -73,9 +73,9 @@ export function Layout() {
           <div className="w-full">
             <Outlet />
           </div>
-          ) : (
+        ) : (
           <AnimatePresence mode="wait">
-            <motion.div 
+            <motion.div
               key={location.pathname}
               className="w-full"
               initial={{ opacity: 0, y: 20 }}
@@ -93,39 +93,45 @@ export function Layout() {
       <nav className="sticky bottom-0 border-t border-border bg-card/80 backdrop-blur-md">
         <div className="container mx-auto">
           <div className="flex justify-around items-center p-3">
-            <NavItem 
-              to="/parties" 
-              label="Parties" 
-              icon={<PartyPopper className="w-5 h-5" />} 
-              isActive={isActive("/parties") || isActive("/party/")} 
+            <NavItem
+              to="/parties"
+              label="Parties"
+              icon={<PartyPopper className="w-5 h-5" />}
+              isActive={isActive("/parties") || isActive("/party/")}
             />
-            <NavItem 
-              to="/wallet" 
-              label="Wallet" 
-              icon={<Wallet className="w-5 h-5" />} 
-              isActive={isActive("/wallet")} 
+            <NavItem
+              to="/wallet"
+              label="Wallet"
+              icon={<Wallet className="w-5 h-5" />}
+              isActive={isActive("/wallet")}
             />
-            <NavItem 
-              to="/profile" 
-              label="Profile" 
-              icon={<User className="w-5 h-5" />} 
-              isActive={isActive("/profile")} 
+            <NavItem
+              to="/profile"
+              label="Profile"
+              icon={<User className="w-5 h-5" />}
+              isActive={isActive("/profile")}
             />
-            <NavItem 
-              to="/support" 
-              label="Support" 
-              icon={<HelpCircle className="w-5 h-5" />} 
-              isActive={isActive("/support")} 
+            <NavItem
+              to="/now-playing"
+              label="Playing"
+              icon={<PlayCircle className="w-5 h-5" />}
+              isActive={isActive("/now-playing")}
+            />
+            <NavItem
+              to="/support"
+              label="Support"
+              icon={<HelpCircle className="w-5 h-5" />}
+              isActive={isActive("/support")}
             />
           </div>
         </div>
       </nav>
 
       {/* Logout confirmation dialog */}
-      <LogoutConfirmDialog 
-        isOpen={showLogoutDialog} 
-        onClose={handleCancelLogout} 
-        onConfirm={handleConfirmLogout} 
+      <LogoutConfirmDialog
+        isOpen={showLogoutDialog}
+        onClose={handleCancelLogout}
+        onConfirm={handleConfirmLogout}
       />
     </div>
   );

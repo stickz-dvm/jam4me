@@ -202,10 +202,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const payload = isDj ? { dj_id: user.id } : { user_id: user.id };
       const response = await api.post(endpoint, payload);
 
-      if (response.data && Array.isArray(response.data.transactions)) {
-        return response.data.transactions.map((t: any) => ({
+      const transactionsData = response.data.transactions || response.data;
+      if (Array.isArray(transactionsData)) {
+        return transactionsData.map((t: any) => ({
           ...t,
-          date: new Date(t.date || t.created_at)
+          date: new Date(t.date || t.created_at || Date.now())
         }));
       }
 

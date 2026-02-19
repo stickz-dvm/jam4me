@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Music, User, Clock, CheckCircle } from "lucide-react";
+import { Music, User, Clock, CheckCircle, Zap } from "lucide-react";
 import { useState, useEffect } from "react";
 import { MusicArtService } from "../services/MusicArtService";
 

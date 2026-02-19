@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, LogOut, Edit, Phone, Camera, X, Mail, Lock, Shield } from "lucide-react";
+import { User, LogOut, Edit, Phone, Camera, X, Mail, Lock, Shield, History, MapPin } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 import { useAuth } from "../../context/AuthContext";
+import { useParty } from "../../context/PartyContext";
 import { toast } from "sonner";
 import { Separator } from "../ui/separator";
 import { LogoutConfirmDialog } from "../LogoutConfirmDialog";
@@ -15,6 +16,7 @@ import { api } from "@/api/apiMethods";
 export function ProfilePage() {
   const navigate = useNavigate();
   const { user, updateUserProfile, logout, refreshUserProfile } = useAuth();
+  const { joinedParties, createdParties, refreshPartyData } = useParty();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
@@ -35,6 +37,7 @@ export function ProfilePage() {
   useEffect(() => {
     if (user?.id) {
       refreshUserProfile();
+      refreshPartyData();
     }
   }, []);
 
@@ -381,6 +384,55 @@ export function ProfilePage() {
               Change
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* My Hubs / History Section */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle>
+            <div className="flex items-center">
+              <History className="w-4 h-4 mr-2 text-primary" />
+              {user?.userType === "HUB_DJ" ? "My Created Hubs" : "My Joined Hubs"}
+            </div>
+          </CardTitle>
+          <CardDescription>
+            Your recent party activity
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {(user?.userType === "HUB_DJ" ? createdParties : joinedParties).length > 0 ? (
+            <div className="space-y-3">
+              {(user?.userType === "HUB_DJ" ? createdParties : joinedParties).slice(0, 3).map((hub) => (
+                <div key={hub.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50">
+                  <div className="flex-1 min-w-0 mr-4">
+                    <p className="font-medium truncate">{hub.name}</p>
+                    <div className="flex items-center text-[10px] text-muted-foreground mt-0.5">
+                      <MapPin size={10} className="mr-1" />
+                      <span className="truncate">{hub.location}</span>
+                    </div>
+                  </div>
+                  <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${hub.isActive ? 'bg-green-500/10 text-green-500' : 'bg-muted text-muted-foreground'}`}>
+                    {hub.isActive ? 'ACTIVE' : 'CLOSED'}
+                  </div>
+                </div>
+              ))}
+              {(user?.userType === "HUB_DJ" ? createdParties : joinedParties).length > 3 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-xs text-primary"
+                  onClick={() => navigate(user?.userType === "HUB_DJ" ? "/dj/dashboard" : "/parties")}
+                >
+                  View All History
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="py-6 text-center">
+              <p className="text-sm text-muted-foreground italic">No hub history found yet.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
