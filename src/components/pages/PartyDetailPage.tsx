@@ -33,6 +33,7 @@ import { SpotifySearch } from "../SpotifySearch";
 import { SongCard } from "../SongCard";
 import { RequestSongCard } from "../RequestSongCard";
 import { MusicPlayer } from "../MusicPlayer";
+import { NowPlayingCard } from "../NowPlayingCard";
 import { toast } from "sonner";
 import { SpotifyTrack } from "../../services/SpotifyService";
 
@@ -130,7 +131,9 @@ export function PartyDetailPage() {
     hasPendingSongs,
     getPartyQrCode,
     setCurrentParty,
-    fetchPartyByPasscode
+    fetchPartyByPasscode,
+    nowPlaying,
+    fetchNowPlaying
   } = useParty();
   const { balance } = useWallet();
   const { searchTracks } = useSpotify();
@@ -233,7 +236,13 @@ export function PartyDetailPage() {
     if (!currentParty && passcode) {
       loadParty();
     }
-  }, [passcode, fetchPartyByPasscode, setCurrentParty]);
+
+    if (currentParty?.id) {
+      fetchNowPlaying(currentParty.id);
+      const interval = setInterval(() => fetchNowPlaying(currentParty.id), 30000);
+      return () => clearInterval(interval);
+    }
+  }, [passcode, currentParty?.id]);
 
   const queuedSongs = currentParty?.songs?.filter(song => song.status === "pending") || [];
   const playedSongs = currentParty?.songs?.filter(song => song.status === "played") || [];
@@ -446,6 +455,17 @@ export function PartyDetailPage() {
               </Button>
             </div>
           )}
+        </motion.div>
+      )}
+
+      {/* Mini Now Playing for Users - specifically positioned above Request Card */}
+      {!isDj && nowPlaying && nowPlaying.now_playing && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 max-w-md mx-auto"
+        >
+          <NowPlayingCard data={nowPlaying} className="border-primary/30 shadow-lg shadow-primary/5" />
         </motion.div>
       )}
 

@@ -159,64 +159,110 @@ export function PartiesPage() {
         </Button>
       </motion.div>
 
-      {joinedParties.length > 0 ? (
-        <motion.div
-          className="grid gap-4 grid-cols-1 md:grid-cols-2"
-          variants={containerVariants}
-        >
-          {joinedParties.map((party) => (
+      <div className="space-y-8">
+        {/* Active Parties */}
+        <div>
+          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+            Active Parties
+          </h3>
+          {joinedParties.filter(p => p.isActive).length > 0 ? (
             <motion.div
-              key={party.id}
-              variants={itemVariants}
-              whileHover={{ y: -5 }}
-              transition={{ type: "spring", stiffness: 300 }}
+              className="grid gap-4 grid-cols-1 md:grid-cols-2"
+              variants={containerVariants}
             >
-              <Card
-                className="cursor-pointer hover:shadow-md transition-shadow glass border-border/50"
-                onClick={() => navigate(`/party/${party.id}`)}
-              >
-                <CardHeader className="pb-2">
-                  <CardTitle>{party.name}</CardTitle>
-                  <CardDescription className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3 text-muted-foreground" />
-                    {party.location}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pb-2">
-                  <div className="flex justify-between items-center text-sm">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6 border border-primary/20">
-                        <AvatarImage src={getDjAvatarUrl(party.djId)} alt={party.dj} />
-                        <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                          {getInitials(party.dj)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>DJ: {party.dj}</span>
-                    </div>
-                    <div className="flex items-center bg-primary/10 px-2 py-1 rounded-full">
-                      <span className="text-primary">{party.songs.length} songs</span>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="text-xs text-muted-foreground">
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3 text-muted-foreground" />
-                      <span>Ends at:</span>
-                    </div>
-                    <span className="bg-card px-2 py-1 rounded-full text-foreground">
-                      {new Date(party.activeUntil).toLocaleString('en-NG', {
-                        dateStyle: 'short',
-                        timeStyle: 'short'
-                      })}
-                    </span>
-                  </div>
-                </CardFooter>
-              </Card>
+              {joinedParties.filter(p => p.isActive).map((party) => (
+                <motion.div
+                  key={party.id}
+                  variants={itemVariants}
+                  whileHover={{ y: -5 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Card
+                    className="cursor-pointer hover:shadow-md transition-shadow glass border-border/50 border-l-4 border-l-primary"
+                    onClick={() => navigate(`/party/${party.id}`)}
+                  >
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-lg">{party.name}</CardTitle>
+                        <div className="bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-primary/20">
+                          LIVE
+                        </div>
+                      </div>
+                      <CardDescription className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3 text-muted-foreground" />
+                        {party.location}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pb-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8 border-2 border-primary/10">
+                            <AvatarImage src={getDjAvatarUrl(party.djId)} alt={party.dj} />
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                              {getInitials(party.dj)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">DJ: {party.dj}</span>
+                        </div>
+                        <div className="flex items-center bg-primary/5 px-2 py-1 rounded-full border border-primary/10">
+                          <span className="text-primary font-semibold">{party.songs.length} songs</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="text-[10px] text-muted-foreground pt-0">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>Ends at {new Date(party.activeUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                        <span className="opacity-60">ID: {party.id}</span>
+                      </div>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
+              ))}
             </motion.div>
-          ))}
-        </motion.div>
-      ) : (
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-center glass rounded-xl border border-dashed border-border/50">
+              <p className="text-muted-foreground text-sm italic">You haven't joined any active parties yet.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Previous Hubs */}
+        {joinedParties.filter(p => !p.isActive).length > 0 && (
+          <div>
+            <h3 className="text-xl font-semibold mb-4 text-muted-foreground">Previous Hubs</h3>
+            <motion.div
+              className="grid gap-3 grid-cols-1 md:grid-cols-2 opacity-70 grayscale-[0.5]"
+              variants={containerVariants}
+            >
+              {joinedParties.filter(p => !p.isActive).map((party) => (
+                <motion.div key={party.id} variants={itemVariants}>
+                  <Card className="glass border-border/30 bg-card/20" data-status="inactive">
+                    <CardHeader className="pb-2 py-3 px-4">
+                      <CardTitle className="text-base text-muted-foreground">{party.name}</CardTitle>
+                      <CardDescription className="text-[10px] flex items-center gap-1">
+                        <Clock className="h-2 w-2" />
+                        Closed on {new Date(party.activeUntil).toLocaleDateString()}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pb-3 px-4">
+                      <div className="flex justify-between items-center text-xs opacity-60">
+                        <span>DJ: {party.dj}</span>
+                        <span>{party.songs.length} songs played</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        )}
+      </div>
+
+      {joinedParties.length === 0 && !isLoading && (
         <motion.div
           className="flex flex-col items-center justify-center py-12 text-center glass rounded-xl p-8 border border-border/50"
           variants={itemVariants}

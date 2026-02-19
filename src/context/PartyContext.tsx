@@ -68,6 +68,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { addFunds, deductFunds } = useWallet();
   const [currentParty, setCurrentParty] = useState<Party | null>(null);
+  const [nowPlaying, setNowPlaying] = useState<any | null>(null);
   const [joinedParties, setJoinedParties] = useState<Party[]>([]);
   const [createdParties, setCreatedParties] = useState<Party[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -394,6 +395,51 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     }
   }, [user, isAuthenticated, joinedParties, createdParties, saveToLocalStorageNow]);
 
+  const fetchSongList = useCallback(async (hubId: string) => {
+    if (!user || !isAuthenticated) return;
+
+    try {
+      // Endpoint is always on the dj_wallet side for song management
+      const response = await api.post("/dj_wallet/song_list/", { hub_id: hubId });
+
+      if (response.status === 200) {
+        const songs = response.data.songs || response.data;
+        if (Array.isArray(songs)) {
+          const normalizedSongs = songs.map((song: any) => ({
+            id: String(song.id || Math.random().toString(36).substr(2, 9)),
+            title: song.title || song.song_title,
+            artist: song.artist || song.artiste_name,
+            price: Number(song.price || 0),
+            requestedBy: song.requested_by || song.username,
+            status: song.status || "pending",
+            requestedAt: new Date(song.requested_at || Date.now()),
+            albumArt: song.album_art || song.profile_picture
+          }));
+
+          setCurrentParty(prev => {
+            if (!prev || String(prev.id) !== String(hubId)) return prev;
+            return { ...prev, songs: normalizedSongs };
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching song list:", error);
+    }
+  }, [user, isAuthenticated]);
+
+  const fetchNowPlaying = useCallback(async (hubId: string) => {
+    if (!user || !isAuthenticated) return;
+
+    try {
+      const response = await api.post("/dj_wallet/get_now_playing/", { hub_id: hubId });
+      if (response.status === 200) {
+        setNowPlaying(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching now playing:", error);
+    }
+  }, [user, isAuthenticated]);
+
   /**
    * Fetch user's joined parties from API
    */
@@ -404,14 +450,25 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      // Use the appropriate endpoint for hub list/history
+      const endpoint = user.userType === "HUB_DJ" ? "/dj_wallet/get_hubs/" : "/user_wallet/get_hubs/";
+      const payload = user.userType === "HUB_DJ" ? { dj_id: user.id } : { user_id: user.id };
 
-      return null;
+      const response = await api.post(endpoint, payload);
+
+      if (response.status === 200) {
+        const hubs = response.data.hubs || response.data;
+        if (Array.isArray(hubs)) {
+          return hubs.map(normalizePartyFromAPI);
+        }
+      }
+      return [];
     } catch (error: any) {
       console.error("Error fetching joined parties:", error);
       if (error.status !== 401) {
         toast.error("Failed to fetch joined parties");
       }
-      return null;
+      return [];
     }
   };
 
@@ -424,14 +481,20 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // TODO: Replace with actual endpoint
-      return null;
+      const response = await api.post("/dj_wallet/get_hubs/", { dj_id: user.id });
+      if (response.status === 200) {
+        const hubs = response.data.hubs || response.data;
+        if (Array.isArray(hubs)) {
+          return hubs.map(normalizePartyFromAPI);
+        }
+      }
+      return [];
     } catch (error: any) {
       console.error("Error fetching created parties:", error);
       if (error.status !== 401) {
         toast.error("Failed to fetch created parties");
       }
-      return null;
+      return [];
     }
   };
 
@@ -457,12 +520,20 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       if (apiCreatedParties !== null) {
         setCreatedParties(apiCreatedParties);
       }
+
+      // If there's a current party, refresh its details too
+      if (currentParty) {
+        await Promise.all([
+          fetchSongList(currentParty.id),
+          fetchNowPlaying(currentParty.id)
+        ]);
+      }
     } catch (error) {
       console.error("Error refreshing party data:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [user, isAuthenticated, authLoading]);
+  }, [user, isAuthenticated, authLoading, currentParty, fetchSongList, fetchNowPlaying]);
 
   /**
    * Initialize party state on mount and when auth state changes
@@ -1079,6 +1150,14 @@ export function PartyProvider({ children }: { children: ReactNode }) {
           payload.venue_name = settings.location;
         }
 
+        if (settings.endDate !== undefined) {
+          payload.date_to_end = settings.endDate;
+        }
+
+        if (settings.activeUntil !== undefined) {
+          payload.time_to_end = settings.activeUntil;
+        }
+
         // We'll try this endpoint, but if it fails with 404, we'll just update locally
         // as the backend might not have this specific endpoint yet
         await api.post("/dj_wallet/dj/edit/hub/", payload);
@@ -1136,6 +1215,9 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     refreshPartyData,
     fetchPartyByPasscode,
     updatePartySettings,
+    fetchSongList,
+    fetchNowPlaying,
+    nowPlaying,
   }), [
     currentParty,
     joinedParties,
@@ -1155,7 +1237,10 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     handleExpiredParties,
     refreshPartyData,
     fetchPartyByPasscode,
-    updatePartySettings
+    updatePartySettings,
+    fetchSongList,
+    fetchNowPlaying,
+    nowPlaying
   ]);
 
   return (

@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Home, Wallet, User, HelpCircle, LogOut } from "lucide-react";
+import { Home, Wallet, User, HelpCircle, LogOut, PlayCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
@@ -45,13 +45,13 @@ export function DjLayout() {
 
   // Determine if current navigation is between navbar pages
   const isNavbarNavigation = () => {
-    const navbarPaths = ['/dj/dashboard', '/dj/wallet', '/dj/profile', '/dj/support'];
+    const navbarPaths = ['/dj/dashboard', '/dj/wallet', '/dj/profile', '/dj/support', '/dj/now-playing'];
     const prevPath = prevLocationRef.current;
     const currentPath = location.pathname;
-    
+
     // Update the ref for next comparison
     prevLocationRef.current = currentPath;
-    
+
     // Check if both previous and current paths are navbar paths
     return navbarPaths.includes(prevPath) && navbarPaths.includes(currentPath);
   };
@@ -68,7 +68,7 @@ export function DjLayout() {
               <span className="text-xs text-accent font-medium -mt-1">DJ Mode</span>
             </div>
           </Link>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="rounded-full h-10 w-10 p-0">
@@ -91,7 +91,7 @@ export function DjLayout() {
               <DropdownMenuLabel>
                 <div className="flex flex-col">
                   <span>{user?.djName || user?.username}</span>
-                  
+
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -131,7 +131,7 @@ export function DjLayout() {
           </div>
         ) : (
           <AnimatePresence mode="wait">
-            <motion.div 
+            <motion.div
               key={location.pathname}
               className="w-full"
               initial={{ opacity: 0, y: 20 }}
@@ -149,32 +149,39 @@ export function DjLayout() {
       <nav className="sticky bottom-0 border-t border-border bg-card/80 backdrop-blur-md">
         <div className="container mx-auto">
           <div className="flex justify-around items-center p-3">
-            <NavItem 
-              to="/dj/dashboard" 
-              label="Dashboard" 
-              icon={<Home className="w-5 h-5" />} 
-              isActive={isActive("/dj/dashboard")} 
+            <NavItem
+              to="/dj/dashboard"
+              label="Dashboard"
+              icon={<Home className="w-5 h-5" />}
+              isActive={isActive("/dj/dashboard")}
               key={`nav-dashboard-${activeRoute}`}
             />
-            <NavItem 
-              to="/dj/wallet" 
-              label="Wallet" 
-              icon={<Wallet className="w-5 h-5" />} 
-              isActive={isActive("/dj/wallet")} 
+            <NavItem
+              to="/dj/wallet"
+              label="Wallet"
+              icon={<Wallet className="w-5 h-5" />}
+              isActive={isActive("/dj/wallet")}
               key={`nav-wallet-${activeRoute}`}
             />
-            <NavItem 
-              to="/dj/profile" 
-              label="Profile" 
-              icon={<User className="w-5 h-5" />} 
-              isActive={isActive("/dj/profile")} 
+            <NavItem
+              to="/dj/profile"
+              label="Profile"
+              icon={<User className="w-5 h-5" />}
+              isActive={isActive("/dj/profile")}
               key={`nav-profile-${activeRoute}`}
             />
-            <NavItem 
-              to="/dj/support" 
-              label="Support" 
-              icon={<HelpCircle className="w-5 h-5" />} 
-              isActive={isActive("/dj/support")} 
+            <NavItem
+              to="/dj/now-playing"
+              label="Playing"
+              icon={<PlayCircle className="w-5 h-5" />}
+              isActive={isActive("/dj/now-playing")}
+              key={`nav-nowplaying-${activeRoute}`}
+            />
+            <NavItem
+              to="/dj/support"
+              label="Support"
+              icon={<HelpCircle className="w-5 h-5" />}
+              isActive={isActive("/dj/support")}
               key={`nav-support-${activeRoute}`}
             />
           </div>
@@ -182,10 +189,10 @@ export function DjLayout() {
       </nav>
 
       {/* Logout confirmation dialog */}
-      <LogoutConfirmDialog 
-        isOpen={showLogoutDialog} 
-        onClose={handleCancelLogout} 
-        onConfirm={handleConfirmLogout} 
+      <LogoutConfirmDialog
+        isOpen={showLogoutDialog}
+        onClose={handleCancelLogout}
+        onConfirm={handleConfirmLogout}
       />
     </div>
   );
@@ -207,7 +214,7 @@ function NavItem({ to, label, icon, isActive }: NavItemProps) {
           className="absolute inset-0 rounded-xl bg-primary/15 border border-primary/20"
           initial={false}
           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-          style={{ 
+          style={{
             // Force hardware acceleration to fix mobile rendering issues
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
@@ -216,13 +223,13 @@ function NavItem({ to, label, icon, isActive }: NavItemProps) {
           }}
         />
       )}
-      <div 
+      <div
         className={`relative z-10 p-2 transition-colors duration-200 ${isActive ? 'text-primary' : 'text-foreground/60'}`}
         style={{ willChange: "color" }}
       >
         {icon}
       </div>
-      <span 
+      <span
         className={`relative z-10 text-xs mt-1 transition-colors duration-200 ${isActive ? 'text-primary font-medium' : 'text-foreground/60'}`}
         style={{ willChange: "color" }}
       >
