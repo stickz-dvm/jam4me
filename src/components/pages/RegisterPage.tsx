@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { useAuth } from "../../context/AuthContext";
 import { LogoPlaceholder } from "../LogoPlaceholder";
 import { User, Music } from "lucide-react";
+import { PasswordInput } from "../ui/password-input";
 import { UserType } from "@/src/api/types";
 
 export function RegisterPage() {
@@ -23,12 +24,12 @@ export function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
-    
+
     try {
       console.log("payload in component: ", {
         username,
@@ -39,7 +40,7 @@ export function RegisterPage() {
       const response = await register(username, email, password, user_status);
 
       console.log("register response in component: ", response);
-      
+
       // Navigate based on user type
       if (response.data.message.includes("Welcome ")) {
         if (user_status === "HUB_DJ") {
@@ -55,7 +56,7 @@ export function RegisterPage() {
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="flex flex-col items-center justify-center min-h-[80vh] p-4"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -64,22 +65,22 @@ export function RegisterPage() {
     >
       <div className="relative w-full h-full inset-0 -z-10">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-background"></div>
-        <motion.div 
+        <motion.div
           className="absolute top-1/4 right-1/4 w-64 h-64 rounded-full bg-primary/10 blur-3xl"
-          animate={{ 
-            x: [0, -30, 0], 
+          animate={{
+            x: [0, -30, 0],
             y: [0, 20, 0],
-            opacity: [0.3, 0.5, 0.3] 
+            opacity: [0.3, 0.5, 0.3]
           }}
-          transition={{ 
-            duration: 8, 
+          transition={{
+            duration: 8,
             repeat: Infinity,
-            repeatType: "reverse" 
+            repeatType: "reverse"
           }}
         />
       </div>
-      
-      <motion.div 
+
+      <motion.div
         className="flex flex-col items-center mb-8"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -89,7 +90,7 @@ export function RegisterPage() {
         <h1 className="gradient-text mb-1">Jam4me</h1>
         <p className="text-muted-foreground">The ultimate party music request platform</p>
       </motion.div>
-      
+
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -103,7 +104,7 @@ export function RegisterPage() {
               Enter your details to create your Jam4me account
             </CardDescription>
           </CardHeader>
-          
+
           <Tabs defaultValue="user" onValueChange={(value) => setUserStatus(value as UserType)} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="user" className="flex items-center justify-center gap-2">
@@ -115,7 +116,7 @@ export function RegisterPage() {
                 <span>DJ</span>
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="user">
               <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-4 mb-4">
@@ -149,9 +150,8 @@ export function RegisterPage() {
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="password">Password</label>
-                    <Input
+                    <PasswordInput
                       id="password"
-                      type="password"
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -162,9 +162,8 @@ export function RegisterPage() {
                   </div>
                   <div className="space-y-2 mb-2">
                     <label htmlFor="confirmPassword">Confirm Password</label>
-                    <Input
+                    <PasswordInput
                       id="confirmPassword"
-                      type="password"
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
@@ -186,7 +185,7 @@ export function RegisterPage() {
                 </CardFooter>
               </form>
             </TabsContent>
-            
+
             <TabsContent value="HUB_DJ">
               <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-4 mb-4">
@@ -220,9 +219,8 @@ export function RegisterPage() {
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="dj-password">Password</label>
-                    <Input
+                    <PasswordInput
                       id="dj-password"
-                      type="password"
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -233,9 +231,8 @@ export function RegisterPage() {
                   </div>
                   <div className="space-y-2 mb-2">
                     <label htmlFor="dj-confirmPassword">Confirm Password</label>
-                    <Input
+                    <PasswordInput
                       id="dj-confirmPassword"
-                      type="password"
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
@@ -255,9 +252,9 @@ export function RegisterPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col space-y-2 pt-2">
-                  <Button 
-                    type="submit" 
-                    className="w-full glow-accent bg-accent text-accent-foreground hover:bg-accent/90" 
+                  <Button
+                    type="submit"
+                    className="w-full glow-accent bg-accent text-accent-foreground hover:bg-accent/90"
                     disabled={isLoading}
                   >
                     {isLoading ? "Creating Account..." : "Register as DJ"}

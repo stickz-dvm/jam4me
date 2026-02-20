@@ -11,6 +11,7 @@ import { useParty } from "../../context/PartyContext";
 import { toast } from "sonner";
 import { Separator } from "../ui/separator";
 import { LogoutConfirmDialog } from "../LogoutConfirmDialog";
+import { PasswordInput } from "../ui/password-input";
 import { api } from "@/api/apiMethods";
 
 export function ProfilePage() {
@@ -578,9 +579,8 @@ export function ProfilePage() {
 
             <div className="space-y-2">
               <label htmlFor="currentPassword">Current Password</label>
-              <Input
+              <PasswordInput
                 id="currentPassword"
-                type="password"
                 placeholder="••••••••"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
@@ -623,9 +623,8 @@ export function ProfilePage() {
 
             <div className="space-y-2">
               <label htmlFor="currentPasswordChange">Current Password</label>
-              <Input
+              <PasswordInput
                 id="currentPasswordChange"
-                type="password"
                 placeholder="••••••••"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
@@ -636,9 +635,8 @@ export function ProfilePage() {
 
             <div className="space-y-2">
               <label htmlFor="newPassword">New Password</label>
-              <Input
+              <PasswordInput
                 id="newPassword"
-                type="password"
                 placeholder="••••••••"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -652,9 +650,8 @@ export function ProfilePage() {
 
             <div className="space-y-2">
               <label htmlFor="confirmPassword">Confirm New Password</label>
-              <Input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}

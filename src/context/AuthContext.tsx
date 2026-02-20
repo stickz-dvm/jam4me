@@ -307,6 +307,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Then update React state (asynchronous)
         setUser(userData);
 
+        // Fetch full profile immediately to get missing fields like email/avatar
+        setTimeout(() => {
+          refreshUserProfile();
+        }, 100);
+
         console.log("Login complete! User is now:", userData.username);
         toast.success("Login successful!");
       } else {
