@@ -163,7 +163,7 @@ export function RequestSongCard({
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => handleStep(-100)}
-                                        className="h-10 w-10 text-white/70 hover:text-white"
+                                        className="h-10 w-10 text-white/70 hover:text-white rounded-full p-0 flex items-center justify-center overflow-hidden"
                                     >
                                         <Minus className="h-4 w-4" />
                                     </Button>
@@ -172,7 +172,7 @@ export function RequestSongCard({
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => handleStep(100)}
-                                        className="h-10 w-10 text-white/70 hover:text-white"
+                                        className="h-10 w-10 text-white/70 hover:text-white rounded-full p-0 flex items-center justify-center overflow-hidden"
                                     >
                                         <Plus className="h-4 w-4" />
                                     </Button>
