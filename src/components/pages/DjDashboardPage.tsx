@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, MouseEvent, SetStateAction } from "react";
+import { useState, useEffect, useRef, MouseEvent, SetStateAction, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
@@ -885,7 +885,7 @@ export function DjDashboardPage() {
           <h2 className="text-2xl font-bold mb-4">Popular Song Requests</h2>
           {topSongs.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {topSongs.map((song, index) => (
+              {topSongs.map((song: any, index: number) => (
                 <Card key={index} className="bg-card/80 backdrop-blur-sm border-border/50">
                   <CardContent className="pt-6">
                     <div className="flex items-center">
