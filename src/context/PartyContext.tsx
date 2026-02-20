@@ -421,7 +421,11 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     if (!user || !isAuthenticated) return;
 
     try {
-      const response = await api.post("/dj_wallet/get_now_playing/", { hub_id: hubId });
+      const endpoint = user.userType === "HUB_DJ"
+        ? "/dj_wallet/get_now_playing/"
+        : "/user_wallet/get_now_playing/";
+
+      const response = await api.post(endpoint, { hub_id: hubId });
       if (response.status === 200) {
         setNowPlaying(response.data);
       }
