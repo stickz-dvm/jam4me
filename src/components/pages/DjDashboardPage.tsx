@@ -56,21 +56,10 @@ export function DjDashboardPage() {
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const priceInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize stats with zero values for new users
-  const [stats, setStats] = useState({
-    totalParties: 0,
-    totalEarnings: 0,
-    totalRequests: 0,
-    songsPlayed: 0,
-    topSongs: [] as { title: string; artist: string; requestCount: number }[]
-  });
-
   // Filter parties by status - safely handle undefined parties
   const parties = createdParties || [];
   const ongoingParty = currentParty;
   const pastParties = parties.filter(party => party.isActive === false);
-
-  console.log("ongoing party det: ", ongoingParty);
 
   // Handle custom price input change
   const handleCustomPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,75 +92,62 @@ export function DjDashboardPage() {
     }
   };
 
-  useEffect(() => {
-    // Calculate stats based on the available parties
-    const calculateStats = () => {
-      setIsLoading(true);
-      try {
-        if (!parties || parties.length === 0) {
-          setStats({
-            totalParties: 0,
-            totalEarnings: 0,
-            totalRequests: 0,
-            songsPlayed: 0,
-            topSongs: []
-          });
-          return;
+  // Calculate stats using useMemo instead of useEffect + useState to avoid re-render loops
+  const stats = useMemo(() => {
+    if (!parties || parties.length === 0) {
+      return {
+        totalParties: 0,
+        totalEarnings: 0,
+        totalRequests: 0,
+        songsPlayed: 0,
+        topSongs: [] as { title: string; artist: string; requestCount: number }[]
+      };
+    }
+
+    // Calculate total earnings and total requests
+    let totalEarnings = 0;
+    let totalRequests = 0;
+    let songsPlayedCount = 0;
+    const songStats: Record<string, { title: string; artist: string; requestCount: number }> = {};
+
+    parties.forEach(party => {
+      // Check for undefined properties to avoid errors
+      const partyEarnings = party.earnings || 0;
+      const partySongs = party.songs || [];
+
+      totalEarnings += partyEarnings;
+      totalRequests += partySongs.length;
+
+      // Count played songs
+      songsPlayedCount += partySongs.filter(s => s.status === "played" || s.status === "playing").length;
+
+      // Track song request frequency
+      partySongs.forEach(song => {
+        const key = `${song.title}-${song.artist}`;
+        if (songStats[key]) {
+          songStats[key].requestCount += 1;
+        } else {
+          songStats[key] = {
+            title: song.title,
+            artist: song.artist,
+            requestCount: 1
+          };
         }
+      });
+    });
 
-        // Calculate total earnings and total requests
-        let totalEarnings = 0;
-        let totalRequests = 0;
-        let songsPlayed = 0;
-        const songStats: Record<string, { title: string; artist: string; requestCount: number }> = {};
+    // Convert song stats to array and sort by request count
+    const topSongs = Object.values(songStats)
+      .sort((a, b) => b.requestCount - a.requestCount)
+      .slice(0, 6); // Get top 6 songs
 
-        parties.forEach(party => {
-          // Check for undefined properties to avoid errors
-          const partyEarnings = party.earnings || 0;
-          const partySongs = party.songs || [];
-
-          totalEarnings += partyEarnings;
-          totalRequests += partySongs.length;
-
-          // Count played songs
-          songsPlayed += partySongs.filter(s => s.status === "played" || s.status === "playing").length;
-
-          // Track song request frequency
-          partySongs.forEach(song => {
-            const key = `${song.title}-${song.artist}`;
-            if (songStats[key]) {
-              songStats[key].requestCount += 1;
-            } else {
-              songStats[key] = {
-                title: song.title,
-                artist: song.artist,
-                requestCount: 1
-              };
-            }
-          });
-        });
-
-        // Convert song stats to array and sort by request count
-        const topSongs = Object.values(songStats)
-          .sort((a, b) => b.requestCount - a.requestCount)
-          .slice(0, 6); // Get top 6 songs
-
-        setStats({
-          totalParties: parties.length,
-          totalEarnings,
-          totalRequests,
-          songsPlayed,
-          topSongs
-        });
-      } catch (error) {
-        // console.error("Failed to calculate stats:", error);
-        toast.error("Failed to load dashboard data. Please try again later.");
-      } finally {
-        setIsLoading(false);
-      }
+    return {
+      totalParties: parties.length,
+      totalEarnings,
+      totalRequests,
+      songsPlayed: songsPlayedCount,
+      topSongs
     };
-
-    calculateStats();
   }, [parties]);
 
   // Handle expired parties 

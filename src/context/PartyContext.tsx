@@ -412,8 +412,11 @@ export function PartyProvider({ children }: { children: ReactNode }) {
           });
         }
       }
-    } catch (error) {
-      console.error("Error fetching song list:", error);
+    } catch (error: any) {
+      // Suppress specific backend error noise for song list
+      if (error.status !== 500 && error.status !== 404) {
+        console.error("Error fetching song list:", error);
+      }
     }
   }, [user, isAuthenticated]);
 
@@ -429,8 +432,11 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       if (response.status === 200) {
         setNowPlaying(response.data);
       }
-    } catch (error) {
-      console.error("Error fetching now playing:", error);
+    } catch (error: any) {
+      // Suppress specific backend error noise for now playing
+      if (error.status !== 500 && error.status !== 404) {
+        console.error("Error fetching now playing:", error);
+      }
     }
   }, [user, isAuthenticated]);
 
