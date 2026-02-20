@@ -198,8 +198,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       : "/user_wallet/transaction_history/";
 
     try {
-      // Use dj_id for Hub DJs, user_id for regular users
-      const payload = isDj ? { dj_id: user.id } : { user_id: user.id };
+      // Use user_id for both Hub DJs and regular users
+      const payload = { user_id: user.id };
       const response = await api.post(endpoint, payload);
 
       const transactionsData = response.data.transactions || response.data;
