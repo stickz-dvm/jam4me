@@ -90,7 +90,7 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
 
     if (token && config.headers) {
-      config.headers.Authorization = `Token ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     } else if (!isPublicRoute(config.url)) {
       // Token missing for protected route
       console.warn("No auth token found for protected route:", config.url);

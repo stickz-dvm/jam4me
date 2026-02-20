@@ -455,7 +455,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       return [];
     } catch (error: any) {
       console.error("Error fetching joined parties:", error);
-      if (error.status !== 401) {
+      if (error.status !== 401 && error.status !== 404) {
         toast.error("Failed to fetch joined parties");
       }
       return [];
@@ -481,7 +481,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       return [];
     } catch (error: any) {
       console.error("Error fetching created parties:", error);
-      if (error.status !== 401) {
+      if (error.status !== 401 && error.status !== 404) {
         toast.error("Failed to fetch created parties");
       }
       return [];
@@ -624,7 +624,8 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     try {
       // We'll try the documented endpoint with the standard prefix
       const currentUserId = user.id;
-      const hubId = Number(passcode);
+      // DO NOT use Number() because passcodes can be alphanumeric (e.g. E2OR8X)
+      const hubId = passcode;
 
       console.log("Joining Hub with payload:", { user_id: currentUserId, hub_id: hubId });
 
@@ -632,7 +633,8 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       const response = await api.post("/user_wallet/jo/_hub/", {
         user_id: currentUserId,
         hub_id: hubId,
-        join_code: hubId // Fallback field
+        hub_passcode: hubId, // Common variant
+        join_code: hubId
       });
 
       console.log("Join Hub Response (Primary):", response);
@@ -686,8 +688,8 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         console.log("Primary endpoint failed with 400/404, trying legacy endpoint...");
         try {
           const legacyResponse = await api.post("/user_wallet/jo/_hub/", {
-            user_id: Number(user.id),
-            join_code: Number(passcode)
+            user_id: user.id,
+            join_code: passcode
           });
 
           if (legacyResponse.status === 200) {
