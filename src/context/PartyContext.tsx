@@ -45,7 +45,7 @@ const normalizePartyFromAPI = (apiData: any): Party => {
     dj: data.hub_dj || data.dj || "Unknown DJ",
     location: data.venue_name || data.location || "Unknown Location",
     passcode: String(data.passcode || id),
-    minRequestPrice: Number(data.base_price || data.base || data.minRequestPrice || 1000),
+    minRequestPrice: Number(data.min_request_price || data.base_price || data.base || data.minRequestPrice || 1000),
     activeUntil: data.time_to_end || data.time || data.activeUntil,
     songs: data.songs?.map((song: any) => ({
       id: String(song.id),
