@@ -464,9 +464,9 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       }
       return [];
     } catch (error: any) {
-      console.error("Error fetching joined parties:", error);
-      if (error.status !== 401 && error.status !== 404) {
-        toast.error("Failed to fetch joined parties");
+      // Suppress specific backend error noise for hub list
+      if (error.status !== 500 && error.status !== 404) {
+        console.error("Error fetching joined parties:", error);
       }
       return [];
     }
@@ -660,8 +660,8 @@ export function PartyProvider({ children }: { children: ReactNode }) {
           dj: data.hub_dj || data.dj || "Unknown DJ",
           location: data.venue_name || data.location || "Venue",
           passcode: data.passcode || passcode,
-          minRequestPrice: Number(data.base_price || 1000),
-          activeUntil: data.time_to_end || new Date(Date.now() + 3600000).toISOString(),
+          minRequestPrice: Number(data.min_request_price || data.base_price || 1000),
+          activeUntil: data.time_to_end || data.time || new Date(Date.now() + 3600000).toISOString(),
           songs: [],
           endDate: data.date_to_end,
           isActive: data.hub_status ?? true,
@@ -753,6 +753,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         party_name: partyData.name,
         hub_status: partyData.isActive,
         base_price: partyData.minRequestPrice,
+        min_request_price: partyData.minRequestPrice,
         date_to_end: partyData.endDate,
         time_to_end: partyData.activeUntil,
         venue_name: partyData.location
@@ -809,9 +810,8 @@ export function PartyProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      // NOTE: Using 'request_song/' endpoint from endpoint.txt
-      // Payload: {'song_title': 'string', 'artiste_name': 'string', 'user_id': 'int'}
-      await api.post("/request_song/", {
+      // Aligned with User_Doc.txt: POST /re/song
+      await api.post("/user_wallet/re/song/", {
         song_title: songTitle,
         artiste_name: artist,
         user_id: user.id
@@ -862,13 +862,17 @@ export function PartyProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       const song = party.songs.find(s => s.id === songId);
       if (!song || song.status !== "pending") {
         throw new Error("Song not found or already processed");
       }
+
+      // Aligned with DJ_Doc.txt: POST /party/accept_song/
+      await api.post("/dj_wallet/party/accept_song/", {
+        user_name: song.requestedBy,
+        song_title: song.title,
+        song_tittle: song.title // Fallback for the typo in doc
+      });
 
       const updatedSongs = party.songs.map(s =>
         s.id === songId ? { ...s, status: "pending" as const } : s
@@ -1167,7 +1171,8 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         };
 
         if (settings.minRequestPrice !== undefined) {
-          payload.base_price = settings.minRequestPrice;
+          payload.min_request_price = settings.minRequestPrice;
+          payload.base_price = settings.minRequestPrice; // Fallback for transition
         }
 
         if (settings.name !== undefined) {
