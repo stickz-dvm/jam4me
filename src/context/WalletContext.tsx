@@ -58,6 +58,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const hasFetchedDataRef = useRef(false);
+  const lastUserIdRef = useRef<string | null>(null);
   /**
    * Load wallet data from localStorage
    * This runs immediately without waiting for API calls
@@ -263,9 +264,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
    * Separate effect from data persistence to avoid loops
    */
   useEffect(() => {
-    // Reset initialization flag when user changes
-    hasFetchedDataRef.current = false;
-    setIsInitialized(false);
+    // Reset initialization flag ONLY when user actually changes
+    if (user?.id !== lastUserIdRef.current) {
+      hasFetchedDataRef.current = false;
+      lastUserIdRef.current = user?.id || null;
+    }
 
     // Wait for auth to finish loading
     if (authLoading) {
@@ -274,15 +277,21 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     // If not authenticated, clear wallet data
     if (!isAuthenticated || !user) {
-      setBalance(0);
-      setTransactions([]);
-      setPaymentMethods([]);
-      setIsInitialized(true);
+      if (isInitialized) {
+        setBalance(0);
+        setTransactions([]);
+        setPaymentMethods([]);
+      } else {
+        setIsInitialized(true);
+      }
       return;
     }
 
     // Load local data first (instant)
-    loadLocalWalletData();
+    if (!isInitialized) {
+      loadLocalWalletData();
+      setIsInitialized(true);
+    }
 
     // CRITICAL: Add small delay before API calls to let auth settle
     // This prevents 401 errors immediately after login
@@ -291,16 +300,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
       // Wait 500ms for token to be properly set in axios interceptor
       const timer = setTimeout(() => {
-        refreshWalletData().finally(() => {
-          setIsInitialized(true);
-        });
+        refreshWalletData();
       }, 500);
 
       return () => clearTimeout(timer);
-    } else {
-      setIsInitialized(true);
     }
-  }, [user, isAuthenticated, authLoading, loadLocalWalletData, refreshWalletData]);
+  }, [user?.id, isAuthenticated, authLoading, loadLocalWalletData, refreshWalletData, isInitialized]);
 
   /**
    * Save wallet data to localStorage whenever it changes
