@@ -810,11 +810,12 @@ export function PartyProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      // Aligned with User_Doc.txt: POST /re/song
-      await api.post("/user_wallet/re/song/", {
+      // Updated per backend developer correction
+      await api.post("/user_wallet/request_song/", {
         song_title: songTitle,
         artiste_name: artist,
-        user_id: user.id
+        user_id: user.id,
+        hub_id: currentParty.id
       });
 
       // Deduct locally for UI feedback (backup to API handling it)
