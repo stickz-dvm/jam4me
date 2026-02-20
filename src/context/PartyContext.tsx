@@ -815,7 +815,8 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         song_title: songTitle,
         artiste_name: artist,
         user_id: user.id,
-        hub_id: currentParty.id
+        hub_id: currentParty.id,
+        bid_amount: price
       });
 
       // Deduct locally for UI feedback (backup to API handling it)
