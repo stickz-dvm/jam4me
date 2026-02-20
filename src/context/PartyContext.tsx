@@ -46,7 +46,7 @@ const normalizePartyFromAPI = (apiData: any): Party => {
     location: data.venue_name || data.location || "Unknown Location",
     passcode: String(data.passcode || id),
     minRequestPrice: Number(data.base_price || data.base || data.minRequestPrice || 1000),
-    activeUntil: data.time_to_end || data.activeUntil,
+    activeUntil: data.time_to_end || data.time || data.activeUntil,
     songs: data.songs?.map((song: any) => ({
       id: String(song.id),
       title: song.title,
@@ -57,7 +57,7 @@ const normalizePartyFromAPI = (apiData: any): Party => {
       requestedAt: new Date(song.requestedAt || song.requested_at),
       albumArt: song.albumArt || song.album_art,
     })) || [],
-    endDate: data.date_to_end || data.endDate,
+    endDate: data.date_to_end || data.date || data.endDate,
     isActive: data.hub_status ?? data.isActive ?? true,
     createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
     earnings: Number(data.earnings || 0),
@@ -75,6 +75,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false);
 
   const hasFetchedDataRef = useRef(false);
+  const lastUserIdRef = useRef<string | null>(null);
   // Track if we should skip the next save (to prevent loops)
   const skipNextSaveRef = useRef(false);
 
@@ -300,17 +301,6 @@ export function PartyProvider({ children }: { children: ReactNode }) {
   }, [user, isAuthenticated, authLoading, loadLocalPartyData]);
 
   /**
-   * Auto-save to localStorage whenever state changes
-   * This is a backup - joinParty also saves immediately
-   */
-  useEffect(() => {
-    if (!user || !isInitialized) return;
-
-    console.log("State changed, auto-saving to localStorage");
-    saveToLocalStorageNow(user.id, currentParty, joinedParties, createdParties);
-  }, [currentParty, joinedParties, createdParties, user, isInitialized, saveToLocalStorageNow]);
-
-  /**
    * ✨ NEW: Fetch a single party by passcode/ID
    * This is the key method for PartyDetailsPage
    */
@@ -533,40 +523,45 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [user, isAuthenticated, authLoading, currentParty, fetchSongList, fetchNowPlaying]);
+  }, [user, isAuthenticated, authLoading, fetchSongList, fetchNowPlaying]);
 
   /**
    * Initialize party state on mount and when auth state changes
    */
   useEffect(() => {
-    hasFetchedDataRef.current = false;
-    setIsInitialized(false);
+    // Reset fetch flag ONLY when user actually changes
+    if (user?.id !== lastUserIdRef.current) {
+      hasFetchedDataRef.current = false;
+      lastUserIdRef.current = user?.id || null;
+    }
 
     if (authLoading) {
       return;
     }
 
     if (!isAuthenticated || !user) {
-      setCurrentParty(null);
-      setJoinedParties([]);
-      setCreatedParties([]);
-      setIsInitialized(true);
+      if (isInitialized) {
+        setCurrentParty(null);
+        setJoinedParties([]);
+        setCreatedParties([]);
+      } else {
+        setIsInitialized(true);
+      }
       return;
     }
 
     // Load local data first
-    loadLocalPartyData();
-
-    // Then fetch fresh data from API
-    if (!hasFetchedDataRef.current) {
-      hasFetchedDataRef.current = true;
-      refreshPartyData().finally(() => {
-        setIsInitialized(true);
-      });
-    } else {
+    if (!isInitialized) {
+      loadLocalPartyData();
       setIsInitialized(true);
     }
-  }, [user, isAuthenticated, authLoading, loadLocalPartyData, refreshPartyData]);
+
+    // Then fetch fresh data from API ONCE
+    if (!hasFetchedDataRef.current) {
+      hasFetchedDataRef.current = true;
+      refreshPartyData();
+    }
+  }, [user?.id, isAuthenticated, authLoading, loadLocalPartyData, refreshPartyData, isInitialized]);
 
   /**
    * Save to localStorage whenever party state changes
