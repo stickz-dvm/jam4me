@@ -158,7 +158,7 @@ export function RequestSongCard({
                             </div>
 
                             <div className="flex items-center gap-3">
-                                <div className="flex-1 flex items-center bg-black/20 rounded-xl p-1 border border-white/5">
+                                <div className="flex-1 flex items-center bg-black/20 rounded-full p-1 border border-white/5">
                                     <Button
                                         variant="ghost"
                                         size="icon"
@@ -185,7 +185,7 @@ export function RequestSongCard({
                             <Button
                                 onClick={() => onRequest(price)}
                                 disabled={price > balance}
-                                className={`w-full py-8 rounded-2xl font-black text-xl uppercase tracking-widest shadow-2xl active:scale-[0.98] transition-all relative overflow-hidden ${price >= minPrice * 2 ? "bg-white text-black" : "bg-[#FFD60A] text-black"
+                                className={`w-full py-8 rounded-full font-black text-xl uppercase tracking-widest shadow-2xl active:scale-[0.98] transition-all relative overflow-hidden ${price >= minPrice * 2 ? "bg-white text-black" : "bg-[#FFD60A] text-black"
                                     }`}
                             >
                                 <span className="relative z-10 flex items-center justify-center gap-3">
