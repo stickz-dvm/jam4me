@@ -1104,23 +1104,44 @@ export function PartyProvider({ children }: { children: ReactNode }) {
   }, [findPartyById]);
 
   const handleExpiredParties = useCallback(() => {
-    const now = new Date().toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    // CRITICAL: Use robust Date comparison instead of locale string comparison
+    const now = new Date();
 
-    if (currentParty && currentParty.activeUntil && now > currentParty.activeUntil) {
-      const expiredParty = { ...currentParty, isActive: false };
+    // Check current party for expiration
+    if (currentParty && (currentParty.endDate || currentParty.activeUntil)) {
+      try {
+        let expirationDate: Date | null = null;
 
-      setCreatedParties(prev => {
-        if (!prev.some(p => p.id === currentParty.id)) {
-          return [...prev, expiredParty];
+        if (currentParty.endDate && currentParty.activeUntil) {
+          // Combine date and time
+          expirationDate = new Date(`${currentParty.endDate}T${currentParty.activeUntil}`);
+        } else if (currentParty.endDate) {
+          // Default to end of day if only date
+          expirationDate = new Date(`${currentParty.endDate}T23:59:59`);
         }
-        return prev.map(p => p.id === currentParty.id ? expiredParty : p);
-      });
 
-      setCurrentParty(null);
-      toast.info("Current party has expired");
+        if (expirationDate && now > expirationDate) {
+          console.log("Party expired based on Date comparison:", {
+            party: currentParty.name,
+            now: now.toISOString(),
+            exhaustedAt: expirationDate.toISOString()
+          });
+
+          const expiredParty = { ...currentParty, isActive: false };
+
+          setCreatedParties(prev => {
+            if (!prev.some(p => p.id === currentParty.id)) {
+              return [...prev, expiredParty];
+            }
+            return prev.map(p => p.id === currentParty.id ? expiredParty : p);
+          });
+
+          setCurrentParty(null);
+          toast.info("Your session has expired");
+        }
+      } catch (e) {
+        console.warn("Failed to parse party expiration date:", e);
+      }
     }
   }, [currentParty]);
 
