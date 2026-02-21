@@ -36,7 +36,28 @@ const updateSongReferences = (party: Party): Party => {
  */
 const normalizePartyFromAPI = (apiData: any): Party => {
   const data = apiData?.data || apiData;
-  const id = String(data.hub_id || data.id || data.passcode || "");
+  // Prioritize passcode (join_code) as the ID per user preference
+  const passcode = String(data.passcode || data.hub_passcode || data.join_code || "");
+  const hubId = String(data.hub_id || data.id || "");
+  const id = passcode || hubId;
+
+  // Extremely robust price detection
+  const price = Number(
+    data.min_request_price ??
+    data.base_price ??
+    data.min_price ??
+    data.min_bid ??
+    data.base ??
+    data.minRequestPrice ??
+    1000
+  );
+
+  console.log("Normalizing Party:", {
+    rawName: data.party_name || data.name,
+    rawPrice: data.min_request_price || data.base_price,
+    normalizedPrice: price,
+    passcode
+  });
 
   // Normalize songs if they exist in the response
   const rawSongs = data.songs || data.request_list || data.song_list || [];
@@ -57,8 +78,8 @@ const normalizePartyFromAPI = (apiData: any): Party => {
     djId: String(data.dj_id || data.djId || ""),
     dj: data.hub_dj || data.dj || "Unknown DJ",
     location: data.venue_name || data.location || "Unknown Location",
-    passcode: String(data.passcode || id),
-    minRequestPrice: Number(data.min_request_price || data.base_price || data.min_price || data.min_bid || data.base || data.minRequestPrice || 1000),
+    passcode,
+    minRequestPrice: price,
     activeUntil: data.time_to_end || data.time || data.activeUntil,
     songs: normalizedSongs,
     endDate: data.date_to_end || data.date || data.endDate,
@@ -451,6 +472,35 @@ export function PartyProvider({ children }: { children: ReactNode }) {
   }, [user, isAuthenticated]);
 
   /**
+   * Fetch hub details to keep things like min price synced
+   */
+  const fetchHubDetails = useCallback(async (hubId: string) => {
+    try {
+      const endpoint = user?.userType === "HUB_DJ"
+        ? "/dj_wallet/get_hub_details/"
+        : "/user_wallet/get_hub_details/";
+
+      const response = await api.post(endpoint, { join_code: hubId });
+
+      if (response.status === 200) {
+        const hubData = response.data.data || response.data;
+        const normalized = normalizePartyFromAPI(hubData);
+
+        setCurrentParty(prev => {
+          if (!prev || String(prev.id) !== String(hubId)) return prev;
+          // Merge details while preserving songs if they were already fetched
+          return {
+            ...normalized,
+            songs: prev.songs.length > 0 ? prev.songs : normalized.songs
+          };
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching hub details:", error);
+    }
+  }, [user]);
+
+  /**
    * Fetch user's joined parties from API
    */
   const fetchJoinedParties = async (): Promise<Party[] | null> => {
@@ -532,10 +582,14 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       }
 
       // If there's a current party, refresh its details too
+      // If there's a current party, refresh its details too
       if (currentParty) {
+        // Use passcode (join_code) for all refresh calls
+        const refreshId = currentParty.passcode || currentParty.id;
         await Promise.all([
-          fetchSongList(currentParty.id),
-          fetchNowPlaying(currentParty.id)
+          fetchSongList(refreshId),
+          fetchNowPlaying(refreshId),
+          fetchHubDetails(refreshId)
         ]);
       }
     } catch (error) {
@@ -670,7 +724,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
           dj: data.hub_dj || data.dj || "Unknown DJ",
           location: data.venue_name || data.location || "Venue",
           passcode: data.passcode || passcode,
-          minRequestPrice: Number(data.min_request_price || data.base_price || 1000),
+          minRequestPrice: Number(data.min_request_price || data.base_price || data.min_price || data.min_bid || 1000),
           activeUntil: data.time_to_end || data.time || new Date(Date.now() + 3600000).toISOString(),
           songs: [],
           endDate: data.date_to_end,
@@ -1263,6 +1317,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     updatePartySettings,
     fetchSongList,
     fetchNowPlaying,
+    fetchHubDetails,
     nowPlaying,
   }), [
     currentParty,
@@ -1286,6 +1341,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     updatePartySettings,
     fetchSongList,
     fetchNowPlaying,
+    fetchHubDetails,
     nowPlaying
   ]);
 

@@ -133,7 +133,8 @@ export function PartyDetailPage() {
     setCurrentParty,
     fetchPartyByPasscode,
     nowPlaying,
-    fetchNowPlaying
+    fetchNowPlaying,
+    fetchHubDetails
   } = useParty();
   const { balance } = useWallet();
   const { searchTracks } = useSpotify();
@@ -238,8 +239,13 @@ export function PartyDetailPage() {
     }
 
     if (currentParty?.id) {
-      fetchNowPlaying(currentParty.id);
-      const interval = setInterval(() => fetchNowPlaying(currentParty.id), 30000);
+      const partyId = currentParty.passcode || currentParty.id;
+      fetchNowPlaying(partyId);
+      fetchHubDetails(partyId);
+      const interval = setInterval(() => {
+        fetchNowPlaying(partyId);
+        fetchHubDetails(partyId);
+      }, 30000);
       return () => clearInterval(interval);
     }
   }, [passcode, currentParty?.id]);
