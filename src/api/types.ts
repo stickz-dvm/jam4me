@@ -97,6 +97,7 @@ export type PartyContextType = {
   updatePartySettings: (partyId: string, settings: Partial<Party>) => Promise<void>;
   fetchSongList: (hubId: string) => Promise<void>;
   fetchNowPlaying: (hubId: string) => Promise<void>;
+  fetchHubDetails: (hubId: string) => Promise<void>;
   nowPlaying: any | null;
 };
 
