@@ -38,6 +38,19 @@ const normalizePartyFromAPI = (apiData: any): Party => {
   const data = apiData?.data || apiData;
   const id = String(data.hub_id || data.id || data.passcode || "");
 
+  // Normalize songs if they exist in the response
+  const rawSongs = data.songs || data.request_list || data.song_list || [];
+  const normalizedSongs = Array.isArray(rawSongs) ? rawSongs.map((song: any) => ({
+    id: String(song.request_id || song.id || Math.random().toString(36).substr(2, 9)),
+    title: song.song_title || song.title || "Unknown Title",
+    artist: song.artiste_name || song.artist || "Unknown Artist",
+    price: Number(song.bid_amount || song.price || 0),
+    requestedBy: song.requested_by || song.username || song.user_name || "Guest",
+    status: song.status || song.song_status || "pending",
+    requestedAt: new Date(song.requested_at || song.requestedAt || Date.now()),
+    albumArt: song.album_art || song.albumArt || song.profile_picture,
+  })) : [];
+
   return {
     id,
     name: data.party_name || data.name || "Untitled Party",
@@ -45,22 +58,13 @@ const normalizePartyFromAPI = (apiData: any): Party => {
     dj: data.hub_dj || data.dj || "Unknown DJ",
     location: data.venue_name || data.location || "Unknown Location",
     passcode: String(data.passcode || id),
-    minRequestPrice: Number(data.min_request_price || data.base_price || data.base || data.minRequestPrice || 1000),
+    minRequestPrice: Number(data.min_request_price || data.base_price || data.min_price || data.min_bid || data.base || data.minRequestPrice || 1000),
     activeUntil: data.time_to_end || data.time || data.activeUntil,
-    songs: data.songs?.map((song: any) => ({
-      id: String(song.id),
-      title: song.title,
-      artist: song.artist,
-      price: Number(song.price),
-      requestedBy: song.requestedBy || song.requested_by,
-      status: song.status,
-      requestedAt: new Date(song.requestedAt || song.requested_at),
-      albumArt: song.albumArt || song.album_art,
-    })) || [],
+    songs: normalizedSongs,
     endDate: data.date_to_end || data.date || data.endDate,
     isActive: data.hub_status ?? data.isActive ?? true,
     createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
-    earnings: Number(data.earnings || 0),
+    earnings: Number(data.earnings || data.total_earnings || 0),
   };
 };
 
@@ -386,11 +390,11 @@ export function PartyProvider({ children }: { children: ReactNode }) {
   }, [user, isAuthenticated, joinedParties, createdParties, saveToLocalStorageNow]);
 
   const fetchSongList = useCallback(async (hubId: string) => {
-    if (!user || !isAuthenticated) return;
+    // Guest support: Backend has removed @token_required for these
 
     try {
       // Endpoint is switched based on user type
-      const endpoint = user.userType === "HUB_DJ"
+      const endpoint = user?.userType === "HUB_DJ"
         ? "/dj_wallet/song_list/"
         : "/user_wallet/song_list/";
 
@@ -425,10 +429,10 @@ export function PartyProvider({ children }: { children: ReactNode }) {
   }, [user, isAuthenticated]);
 
   const fetchNowPlaying = useCallback(async (hubId: string) => {
-    if (!user || !isAuthenticated) return;
+    // Guest support: Allows seeing what's playing without login
 
     try {
-      const endpoint = user.userType === "HUB_DJ"
+      const endpoint = user?.userType === "HUB_DJ"
         ? "/dj_wallet/get_now_playing/"
         : "/user_wallet/get_now_playing/";
 
