@@ -38,7 +38,7 @@ export function NowPlayingPage() {
     };
 
     // Default to a vibrant blue/purple if no art
-    const requesterColor = nowPlaying?.album_art ? "#FFD60A" : "#3b82f6";
+    const requesterColor = (nowPlaying?.album_art || nowPlaying?.profile_picture) ? "#FFD60A" : "#3b82f6";
 
     return (
         <div className="fixed inset-0 bg-black overflow-hidden font-sans select-none">
@@ -52,7 +52,7 @@ export function NowPlayingPage() {
                     transition={{ duration: 1.5 }}
                     className="absolute inset-0"
                 >
-                    {nowPlaying?.profile_picture || nowPlaying?.album_art ? (
+                    {(nowPlaying?.profile_picture || nowPlaying?.album_art) ? (
                         <>
                             <img
                                 src={nowPlaying.profile_picture || nowPlaying.album_art}
@@ -96,7 +96,7 @@ export function NowPlayingPage() {
 
             {/* MAIN CONTENT AREA */}
             <div className="absolute inset-0 flex items-center px-12 md:px-24">
-                {nowPlaying && nowPlaying.now_playing ? (
+                {(nowPlaying && (nowPlaying.now_playing || nowPlaying.now_playing_data)) ? (
                     <div className="relative">
                         {/* User Nickname on the left */}
                         <motion.div
@@ -113,7 +113,7 @@ export function NowPlayingPage() {
                                 className="text-7xl md:text-9xl font-black italic uppercase leading-none tracking-tighter drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
                                 style={{ color: requesterColor }}
                             >
-                                {nowPlaying.username || "Guest"}
+                                {nowPlaying.username || "Guest Lover"}
                             </h2>
                             <div className="flex items-center gap-3 bg-black/40 backdrop-blur-2xl border border-white/10 p-2.5 rounded-3xl w-fit pr-8">
                                 <div className="h-14 w-14 rounded-2xl overflow-hidden border-2 border-white/10 shadow-2xl">
@@ -170,7 +170,7 @@ export function NowPlayingPage() {
 
             {/* BOTTOM DOCK / TASKBAR */}
             <AnimatePresence>
-                {nowPlaying && nowPlaying.now_playing && (
+                {(nowPlaying && (nowPlaying.now_playing || nowPlaying.now_playing_data)) && (
                     <div className="absolute bottom-10 inset-x-0 flex justify-center px-6 z-50">
                         <motion.div
                             initial={{ y: 100, opacity: 0 }}
@@ -204,7 +204,9 @@ export function NowPlayingPage() {
                                     </div>
                                     <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.4em]">Live Now</span>
                                 </div>
-                                <h3 className="text-2xl md:text-4xl font-black text-white truncate uppercase tracking-tighter leading-none mb-1">{nowPlaying.now_playing}</h3>
+                                <h3 className="text-2xl md:text-4xl font-black text-white truncate uppercase tracking-tighter leading-none mb-1">
+                                    {nowPlaying.now_playing || nowPlaying.song_title || "Untitled Track"}
+                                </h3>
                                 <div className="flex items-center gap-2">
                                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                                     <span className="text-sm font-bold text-white/40 truncate">{currentParty?.name || "Live Session"}</span>
