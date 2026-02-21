@@ -398,7 +398,8 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         ? "/dj_wallet/song_list/"
         : "/user_wallet/song_list/";
 
-      const response = await api.post(endpoint, { hub_id: hubId });
+      // Switched to join_code per user request
+      const response = await api.post(endpoint, { join_code: hubId });
 
       if (response.status === 200) {
         const songs = response.data.songs || response.data;
@@ -436,7 +437,8 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         ? "/dj_wallet/get_now_playing/"
         : "/user_wallet/get_now_playing/";
 
-      const response = await api.post(endpoint, { hub_id: hubId });
+      // Switched to join_code per user request
+      const response = await api.post(endpoint, { join_code: hubId });
       if (response.status === 200) {
         setNowPlaying(response.data);
       }
@@ -819,11 +821,12 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       // Updated per backend developer correction
+      // Updated to use standardized join_code mapping
       await api.post("/user_wallet/request_song/", {
         song_title: songTitle,
         artiste_name: artist,
         user_id: user.id,
-        hub_id: currentParty.id,
+        join_code: currentParty.passcode || currentParty.id,
         bid_amount: price
       });
 
