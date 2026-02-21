@@ -61,7 +61,7 @@ const normalizePartyFromAPI = (apiData: any): Party => {
   });
 
   // Normalize songs if they exist in the response
-  const rawSongs = data.songs || data.request_list || data.song_list || [];
+  const rawSongs = data.songs || data.request_list || data.song_list || data.song_list_data || [];
   const normalizedSongs = Array.isArray(rawSongs) ? rawSongs.map((song: any) => ({
     id: String(song.request_id || song.id || Math.random().toString(36).substr(2, 9)),
     title: song.song_title || song.title || "Unknown Title",
@@ -428,7 +428,9 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       });
 
       if (response.status === 200) {
-        const songs = response.data.songs || response.data;
+        // Correctly handle song_list_data wrapper
+        const songs = response.data.song_list_data || response.data.songs || (Array.isArray(response.data) ? response.data : []);
+
         if (Array.isArray(songs)) {
           const normalizedSongs = songs.map((song: any) => ({
             id: String(song.request_id || song.id || Math.random().toString(36).substr(2, 9)),
@@ -442,8 +444,20 @@ export function PartyProvider({ children }: { children: ReactNode }) {
           }));
 
           setCurrentParty(prev => {
-            if (!prev || String(prev.id) !== String(hubId)) return prev;
-            return { ...prev, songs: normalizedSongs };
+            const effectiveHubId = String(hubId || response.data.hub_id || "");
+            const prevId = String(prev?.id || "");
+
+            // If IDs don't match, and we have both, don't update
+            if (!prev || (prevId && effectiveHubId && prevId !== effectiveHubId)) {
+              return prev;
+            }
+
+            console.log("Updating currentParty with fetched songs. ID:", effectiveHubId);
+            return {
+              ...prev,
+              id: prev.id || effectiveHubId,
+              songs: normalizedSongs
+            };
           });
         }
       }
@@ -528,6 +542,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       const payload = user.userType === "HUB_DJ" ? { dj_id: user.id } : { user_id: user.id };
 
       const response = await api.post(endpoint, payload);
+      console.log("Joined Parties Response:", response.data);
 
       if (response.status === 200) {
         const hubs = response.data.hubs || response.data;
@@ -555,6 +570,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await api.post("/dj_wallet/get_hubs/", { dj_id: user.id });
+      console.log("Created Parties Response:", response.data);
       if (response.status === 200) {
         const hubs = response.data.hubs || response.data;
         if (Array.isArray(hubs)) {
