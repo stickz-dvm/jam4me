@@ -24,8 +24,8 @@ export function MusicPlayer({ song, isPlaying }: MusicPlayerProps) {
     title: string;
     artist: string;
   }>({
-    title: "Lungu Boy",
-    artist: "Asake"
+    title: "Now Playing",
+    artist: "Jam4Me"
   });
   const [imageFailed, setImageFailed] = useState<boolean>(false);
 
@@ -35,10 +35,9 @@ export function MusicPlayer({ song, isPlaying }: MusicPlayerProps) {
     setImageFailed(false);
 
     if (!song || !song.id) {
-      // Default to Lungu Boy by Asake if no song is provided
-      setCurrentSong({ title: "Lungu Boy", artist: "Asake" });
-      const albumArtUrl = "https://media.pitchfork.com/photos/66b10a3eee21ef0a8b842d3e/2:3/w_2000,h_3000,c_limit/Asake-Lungu-Boy.jpg";
-      setAlbumArt(albumArtUrl);
+      // Default to neutral state if no song is provided
+      setCurrentSong({ title: "Now Playing", artist: "Jam4Me" });
+      setAlbumArt("");
       return;
     }
 

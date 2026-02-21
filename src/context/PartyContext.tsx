@@ -70,7 +70,7 @@ const normalizePartyFromAPI = (apiData: any): Party => {
     requestedBy: song.requested_by || song.username || song.user_name || "Guest",
     status: song.status || song.song_status || "pending",
     requestedAt: new Date(song.requested_at || song.requestedAt || Date.now()),
-    albumArt: song.album_art || song.albumArt || song.profile_picture,
+    albumArt: song.song_art || song.album_art || song.song_art_url || song.album_art_url || song.albumArt || song.profile_picture,
   })) : [];
 
   return {
@@ -440,7 +440,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
             requestedBy: song.requested_by || song.username || song.user_name,
             status: song.status || "pending",
             requestedAt: new Date(song.requested_at || Date.now()),
-            albumArt: song.album_art || song.profile_picture
+            albumArt: song.song_art || song.album_art || song.song_art_url || song.album_art_url || song.albumArt || song.profile_picture
           }));
 
           setCurrentParty(prev => {
@@ -484,7 +484,19 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         passcode: hubId
       });
       if (response.status === 200) {
-        setNowPlaying(response.data);
+        const rawData = response.data.now_playing_data || response.data.now_playing || response.data;
+        if (rawData && typeof rawData === 'object') {
+          // Normalize the nowPlaying object for consistent UI display
+          setNowPlaying({
+            ...rawData,
+            now_playing: rawData.now_playing || rawData.song_title || rawData.title,
+            artiste_name: rawData.artiste_name || rawData.artist || rawData.artist_name,
+            album_art: rawData.song_art || rawData.album_art || rawData.song_art_url || rawData.album_art_url || rawData.profile_picture,
+            username: rawData.username || rawData.requested_by || rawData.user_name
+          });
+        } else {
+          setNowPlaying(rawData);
+        }
       }
     } catch (error: any) {
       // Suppress specific backend error noise for now playing
@@ -912,11 +924,10 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         join_code: currentParty.passcode || currentParty.id,
         hub_id: currentParty.id || currentParty.passcode,
         passcode: currentParty.passcode || currentParty.id,
-        bid_amount: price
       });
 
-      // Deduct locally for UI feedback (backup to API handling it)
-      await deductFunds(price);
+      // Removed manual deductFunds as backend now handles this correctly 
+      // during the request or acceptance phase per developer request
 
       const newSong: Song = {
         id: `song-${Date.now()}`,
@@ -1016,7 +1027,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         throw new Error("Song not found or already processed");
       }
 
-      await addFunds(song.price);
+      // Removed manual addFunds - backend handles payment logic
 
       const updatedSongs = party.songs.map(s =>
         s.id === songId ? { ...s, status: "declined" as const } : s
@@ -1071,7 +1082,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       let newEarnings = party.earnings || 0;
       if (song.status === "pending") {
         newEarnings += song.price;
-        await addFunds(song.price);
+        // Removed manual addFunds - backend handles payment logic
       }
 
       const updatedParty = {
