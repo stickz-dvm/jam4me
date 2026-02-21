@@ -52,6 +52,7 @@ const normalizePartyFromAPI = (apiData: any): Party => {
     1000
   );
 
+  console.log("RAW HUB DATA:", data);
   console.log("Normalizing Party:", {
     rawName: data.party_name || data.name,
     rawPrice: data.min_request_price || data.base_price,
@@ -419,8 +420,12 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         ? "/dj_wallet/song_list/"
         : "/user_wallet/song_list/";
 
-      // Switched to join_code per user request
-      const response = await api.post(endpoint, { join_code: hubId });
+      // Send multiple keys to be as robust as possible
+      const response = await api.post(endpoint, {
+        join_code: hubId,
+        hub_id: hubId,
+        passcode: hubId
+      });
 
       if (response.status === 200) {
         const songs = response.data.songs || response.data;
@@ -458,8 +463,12 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         ? "/dj_wallet/get_now_playing/"
         : "/user_wallet/get_now_playing/";
 
-      // Switched to join_code per user request
-      const response = await api.post(endpoint, { join_code: hubId });
+      // Send multiple keys to be as robust as possible
+      const response = await api.post(endpoint, {
+        join_code: hubId,
+        hub_id: hubId,
+        passcode: hubId
+      });
       if (response.status === 200) {
         setNowPlaying(response.data);
       }
@@ -480,7 +489,11 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         ? "/dj_wallet/get_hub_details/"
         : "/user_wallet/get_hub_details/";
 
-      const response = await api.post(endpoint, { join_code: hubId });
+      const response = await api.post(endpoint, {
+        join_code: hubId,
+        hub_id: hubId,
+        passcode: hubId
+      });
 
       if (response.status === 200) {
         const hubData = response.data.data || response.data;
@@ -881,6 +894,8 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         artiste_name: artist,
         user_id: user.id,
         join_code: currentParty.passcode || currentParty.id,
+        hub_id: currentParty.id || currentParty.passcode,
+        passcode: currentParty.passcode || currentParty.id,
         bid_amount: price
       });
 
