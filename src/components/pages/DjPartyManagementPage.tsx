@@ -50,6 +50,9 @@ export function DjPartyManagementPage() {
     hasPendingSongs,
     handleExpiredParties,
     updatePartySettings,
+    fetchSongList,
+    fetchNowPlaying,
+    setCurrentParty,
     isLoading
   } = useParty();
 
@@ -103,7 +106,29 @@ export function DjPartyManagementPage() {
 
   useEffect(() => {
     handleExpiredParties();
-  }, []); // Added dependency array to prevent infinite loop
+  }, [handleExpiredParties]);
+
+  // Initial fetch and polling for song list
+  useEffect(() => {
+    if (partyIdStr) {
+      // Fetch immediately
+      fetchSongList(partyIdStr);
+      fetchNowPlaying(partyIdStr);
+
+      // Set as current party if not already set, so other components (like NowPlaying) stay in sync
+      if (party && (!currentParty || normalizeId(currentParty.id) !== partyIdStr)) {
+        console.log("Setting party as current for management:", party.name);
+        setCurrentParty(party);
+      }
+
+      // Poll every 10 seconds for new requests
+      const interval = setInterval(() => {
+        fetchSongList(partyIdStr);
+      }, 10000);
+
+      return () => clearInterval(interval);
+    }
+  }, [partyIdStr, fetchSongList, fetchNowPlaying, setCurrentParty]);
 
   // Check if partyId exists
   if (!partyId) {
@@ -612,37 +637,13 @@ export function DjPartyManagementPage() {
 
                 <div>
                   <h3 className="text-lg font-medium mb-3">Top Requesters</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {/* Placeholder for top requesters - in a real app would calculate this */}
-                    <div className="flex items-center justify-between bg-muted/20 p-3 rounded-lg">
-                      <div className="flex items-center">
-                        <div className="bg-primary/20 w-8 h-8 rounded-full flex items-center justify-center mr-3">
-                          1
-                        </div>
-                        <div>
-                          <p className="font-medium">User 0x8f4e...2a1b</p>
-                          <p className="text-sm text-muted-foreground">₦5,000 total spent</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Requested</p>
-                        <p className="font-medium">5 songs</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between bg-muted/20 p-3 rounded-lg">
-                      <div className="flex items-center">
-                        <div className="bg-primary/20 w-8 h-8 rounded-full flex items-center justify-center mr-3">
-                          2
-                        </div>
-                        <div>
-                          <p className="font-medium">User 0x3d2c...9f7a</p>
-                          <p className="text-sm text-muted-foreground">₦3,200 total spent</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Requested</p>
-                        <p className="font-medium">3 songs</p>
-                      </div>
+                  <div className="bg-muted/10 backdrop-blur-sm border border-border/50 rounded-xl p-8 flex items-center justify-center">
+                    <div className="text-center">
+                      <p className="text-muted-foreground font-medium uppercase tracking-widest text-xs mb-1">Feature Update</p>
+                      <h4 className="text-xl font-black italic text-white/40">COMING SOON</h4>
+                      <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">
+                        We're currently building deep analytics to show you who your biggest fans and top spenders are.
+                      </p>
                     </div>
                   </div>
                 </div>

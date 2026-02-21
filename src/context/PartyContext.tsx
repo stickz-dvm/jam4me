@@ -8,7 +8,8 @@ import { ApiResponse, Party, PartyContextType, Song } from "../api/types";
 const PartyContext = createContext<PartyContextType | undefined>(undefined);
 
 export const normalizeId = (id: string | number | undefined | null): string => {
-  return id != null ? String(id) : "";
+  if (id == null) return "";
+  return String(id).toLowerCase().trim();
 };
 
 const updateSongReferences = (party: Party): Party => {
@@ -61,14 +62,17 @@ const normalizePartyFromAPI = (apiData: any): Party => {
   });
 
   // Normalize songs if they exist in the response
-  const rawSongs = data.songs || data.request_list || data.song_list || data.song_list_data || [];
+  const rawSongs = data.songs || data.request_list || data.song_list || data.song_list_data;
+
+  // If we have an array of songs, map them
   const normalizedSongs = Array.isArray(rawSongs) ? rawSongs.map((song: any) => ({
     id: String(song.request_id || song.id || Math.random().toString(36).substr(2, 9)),
     title: song.song_title || song.title || "Unknown Title",
     artist: song.artiste_name || song.artist || "Unknown Artist",
     price: Number(song.bid_amount || song.price || 0),
     requestedBy: song.requested_by || song.username || song.user_name || "Guest",
-    status: song.status || song.song_status || "pending",
+    // Handle status variations robustly
+    status: (song.status || song.song_status || "pending").toLowerCase(),
     requestedAt: new Date(song.requested_at || song.requestedAt || Date.now()),
     albumArt: song.song_art || song.album_art || song.song_art_url || song.album_art_url || song.albumArt || song.profile_picture,
   })) : [];
@@ -438,27 +442,32 @@ export function PartyProvider({ children }: { children: ReactNode }) {
             artist: song.artiste_name || song.artist,
             price: Number(song.bid_amount || song.price || 0),
             requestedBy: song.requested_by || song.username || song.user_name,
-            status: song.status || "pending",
-            requestedAt: new Date(song.requested_at || Date.now()),
+            status: song.status || song.song_status || "pending",
+            requestedAt: new Date(song.requested_at || song.requestedAt || Date.now()),
             albumArt: song.song_art || song.album_art || song.song_art_url || song.album_art_url || song.albumArt || song.profile_picture
           }));
 
+          const effectiveHubId = normalizeId(hubId || response.data.hub_id);
+
+          // Update current party if it matches
           setCurrentParty(prev => {
-            const effectiveHubId = String(hubId || response.data.hub_id || "");
-            const prevId = String(prev?.id || "");
-
-            // If IDs don't match, and we have both, don't update
-            if (!prev || (prevId && effectiveHubId && prevId !== effectiveHubId)) {
-              return prev;
+            if (prev && normalizeId(prev.id) === effectiveHubId) {
+              return { ...prev, songs: normalizedSongs };
             }
-
-            console.log("Updating currentParty with fetched songs. ID:", effectiveHubId);
-            return {
-              ...prev,
-              id: prev.id || effectiveHubId,
-              songs: normalizedSongs
-            };
+            return prev;
           });
+
+          // Update created parties list
+          setCreatedParties(prev => prev.map(p =>
+            normalizeId(p.id) === effectiveHubId ? { ...p, songs: normalizedSongs } : p
+          ));
+
+          // Update joined parties list
+          setJoinedParties(prev => prev.map(p =>
+            normalizeId(p.id) === effectiveHubId ? { ...p, songs: normalizedSongs } : p
+          ));
+
+          console.log(`Updated song list for party ${effectiveHubId}: ${normalizedSongs.length} songs`);
         }
       }
     } catch (error: any) {
@@ -615,17 +624,21 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       ]);
 
       if (apiJoinedParties !== null) {
-        setJoinedParties(apiJoinedParties);
+        setJoinedParties(prev => apiJoinedParties.map(newP => {
+          const existing = prev.find(p => normalizeId(p.id) === normalizeId(newP.id));
+          return (existing && newP.songs.length === 0) ? { ...newP, songs: existing.songs } : newP;
+        }));
       }
 
       if (apiCreatedParties !== null) {
-        setCreatedParties(apiCreatedParties);
+        setCreatedParties(prev => apiCreatedParties.map(newP => {
+          const existing = prev.find(p => normalizeId(p.id) === normalizeId(newP.id));
+          return (existing && newP.songs.length === 0) ? { ...newP, songs: existing.songs } : newP;
+        }));
       }
 
       // If there's a current party, refresh its details too
-      // If there's a current party, refresh its details too
       if (currentParty) {
-        // Use passcode (join_code) for all refresh calls
         const refreshId = currentParty.passcode || currentParty.id;
         await Promise.all([
           fetchSongList(refreshId),
