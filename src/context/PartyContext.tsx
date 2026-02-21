@@ -389,18 +389,22 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     if (!user || !isAuthenticated) return;
 
     try {
-      // Endpoint is always on the dj_wallet side for song management
-      const response = await api.post("/dj_wallet/song_list/", { hub_id: hubId });
+      // Endpoint is switched based on user type
+      const endpoint = user.userType === "HUB_DJ"
+        ? "/dj_wallet/song_list/"
+        : "/user_wallet/song_list/";
+
+      const response = await api.post(endpoint, { hub_id: hubId });
 
       if (response.status === 200) {
         const songs = response.data.songs || response.data;
         if (Array.isArray(songs)) {
           const normalizedSongs = songs.map((song: any) => ({
-            id: String(song.id || Math.random().toString(36).substr(2, 9)),
-            title: song.title || song.song_title,
-            artist: song.artist || song.artiste_name,
-            price: Number(song.price || 0),
-            requestedBy: song.requested_by || song.username,
+            id: String(song.request_id || song.id || Math.random().toString(36).substr(2, 9)),
+            title: song.song_title || song.title,
+            artist: song.artiste_name || song.artist,
+            price: Number(song.bid_amount || song.price || 0),
+            requestedBy: song.requested_by || song.username || song.user_name,
             status: song.status || "pending",
             requestedAt: new Date(song.requested_at || Date.now()),
             albumArt: song.album_art || song.profile_picture
@@ -869,11 +873,11 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         throw new Error("Song not found or already processed");
       }
 
-      // Aligned with DJ_Doc.txt: POST /party/accept_song/
+      // Aligned with backend fix: Accepts hub_id and standardized field names
       await api.post("/dj_wallet/party/accept_song/", {
         user_name: song.requestedBy,
         song_title: song.title,
-        song_tittle: song.title // Fallback for the typo in doc
+        hub_id: targetPartyId
       });
 
       const updatedSongs = party.songs.map(s =>
