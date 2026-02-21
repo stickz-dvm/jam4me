@@ -40,7 +40,7 @@ const normalizePartyFromAPI = (apiData: any): Party => {
   // Prioritize passcode (join_code) as the ID per user preference
   const passcode = String(data.passcode || data.hub_passcode || data.join_code || "");
   const hubId = String(data.hub_id || data.id || "");
-  const id = passcode || hubId;
+  const id = normalizeId(passcode || hubId);
 
   // Extremely robust price detection
   const price = Number(
@@ -710,14 +710,15 @@ export function PartyProvider({ children }: { children: ReactNode }) {
    * Helper function to find party by ID
    */
   const findPartyById = useCallback((partyId: string): Party | null => {
-    if (currentParty && normalizeId(currentParty.id) === partyId) {
+    const nid = normalizeId(partyId);
+    if (currentParty && normalizeId(currentParty.id) === nid) {
       return currentParty;
     }
 
-    const createdParty = createdParties.find(p => normalizeId(p.id) === partyId);
+    const createdParty = createdParties.find(p => normalizeId(p.id) === nid);
     if (createdParty) return createdParty;
 
-    const joinedParty = joinedParties.find(p => normalizeId(p.id) === partyId);
+    const joinedParty = joinedParties.find(p => normalizeId(p.id) === nid);
     if (joinedParty) return joinedParty;
 
     return null;
@@ -727,16 +728,17 @@ export function PartyProvider({ children }: { children: ReactNode }) {
    * Helper function to update a party in all relevant state arrays
    */
   const updatePartyInState = useCallback((updatedParty: Party) => {
-    if (currentParty && currentParty.id === updatedParty.id) {
+    const nid = normalizeId(updatedParty.id);
+    if (currentParty && normalizeId(currentParty.id) === nid) {
       setCurrentParty(updatedParty);
     }
 
-    if (createdParties.some(p => p.id === updatedParty.id)) {
-      setCreatedParties(prev => prev.map(p => p.id === updatedParty.id ? updatedParty : p));
+    if (createdParties.some(p => normalizeId(p.id) === nid)) {
+      setCreatedParties(prev => prev.map(p => normalizeId(p.id) === nid ? updatedParty : p));
     }
 
-    if (joinedParties.some(p => p.id === updatedParty.id)) {
-      setJoinedParties(prev => prev.map(p => p.id === updatedParty.id ? updatedParty : p));
+    if (joinedParties.some(p => normalizeId(p.id) === nid)) {
+      setJoinedParties(prev => prev.map(p => normalizeId(p.id) === nid ? updatedParty : p));
     }
   }, [currentParty, createdParties, joinedParties]);
 
@@ -772,7 +774,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
 
         // Create the party object
         const newParty: Party = {
-          id: data.passcode || data.id || passcode,
+          id: normalizeId(data.passcode || data.id || passcode),
           name: data.party_name || data.name || "Joined Party",
           djId: data.dj_id || data.djId,
           dj: data.hub_dj || data.dj || "Unknown DJ",
@@ -974,7 +976,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       throw new Error("Only DJs can approve songs");
     }
 
-    const targetPartyId = partyId || (currentParty?.id || "");
+    const targetPartyId = normalizeId(partyId || (currentParty?.id || ""));
     const party = findPartyById(targetPartyId);
 
     if (!party) {
@@ -1022,7 +1024,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       throw new Error("Only DJs can decline songs");
     }
 
-    const targetPartyId = partyId || (currentParty?.id || "");
+    const targetPartyId = normalizeId(partyId || (currentParty?.id || ""));
     const party = findPartyById(targetPartyId);
 
     if (!party) {
@@ -1068,7 +1070,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       throw new Error("Only DJs can play songs");
     }
 
-    const targetPartyId = partyId || (currentParty?.id || "");
+    const targetPartyId = normalizeId(partyId || (currentParty?.id || ""));
     const party = findPartyById(targetPartyId);
 
     if (!party) {
@@ -1121,7 +1123,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       throw new Error("Only DJs can mark songs as played");
     }
 
-    const targetPartyId = partyId || (currentParty?.id || "");
+    const targetPartyId = normalizeId(partyId || (currentParty?.id || ""));
     const party = findPartyById(targetPartyId);
 
     if (!party) {
