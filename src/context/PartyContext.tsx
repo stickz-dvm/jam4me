@@ -69,7 +69,7 @@ const normalizePartyFromAPI = (apiData: any): Party => {
     title: song.song_title || song.title || "Unknown Title",
     artist: song.artiste_name || song.artist || "Unknown Artist",
     price: Number(song.bid_amount || song.price || 0),
-    requestedBy: song.requested_by  || song.hub_user || "Guest",
+    requestedBy: song.hub_user || "Guest",
     // Handle status variations robustly
     status: (song.status || song.song_status || "pending").toLowerCase(),
     requestedAt: new Date(song.requested_at || song.requestedAt || Date.now()),
@@ -460,7 +460,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
             title: song.song_title || song.title,
             artist: song.artiste_name || song.artist,
             price: Number(song.bid_amount || song.price || 0),
-            requestedBy: song.requested_by || song.username || song.user_name || song.hub_user,
+            requestedBy: song.hub_user,
             status: song.status || song.song_status || "pending",
             requestedAt: new Date(song.requested_at || song.requestedAt || Date.now()),
             albumArt: song.song_art || song.album_art || song.song_art_url || song.album_art_url || song.albumArt || song.profile_picture
