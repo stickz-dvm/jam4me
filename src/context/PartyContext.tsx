@@ -8,7 +8,8 @@ import { ApiResponse, Party, PartyContextType, Song } from "../api/types";
 const PartyContext = createContext<PartyContextType | undefined>(undefined);
 
 export const normalizeId = (id: string | number | undefined | null): string => {
-  return id != null ? String(id).toUpperCase().trim() : "";
+  if (id == null) return "";
+  return String(id).toLowerCase().trim();
 };
 
 const updateSongReferences = (party: Party): Party => {

@@ -132,6 +132,7 @@ export function PartyDetailPage() {
     getPartyQrCode,
     setCurrentParty,
     fetchPartyByPasscode,
+    updatePartySettings,
     nowPlaying,
     fetchNowPlaying,
     fetchHubDetails
@@ -239,18 +240,18 @@ export function PartyDetailPage() {
     }
 
     if (currentParty?.id) {
-      const partyId = currentParty.passcode || currentParty.id;
+      const partyId = currentParty.hubId || currentParty.passcode || currentParty.id;
       fetchNowPlaying(partyId);
       fetchHubDetails(partyId);
       const interval = setInterval(() => {
         fetchNowPlaying(partyId);
         fetchHubDetails(partyId);
-      }, 30000);
+      }, 10000);
       return () => clearInterval(interval);
     }
   }, [passcode, currentParty?.id]);
 
-  const queuedSongs = currentParty?.songs?.filter(song => song.status === "pending") || [];
+  const queuedSongs = currentParty?.songs?.filter(song => song.status === "pending" || song.status === "accepted") || [];
   const playedSongs = currentParty?.songs?.filter(song => song.status === "played") || [];
 
   useEffect(() => {

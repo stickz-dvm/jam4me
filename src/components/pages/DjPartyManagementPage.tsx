@@ -110,10 +110,11 @@ export function DjPartyManagementPage() {
 
   // Initial fetch and polling for song list
   useEffect(() => {
-    if (partyIdStr) {
+    const apiHubId = partyId || partyIdStr;
+    if (apiHubId) {
       // Fetch immediately
-      fetchSongList(partyIdStr);
-      fetchNowPlaying(partyIdStr);
+      fetchSongList(apiHubId);
+      fetchNowPlaying(apiHubId);
 
       // Set as current party if not already set, so other components (like NowPlaying) stay in sync
       if (party && (!currentParty || normalizeId(currentParty.id) !== partyIdStr)) {
@@ -121,14 +122,14 @@ export function DjPartyManagementPage() {
         setCurrentParty(party);
       }
 
-      // Poll every 10 seconds for new requests
       const interval = setInterval(() => {
-        fetchSongList(partyIdStr);
+        fetchSongList(apiHubId);
+        fetchNowPlaying(apiHubId);
       }, 10000);
 
       return () => clearInterval(interval);
     }
-  }, [partyIdStr, fetchSongList, fetchNowPlaying, setCurrentParty]);
+  }, [partyId, partyIdStr, fetchSongList, fetchNowPlaying, setCurrentParty, party, currentParty]);
 
   // Check if partyId exists
   if (!partyId) {
