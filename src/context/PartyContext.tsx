@@ -1022,7 +1022,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
 
       // Aligned with backend fix: Accepts hub_id and standardized field names
       await api.post("/dj_wallet/party/accept_song/", {
-        user_name: song.requestedBy,
+        user_name: song.requestedBy|| song.username || "",
         song_title: song.title,
         hub_id: party.hubId || party.id
       });
