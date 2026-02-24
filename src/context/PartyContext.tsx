@@ -8,8 +8,7 @@ import { ApiResponse, Party, PartyContextType, Song } from "../api/types";
 const PartyContext = createContext<PartyContextType | undefined>(undefined);
 
 export const normalizeId = (id: string | number | undefined | null): string => {
-  if (id == null) return "";
-  return String(id).toLowerCase().trim();
+  return id != null ? String(id).toUpperCase().trim() : "";
 };
 
 const updateSongReferences = (party: Party): Party => {
@@ -37,7 +36,6 @@ const updateSongReferences = (party: Party): Party => {
  */
 const normalizePartyFromAPI = (apiData: any): Party => {
   const data = apiData?.data || apiData;
-  // Prioritize passcode (join_code) as the ID per user preference
   const passcode = String(data.passcode || data.hub_passcode || data.join_code || "");
   const hubId = String(data.hub_id || data.id || "");
   const id = normalizeId(passcode || hubId);
@@ -77,17 +75,37 @@ const normalizePartyFromAPI = (apiData: any): Party => {
     albumArt: song.song_art || song.album_art || song.song_art_url || song.album_art_url || song.albumArt || song.profile_picture,
   })) : [];
 
+  // Robustly parse end/active time
+  const activeUntilRaw = data.time_to_end || data.time || data.activeUntil;
+  const endDateRaw = data.date_to_end || data.date || data.endDate;
+
+  let normalizedActiveUntil = activeUntilRaw;
+  if (activeUntilRaw && typeof activeUntilRaw === 'string') {
+    if (!activeUntilRaw.includes('-') && !activeUntilRaw.includes('T')) {
+      // It's just a time like "22:00", need to add date
+      const datePart = endDateRaw ? String(endDateRaw).split('T')[0] : new Date().toISOString().split('T')[0];
+      normalizedActiveUntil = `${datePart}T${activeUntilRaw}`;
+    }
+  }
+
+  // Final validation to prevent "Invalid Date"
+  if (normalizedActiveUntil && isNaN(new Date(normalizedActiveUntil).getTime())) {
+    console.warn("Detected invalid date in activeUntil, falling back:", normalizedActiveUntil);
+    normalizedActiveUntil = new Date(Date.now() + 8 * 3600000).toISOString(); // Default 8 hours from now
+  }
+
   return {
     id,
-    name: data.party_name || data.name || "Untitled Party",
+    hubId,
+    name: data.party_name || data.name || "",
     djId: String(data.dj_id || data.djId || ""),
-    dj: data.hub_dj || data.dj || "Unknown DJ",
-    location: data.venue_name || data.location || "Unknown Location",
+    dj: data.hub_dj || data.dj || "",
+    location: data.venue_name || data.location || "",
     passcode,
     minRequestPrice: price,
-    activeUntil: data.time_to_end || data.time || data.activeUntil,
+    activeUntil: normalizedActiveUntil || new Date(Date.now() + 8 * 3600000).toISOString(),
     songs: normalizedSongs,
-    endDate: data.date_to_end || data.date || data.endDate,
+    endDate: endDateRaw || new Date().toISOString(),
     isActive: data.hub_status ?? data.isActive ?? true,
     createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
     earnings: Number(data.earnings || data.total_earnings || 0),
@@ -533,13 +551,21 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       if (response.status === 200) {
         const hubData = response.data.data || response.data;
         const normalized = normalizePartyFromAPI(hubData);
+        const nid = normalizeId(hubId);
 
         setCurrentParty(prev => {
-          if (!prev || String(prev.id) !== String(hubId)) return prev;
-          // Merge details while preserving songs if they were already fetched
+          if (!prev || normalizeId(prev.id) !== nid) return prev;
+
+          // Merge details intelligently: don't overwrite with missing data
           return {
+            ...prev,
             ...normalized,
-            songs: prev.songs.length > 0 ? prev.songs : normalized.songs
+            id: normalized.id || prev.id,
+            passcode: normalized.passcode || prev.passcode,
+            name: normalized.name || prev.name,
+            location: normalized.location || prev.location,
+            dj: normalized.dj || prev.dj,
+            songs: normalized.songs.length > 0 ? normalized.songs : prev.songs
           };
         });
       }
@@ -651,7 +677,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [user, isAuthenticated, authLoading, fetchSongList, fetchNowPlaying]);
+  }, [user, isAuthenticated, authLoading, currentParty, fetchSongList, fetchNowPlaying, fetchHubDetails]);
 
   /**
    * Initialize party state on mount and when auth state changes
@@ -917,7 +943,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
     }
   }, [user, isAuthenticated, createdParties, joinedParties, saveToLocalStorageNow]);
 
-  const requestSong = useCallback(async (songTitle: string, artist: string, price: number, albumArt?: string) => {
+  const requestSong = useCallback(async (songTitle: string, artist: string, price: number, albumArt?: string, spotifyId?: string) => {
     if (!isAuthenticated || !user) {
       toast.error("Please login to request songs");
       throw new Error("Not authenticated");
@@ -930,15 +956,17 @@ export function PartyProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      // Updated per backend developer correction
-      // Updated to use standardized join_code mapping
+      // Corrected payload to match backend requirements
       await api.post("/user_wallet/request_song/", {
         song_title: songTitle,
         artiste_name: artist,
         user_id: user.id,
-        join_code: currentParty.passcode || currentParty.id,
-        hub_id: currentParty.id || currentParty.passcode,
-        passcode: currentParty.passcode || currentParty.id,
+        join_code: currentParty.passcode,
+        hub_id: currentParty.hubId || currentParty.id,
+        passcode: currentParty.passcode,
+        bid_amount: String(price), // Send as string just in case
+        spotify_id: spotifyId || "",
+        album_art: albumArt || ""
       });
 
       // Removed manual deductFunds as backend now handles this correctly 
@@ -995,11 +1023,11 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       await api.post("/dj_wallet/party/accept_song/", {
         user_name: song.requestedBy,
         song_title: song.title,
-        hub_id: targetPartyId
+        hub_id: party.hubId || party.id
       });
 
       const updatedSongs = party.songs.map(s =>
-        s.id === songId ? { ...s, status: "pending" as const } : s
+        s.id === songId ? { ...s, status: "accepted" as const } : s
       );
 
       const updatedParty = {
@@ -1034,15 +1062,22 @@ export function PartyProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       const song = party.songs.find(s => s.id === songId);
-      if (!song || song.status !== "pending") {
+      if (!song || (song.status !== "pending" && song.status !== "accepted")) {
         throw new Error("Song not found or already processed");
       }
 
       // Removed manual addFunds - backend handles payment logic
+      // Call backend to decline if endpoint exists
+      try {
+        await api.post("/dj_wallet/party/decline_song/", {
+          song_title: song.title,
+          user_name: song.requestedBy,
+          hub_id: party.hubId || party.id
+        });
+      } catch (e) {
+        console.warn("Decline API not found or failed, continuing with local update", e);
+      }
 
       const updatedSongs = party.songs.map(s =>
         s.id === songId ? { ...s, status: "declined" as const } : s
@@ -1080,13 +1115,16 @@ export function PartyProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       const song = party.songs.find(s => s.id === songId);
       if (!song) {
         throw new Error("Song not found");
       }
+
+      // Aligned with backend: play_song expects hub_id
+      await api.post("/dj_wallet/party/play_song/", {
+        song_title: song.title,
+        hub_id: party.hubId || party.id
+      });
 
       const updatedSongs = party.songs.map(s => {
         if (s.status === "playing") return { ...s, status: "played" as const };
@@ -1133,13 +1171,16 @@ export function PartyProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       const song = party.songs.find(s => s.id === songId);
       if (!song || song.status !== "playing") {
         throw new Error("Song not found or not currently playing");
       }
+
+      // Aligned with backend: mark_as_played expects hub_id
+      await api.post("/dj_wallet/party/mark_as_played/", {
+        song_title: song.title,
+        hub_id: party.hubId || party.id
+      });
 
       const updatedSongs = party.songs.map(s =>
         s.id === songId ? { ...s, status: "played" as const } : s

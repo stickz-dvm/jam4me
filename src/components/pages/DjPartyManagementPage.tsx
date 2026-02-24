@@ -167,6 +167,16 @@ export function DjPartyManagementPage() {
   }
 
   // Handle song actions
+  const handleApproveSong = async (songId: string) => {
+    try {
+      await approveSong(songId, partyId);
+      toast.success("Song accepted");
+    } catch (error: any) {
+      console.error("Error approving song:", error);
+      toast.error(error.message || "Failed to approve song.");
+    }
+  };
+
   const handlePlaySong = async (songId: string) => {
     try {
       // Find the song that's being played
@@ -262,11 +272,27 @@ export function DjPartyManagementPage() {
 
   // Filter songs by status - directly from party data to stay in sync
   const pendingSongs = party.songs?.filter(song => song.status === "pending") || [];
+  const acceptedSongs = party.songs?.filter(song => song.status === "accepted") || [];
   const playingSongs = party.songs?.filter(song => song.status === "playing") || [];
   const playedSongs = party.songs?.filter(song => song.status === "played") || [];
 
   // Sort pending songs by price (highest first)
   const sortedPendingSongs = [...pendingSongs].sort((a, b) => b.price - a.price);
+  const sortedAcceptedSongs = [...acceptedSongs].sort((a, b) => b.price - a.price);
+
+  const formatDate = (dateStr: any) => {
+    try {
+      if (!dateStr) return "TBD";
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return "TBD";
+      return date.toLocaleString('en-NG', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      });
+    } catch (e) {
+      return "TBD";
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -338,10 +364,7 @@ export function DjPartyManagementPage() {
               </div>
               <div className="flex items-center">
                 <Clock className="mr-1 h-4 w-4" />
-                <span>Ends at: {new Date(party.activeUntil).toLocaleString('en-NG', {
-                  dateStyle: 'medium',
-                  timeStyle: 'short'
-                })}</span>
+                <span>Ends at: {formatDate(party.activeUntil)}</span>
               </div>
             </div>
           </div>
@@ -464,62 +487,145 @@ export function DjPartyManagementPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {sortedPendingSongs.length > 0 ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {sortedPendingSongs.map((song) => (
-                      <Card key={song.id} className="bg-muted/10 backdrop-blur-sm border-accent/10 transition-all">
-                        <CardContent className="p-4">
-                          <div className="flex items-center gap-4 mb-4">
-                            <div className="w-16 h-16 overflow-hidden rounded-md shrink-0 bg-muted/30">
-                              {song.albumArt ? (
-                                <img
-                                  src={song.albumArt}
-                                  alt={`${song.title} cover`}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="flex items-center justify-center w-full h-full">
-                                  <Music2 className="h-6 w-6 text-muted-foreground" />
+                {sortedPendingSongs.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center">
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Pending Requests ({sortedPendingSongs.length})
+                    </h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {sortedPendingSongs.map((song) => (
+                        <Card key={song.id} className="bg-muted/10 backdrop-blur-sm border-accent/10 transition-all">
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-4 mb-4">
+                              <div className="w-16 h-16 overflow-hidden rounded-md shrink-0 bg-muted/30">
+                                {song.albumArt ? (
+                                  <img
+                                    src={song.albumArt}
+                                    alt={`${song.title} cover`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex items-center justify-center w-full h-full">
+                                    <Music2 className="h-6 w-6 text-muted-foreground" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-grow">
+                                <h4 className="font-medium text-base mb-1">{song.title}</h4>
+                                <p className="text-sm text-muted-foreground">{song.artist}</p>
+                                <div className="flex items-center mt-2">
+                                  <Badge className="price-badge border-none">
+                                    ₦{song.price?.toLocaleString() || 0}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground ml-2">
+                                    Requested by {song.requestedBy?.substring(0, 8) || "Guest"}
+                                  </span>
                                 </div>
-                              )}
-                            </div>
-                            <div className="flex-grow">
-                              <h4 className="font-medium text-base mb-1">{song.title}</h4>
-                              <p className="text-sm text-muted-foreground">{song.artist}</p>
-                              <div className="flex items-center mt-2">
-                                <Badge className="price-badge border-none">
-                                  ₦{song.price?.toLocaleString() || 0}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground ml-2">
-                                  Requested by {song.requestedBy?.substring(0, 8) || "Guest"}
-                                </span>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="flex space-x-2 justify-end">
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeclineSong(song.id)}
-                            >
-                              <Ban className="h-4 w-4 mr-2" />
-                              Decline
-                            </Button>
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={() => handlePlaySong(song.id)}
-                            >
-                              <Play className="h-4 w-4 mr-2" />
-                              Play Now
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                            <div className="grid grid-cols-2 gap-2 justify-end">
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeclineSong(song.id)}
+                                className="w-full"
+                              >
+                                <Ban className="h-4 w-4 mr-2" />
+                                Decline
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => handleApproveSong(song.id)}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Accept
+                              </Button>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => handlePlaySong(song.id)}
+                                className="col-span-2 w-full"
+                              >
+                                <Play className="h-4 w-4 mr-2" />
+                                Accept & Play Now
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
                   </div>
-                ) : (
+                )}
+
+                {sortedAcceptedSongs.length > 0 && (
+                  <div className="mb-0">
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-green-500 mb-3 flex items-center">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Ready to Play ({sortedAcceptedSongs.length})
+                    </h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {sortedAcceptedSongs.map((song) => (
+                        <Card key={song.id} className="bg-green-500/5 backdrop-blur-sm border-green-500/20 transition-all">
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-4 mb-4">
+                              <div className="w-16 h-16 overflow-hidden rounded-md shrink-0 bg-muted/30">
+                                {song.albumArt ? (
+                                  <img
+                                    src={song.albumArt}
+                                    alt={`${song.title} cover`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex items-center justify-center w-full h-full">
+                                    <Music2 className="h-6 w-6 text-muted-foreground" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-grow">
+                                <h4 className="font-medium text-base mb-1">{song.title}</h4>
+                                <p className="text-sm text-muted-foreground">{song.artist}</p>
+                                <div className="flex items-center mt-2">
+                                  <Badge className="bg-green-500 text-white border-none">
+                                    ₦{song.price?.toLocaleString() || 0}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground ml-2 text-green-400">
+                                    ACCEPTED
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex space-x-2 justify-end">
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeclineSong(song.id)}
+                              >
+                                <Ban className="h-4 w-4 mr-2" />
+                                Decline
+                              </Button>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => handlePlaySong(song.id)}
+                                className="flex-grow"
+                              >
+                                <Play className="h-4 w-4 mr-2" />
+                                Play Now
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {sortedPendingSongs.length === 0 && sortedAcceptedSongs.length === 0 && (
                   <div className="text-center py-8">
                     <div className="rounded-full bg-muted/20 w-12 h-12 mx-auto flex items-center justify-center mb-3">
                       <Music2 className="h-6 w-6 text-muted-foreground" />
@@ -711,16 +817,17 @@ export function DjPartyManagementPage() {
                       <NairaSign className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <input
-                      type="text"
-                      value={minRequestPrice.toLocaleString()}
+                      type="number"
+                      value={minRequestPrice || ''}
                       onChange={(e) => {
-                        // Strip commas and non-numeric characters
-                        const value = e.target.value.replace(/[^0-9]/g, '');
-                        const numValue = parseInt(value);
-                        if (!isNaN(numValue)) {
-                          setMinRequestPrice(numValue);
-                        } else if (value === '') {
+                        const value = e.target.value;
+                        if (value === '') {
                           setMinRequestPrice(0);
+                        } else {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue)) {
+                            setMinRequestPrice(numValue);
+                          }
                         }
                       }}
                       onBlur={() => {

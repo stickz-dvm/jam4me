@@ -9,7 +9,7 @@ interface Song {
   artist: string;
   albumArt?: string;
   price: number;
-  status: "playing" | "queued" | "played";
+  status: "playing" | "queued" | "played" | "accepted";
   requestedBy: string;
   timestamp?: string;
 }
@@ -54,6 +54,13 @@ export function SongCard({ song, currentlyPlaying }: SongCardProps) {
           <div className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-full bg-accent px-2 py-1">
             <div className="h-2 w-2 animate-pulse rounded-full bg-accent-foreground"></div>
             <span className="text-xs font-medium text-accent-foreground">Playing</span>
+          </div>
+        );
+      case "accepted":
+        return (
+          <div className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-full bg-green-500/80 px-2 py-1">
+            <CheckCircle className="h-3 w-3 text-white" />
+            <span className="text-xs font-medium text-white">Accepted</span>
           </div>
         );
       case "queued":

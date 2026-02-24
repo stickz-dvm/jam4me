@@ -51,13 +51,14 @@ export type Song = {
   artist: string;
   price: number;
   requestedBy: string;
-  status: "pending" | "playing" | "played" | "declined";
+  status: "pending" | "accepted" | "playing" | "played" | "declined";
   requestedAt: Date;
   albumArt?: string;
 };
 
 export type Party = {
   id: string;
+  hubId?: string;
   name: string;
   passcode: string;
   location: string;
@@ -80,7 +81,7 @@ export type PartyContextType = {
   joinParty: (passcode: string) => void;
   leaveParty: () => void;
   createParty: (partyData: Omit<Party, "id" | "djId" | "songs" | "passcode" | "createdAt">) => Promise<Party>;
-  requestSong: (songTitle: string, artist: string, price: number, albumArt?: string) => Promise<void>;
+  requestSong: (songTitle: string, artist: string, price: number, albumArt?: string, spotifyId?: string) => Promise<void>;
   approveSong: (songId: string, partyId?: string) => Promise<void>;
   declineSong: (songId: string, partyId?: string) => Promise<void>;
   playSong: (songId: string, partyId?: string) => Promise<void>;

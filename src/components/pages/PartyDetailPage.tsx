@@ -294,7 +294,8 @@ export function PartyDetailPage() {
         selectedTrack.name,
         selectedTrack.artists[0]?.name || "Unknown Artist",
         requestPrice,
-        selectedTrack.album?.images?.[0]?.url
+        selectedTrack.album?.images?.[0]?.url,
+        selectedTrack.id
       );
       setSelectedTrack(null);
       setPrice(currentParty?.minRequestPrice || 1000);
@@ -349,16 +350,17 @@ export function PartyDetailPage() {
   };
 
   const handleUpdateMinPrice = async () => {
+    if (!currentParty) return;
+
     setIsUpdatingPrice(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      if (currentParty) {
-        setCurrentParty({ ...currentParty, minRequestPrice });
-      }
-      toast.success(`Minimum price updated to ₦${minRequestPrice.toLocaleString()}`);
+      await updatePartySettings(currentParty.id, {
+        minRequestPrice: minRequestPrice
+      });
       setShowPriceDialog(false);
-    } catch (error) {
-      toast.error("Failed to update minimum price");
+    } catch (error: any) {
+      console.error("Error updating party settings:", error);
+      // Toast handled by context
     } finally {
       setIsUpdatingPrice(false);
     }
@@ -579,7 +581,13 @@ export function PartyDetailPage() {
                     {queuedSongs.map((song) => (
                       <Card key={song.id} className="bg-card/80 backdrop-blur-sm border-border/50">
                         <CardContent className="p-4">
-                          <SongCard song={{ ...song, status: "queued" }} currentlyPlaying={false} />
+                          <SongCard
+                            song={{
+                              ...song,
+                              status: song.status === "pending" ? "queued" : song.status as any
+                            }}
+                            currentlyPlaying={currentlyPlaying?.id === song.id}
+                          />
                           {isDj && (
                             <div className="mt-4 pt-4 border-t border-border/50 flex justify-between">
                               <Button size="sm" variant="destructive" onClick={() => handleDeclineSong(song.id)} className="flex-1 mr-2">
