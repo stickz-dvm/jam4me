@@ -460,7 +460,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
             title: song.song_title || song.title,
             artist: song.artiste_name || song.artist,
             price: Number(song.bid_amount || song.price || 0),
-            requestedBy: song.requested_by || song.username || song.user_name,
+            requestedBy: song.requested_by || song.username || song.user_name || song.hub_user,
             status: song.status || song.song_status || "pending",
             requestedAt: new Date(song.requested_at || song.requestedAt || Date.now()),
             albumArt: song.song_art || song.album_art || song.song_art_url || song.album_art_url || song.albumArt || song.profile_picture
@@ -1022,7 +1022,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
 
       // Aligned with backend fix: Accepts hub_id and standardized field names
       await api.post("/dj_wallet/party/accept_song/", {
-        user_name: song.requestedBy|| song.username || "",
+        user_name: song.requestedBy,
         song_title: song.title,
         hub_id: party.hubId || party.id
       });
