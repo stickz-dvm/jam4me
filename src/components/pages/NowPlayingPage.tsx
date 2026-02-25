@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { useParty } from "../../context/PartyContext";
-import { Music2, Disc, Maximize2, Monitor, Music, User, Play } from "lucide-react";
+import { Music2, Disc, Monitor, Music, User, Play } from "lucide-react";
 import { Button } from "../ui/button";
 
 export function NowPlayingPage() {
@@ -23,22 +23,6 @@ export function NowPlayingPage() {
             return () => clearInterval(interval);
         }
     }, [currentParty?.id, fetchNowPlaying]);
-
-    const handleFullScreenPopup = () => {
-        const width = 1200;
-        const height = 800;
-        const left = (window.screen.width / 2) - (width / 2);
-        const top = (window.screen.height / 2) - (height / 2);
-
-        const url = new URL(window.location.href);
-        url.searchParams.set("popup", "true");
-
-        window.open(
-            url.toString(),
-            "Jam4Me-Live",
-            `width=${width},height=${height},left=${left},top=${top},menubar=no,status=no,toolbar=no`
-        );
-    };
 
     // Default to a vibrant blue/purple if no art
     const requesterColor = (nowPlaying?.album_art || nowPlaying?.profile_picture) ? "#FFD60A" : "#3b82f6";
@@ -70,32 +54,6 @@ export function NowPlayingPage() {
                     )}
                 </motion.div>
             </AnimatePresence>
-
-            {/* TOP BAR / MENU BAR - Lowered to avoid overlap with Layout header */}
-            <div className="absolute top-16 inset-x-0 h-12 bg-black/10 backdrop-blur-xl border border-white/5 mx-6 rounded-2xl flex items-center justify-between px-6 z-50">
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-[#FF5F57] rounded-full shadow-lg" />
-                        <div className="w-3 h-3 bg-[#FEBC2E] rounded-full shadow-lg" />
-                        <div className="w-3 h-3 bg-[#28C840] rounded-full shadow-lg" />
-                    </div>
-                    <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.4em]">Live Dashboard</span>
-                </div>
-
-                <div className="flex items-center gap-4">
-                    <Button
-                        size="sm"
-                        onClick={handleFullScreenPopup}
-                        className="h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-[9px] font-black uppercase tracking-widest px-6 flex items-center gap-2 transition-all active:scale-95"
-                    >
-                        <Maximize2 size={10} />
-                        Full Screen
-                    </Button>
-                    <div className="text-[11px] font-bold text-white/90 mr-2 bg-white/5 px-3 py-1 rounded-full border border-white/5">
-                        {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                </div>
-            </div>
 
             {/* MAIN CONTENT AREA */}
             <div className="absolute inset-0 flex items-center px-12 md:px-24">

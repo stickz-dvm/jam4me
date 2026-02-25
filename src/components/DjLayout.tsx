@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Home, Wallet, User, HelpCircle, LogOut, PlayCircle } from "lucide-react";
+import { Home, Wallet, User, HelpCircle, LogOut, PlayCircle, Maximize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
@@ -57,6 +57,22 @@ export function DjLayout() {
     return navbarPaths.includes(prevPath) && navbarPaths.includes(currentPath);
   };
 
+  const handleFullScreenPopup = () => {
+    const width = 1200;
+    const height = 800;
+    const left = (window.screen.width / 2) - (width / 2);
+    const top = (window.screen.height / 2) - (height / 2);
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("popup", "true");
+
+    window.open(
+      url.toString(),
+      "Jam4Me-Live",
+      `width=${width},height=${height},left=${left},top=${top},menubar=no,status=no,toolbar=no`
+    );
+  };
+
   if (isPopup) {
     return (
       <div className="flex flex-col min-h-screen bg-black overflow-hidden">
@@ -80,57 +96,71 @@ export function DjLayout() {
             </div>
           </Link>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="rounded-full h-10 w-10 p-0">
-                <Avatar className="h-9 w-9">
-                  {user?.avatar ? (
-                    <ImageWithFallback
-                      src={user.avatar}
-                      alt={user.username}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-muted">
-                      <User className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                  )}
-                </Avatar>
+          <div className="flex items-center gap-2">
+            {location.pathname === "/dj/now-playing" && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleFullScreenPopup}
+                className="h-9 rounded-full border-accent/20 hover:bg-accent/5 hidden sm:flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-accent transition-all active:scale-95"
+              >
+                <Maximize2 size={14} />
+                Full Screen
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col">
-                  <span>{user?.djName || user?.username}</span>
+            )}
 
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/dj/profile" className="cursor-pointer">
-                  <User className="mr-2 h-4 w-4" />
-                  <span>My Profile</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/dj/wallet" className="cursor-pointer">
-                  <Wallet className="mr-2 h-4 w-4" />
-                  <span>Wallet & Earnings</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/dj/support" className="cursor-pointer">
-                  <HelpCircle className="mr-2 h-4 w-4" />
-                  <span>Help & Support</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogoutClick} className="text-destructive focus:text-destructive cursor-pointer">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="rounded-full h-10 w-10 p-0">
+                  <Avatar className="h-9 w-9">
+                    {user?.avatar ? (
+                      <ImageWithFallback
+                        src={user.avatar}
+                        alt={user.username}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-muted">
+                        <User className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    )}
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span>{user?.djName || user?.username}</span>
+
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/dj/profile" className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>My Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/dj/wallet" className="cursor-pointer">
+                    <Wallet className="mr-2 h-4 w-4" />
+                    <span>Wallet & Earnings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/dj/support" className="cursor-pointer">
+                    <HelpCircle className="mr-2 h-4 w-4" />
+                    <span>Help & Support</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogoutClick} className="text-destructive focus:text-destructive cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
 
