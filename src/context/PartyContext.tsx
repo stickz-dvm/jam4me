@@ -12,6 +12,15 @@ export const normalizeId = (id: string | number | undefined | null): string => {
   return String(id).toLowerCase().trim();
 };
 
+export const normalizeImageUrl = (url: string | undefined | null): string => {
+  if (!url) return "";
+  // Check if it's a base64 string without data prefix
+  if ((url.startsWith("/9j/") || url.startsWith("iVBOR")) && !url.startsWith("data:image")) {
+    return `data:image/jpeg;base64,${url}`;
+  }
+  return url;
+};
+
 const updateSongReferences = (party: Party): Party => {
   if (!party || !party.songs) return party;
 
@@ -73,7 +82,7 @@ const normalizePartyFromAPI = (apiData: any): Party => {
     // Handle status variations robustly
     status: (song.status || song.song_status || "pending").toLowerCase(),
     requestedAt: new Date(song.requested_at || song.requestedAt || Date.now()),
-    albumArt: song.song_art || song.album_art || song.song_art_url || song.album_art_url || song.albumArt || song.profile_picture,
+    albumArt: normalizeImageUrl(song.song_art || song.album_art || song.song_art_url || song.album_art_url || song.albumArt || song.profile_picture),
   })) : [];
 
   // Robustly parse end/active time
@@ -519,7 +528,8 @@ export function PartyProvider({ children }: { children: ReactNode }) {
             ...rawData,
             now_playing: rawData.now_playing || rawData.song_title || rawData.title,
             artiste_name: rawData.artiste_name || rawData.artist || rawData.artist_name,
-            album_art: rawData.song_art || rawData.album_art || rawData.song_art_url || rawData.album_art_url || rawData.profile_picture,
+            album_art: normalizeImageUrl(rawData.song_art || rawData.album_art || rawData.song_art_url || rawData.album_art_url),
+            profile_picture: normalizeImageUrl(rawData.profile_picture),
             username: rawData.username || rawData.requested_by || rawData.user_name
           });
         } else {

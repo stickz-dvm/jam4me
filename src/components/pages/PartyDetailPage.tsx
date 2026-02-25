@@ -538,11 +538,6 @@ export function PartyDetailPage() {
               </div>
             ) : (
               <div className="flex flex-col items-center w-full gap-4">
-                {nowPlaying && nowPlaying.now_playing && (
-                  <div className="w-full max-w-5xl">
-                    <NowPlayingCard data={nowPlaying} />
-                  </div>
-                )}
                 <div className="flex justify-center w-full px-0">
                   <RequestSongCard
                     track={selectedTrack}
