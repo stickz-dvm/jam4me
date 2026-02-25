@@ -168,6 +168,13 @@ export function DjLayout() {
               key={`nav-dashboard-${activeRoute}`}
             />
             <NavItem
+              to="/dj/now-playing"
+              label="Playing"
+              icon={<PlayCircle className="w-5 h-5" />}
+              isActive={isActive("/dj/now-playing")}
+              key={`nav-nowplaying-${activeRoute}`}
+            />
+            <NavItem
               to="/dj/wallet"
               label="Wallet"
               icon={<Wallet className="w-5 h-5" />}
@@ -180,13 +187,6 @@ export function DjLayout() {
               icon={<User className="w-5 h-5" />}
               isActive={isActive("/dj/profile")}
               key={`nav-profile-${activeRoute}`}
-            />
-            <NavItem
-              to="/dj/now-playing"
-              label="Playing"
-              icon={<PlayCircle className="w-5 h-5" />}
-              isActive={isActive("/dj/now-playing")}
-              key={`nav-nowplaying-${activeRoute}`}
             />
             <NavItem
               to="/dj/support"

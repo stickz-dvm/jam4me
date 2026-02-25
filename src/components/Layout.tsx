@@ -110,6 +110,12 @@ export function Layout() {
               isActive={isActive("/parties") || isActive("/party/")}
             />
             <NavItem
+              to="/now-playing"
+              label="Playing"
+              icon={<PlayCircle className="w-5 h-5" />}
+              isActive={isActive("/now-playing")}
+            />
+            <NavItem
               to="/wallet"
               label="Wallet"
               icon={<Wallet className="w-5 h-5" />}
@@ -120,12 +126,6 @@ export function Layout() {
               label="Profile"
               icon={<User className="w-5 h-5" />}
               isActive={isActive("/profile")}
-            />
-            <NavItem
-              to="/now-playing"
-              label="Playing"
-              icon={<PlayCircle className="w-5 h-5" />}
-              isActive={isActive("/now-playing")}
             />
             <NavItem
               to="/support"

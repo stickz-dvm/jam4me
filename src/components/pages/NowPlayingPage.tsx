@@ -71,8 +71,8 @@ export function NowPlayingPage() {
                 </motion.div>
             </AnimatePresence>
 
-            {/* TOP BAR / MENU BAR */}
-            <div className="absolute top-0 inset-x-0 h-12 bg-black/10 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-6 z-50">
+            {/* TOP BAR / MENU BAR - Lowered to avoid overlap with Layout header */}
+            <div className="absolute top-16 inset-x-0 h-12 bg-black/10 backdrop-blur-xl border border-white/5 mx-6 rounded-2xl flex items-center justify-between px-6 z-50">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-[#FF5F57] rounded-full shadow-lg" />
@@ -183,8 +183,8 @@ export function NowPlayingPage() {
                         >
                             {/* Song Art */}
                             <div className="h-16 w-16 md:h-24 md:w-24 rounded-[2rem] overflow-hidden border border-white/20 relative group bg-blue-900/50 shadow-2xl">
-                                {nowPlaying.album_art ? (
-                                    <img src={nowPlaying.album_art} className="h-full w-full object-cover" />
+                                {(nowPlaying.album_art || nowPlaying.song_art) ? (
+                                    <img src={nowPlaying.album_art || nowPlaying.song_art} className="h-full w-full object-cover" />
                                 ) : (
                                     <Music className="w-full h-full p-4 text-blue-300 opacity-50" />
                                 )}
