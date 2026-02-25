@@ -30,8 +30,11 @@ export function NowPlayingPage() {
         const left = (window.screen.width / 2) - (width / 2);
         const top = (window.screen.height / 2) - (height / 2);
 
+        const url = new URL(window.location.href);
+        url.searchParams.set("popup", "true");
+
         window.open(
-            window.location.href,
+            url.toString(),
             "Jam4Me-Live",
             `width=${width},height=${height},left=${left},top=${top},menubar=no,status=no,toolbar=no`
         );

@@ -17,6 +17,7 @@ export function DjLayout() {
   // Add state to force re-render on route changes
   const [activeRoute, setActiveRoute] = useState(location.pathname);
   const [disableAnimation, setDisableAnimation] = useState(false);
+  const isPopup = new URLSearchParams(location.search).get("popup") === "true";
 
   const isActive = (path: string) => {
     return location.pathname.startsWith(path);
@@ -55,6 +56,16 @@ export function DjLayout() {
     // Check if both previous and current paths are navbar paths
     return navbarPaths.includes(prevPath) && navbarPaths.includes(currentPath);
   };
+
+  if (isPopup) {
+    return (
+      <div className="flex flex-col min-h-screen bg-black overflow-hidden">
+        <main className="flex-1 w-full h-full">
+          <Outlet />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background">

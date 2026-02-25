@@ -9,9 +9,9 @@ import { LogoutConfirmDialog } from "./LogoutConfirmDialog";
 
 export function Layout() {
   const location = useLocation();
-  const { logout } = useAuth();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const prevLocationRef = useRef(location.pathname);
+  const isPopup = new URLSearchParams(location.search).get("popup") === "true";
 
   // Determine if current navigation is between navbar pages
   const isNavbarNavigation = () => {
@@ -42,6 +42,16 @@ export function Layout() {
   const handleCancelLogout = () => {
     setShowLogoutDialog(false);
   };
+
+  if (isPopup) {
+    return (
+      <div className="flex flex-col min-h-screen bg-black overflow-hidden">
+        <main className="flex-1 w-full h-full">
+          <Outlet />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
