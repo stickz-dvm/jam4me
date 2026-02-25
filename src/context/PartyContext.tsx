@@ -512,7 +512,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         passcode: hubId
       });
       if (response.status === 200) {
-        const rawData = response.data.now_playing_data || response.data.now_playing || response.data;
+        const rawData = response.data.now_playing_data || response.data;
         if (rawData && typeof rawData === 'object') {
           // Normalize the nowPlaying object for consistent UI display
           setNowPlaying({
@@ -523,7 +523,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
             username: rawData.username || rawData.requested_by || rawData.user_name
           });
         } else {
-          setNowPlaying(rawData);
+          setNowPlaying(rawData ? { now_playing: rawData } : null);
         }
       }
     } catch (error: any) {

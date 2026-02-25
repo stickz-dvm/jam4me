@@ -1,0 +1,118 @@
+
+printWarning @ chunk-YQ5BCTVV.js?v=6660f6dc:521
+error @ chunk-YQ5BCTVV.js?v=6660f6dc:505
+warnOnInvalidKey @ chunk-YQ5BCTVV.js?v=6660f6dc:10266
+reconcileChildrenArray @ chunk-YQ5BCTVV.js?v=6660f6dc:10282
+reconcileChildFibers2 @ chunk-YQ5BCTVV.js?v=6660f6dc:10606
+reconcileChildren @ chunk-YQ5BCTVV.js?v=6660f6dc:14340
+updateFragment @ chunk-YQ5BCTVV.js?v=6660f6dc:14570
+beginWork @ chunk-YQ5BCTVV.js?v=6660f6dc:15997
+beginWork$1 @ chunk-YQ5BCTVV.js?v=6660f6dc:19806
+performUnitOfWork @ chunk-YQ5BCTVV.js?v=6660f6dc:19251
+workLoopSync @ chunk-YQ5BCTVV.js?v=6660f6dc:19190
+renderRootSync @ chunk-YQ5BCTVV.js?v=6660f6dc:19169
+performConcurrentWorkOnRoot @ chunk-YQ5BCTVV.js?v=6660f6dc:18728
+workLoop @ chunk-YQ5BCTVV.js?v=6660f6dc:197
+flushWork @ chunk-YQ5BCTVV.js?v=6660f6dc:176
+performWorkUntilDeadline @ chunk-YQ5BCTVV.js?v=6660f6dc:384Understand this error
+PartyContext.tsx:225 Saved to localStorage: {currentParty: 'Jamax', joinedCount: 11, createdCount: 11}
+apiClient.ts:114 API Response: 200 /dj_wallet/get_now_playing/ {now_playing: 'Wo!!', request_id: '15', username: '123456789', profile_picture: '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQ…qVtvs7gqqCXcZ7abTEXHqVLCv7SoaO4KUwrU///4AAwD/2Q==', star_level: 1, …}
+apiClient.ts:114 API Response: 200 /dj_wallet/song_list/ {song_list_data: Array(0), hub_id: '5c2be22e-fb6f-4a21-a952-86ccb91b6633'}
+PartyContext.tsx:489 Updated song list for party cma66h: 0 songs
+apiClient.ts:114 API Response: 200 /dj_wallet/get_now_playing/ {now_playing: 'Wo!!', request_id: '15', username: '123456789', profile_picture: '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQ…qVtvs7gqqCXcZ7abTEXHqVLCv7SoaO4KUwrU///4AAwD/2Q==', star_level: 1, …}
+apiClient.ts:114 API Response: 200 /dj_wallet/get_hubs/ {hubs: Array(11)}
+PartyContext.tsx:593 Joined Parties Response: {hubs: Array(11)}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'dd', date: '2026-02-20', time: '2026-02-20 12:28:18.151574+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'dd', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'DOG out', date: '2026-02-21', time: '2026-02-21 17:14:22.930121+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'DOG out', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'cap locks', date: '2026-02-21', time: '2026-02-21 19:47:45.112295+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'cap locks', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'DVM', date: '2026-02-22', time: '2026-02-21 20:52:19.134960+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'DVM', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'criterion', date: '2026-02-22', time: '2026-02-21 21:46:59.374528+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'criterion', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'kiKi', date: '2026-02-22', time: '2026-02-21 22:15:20.115016+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'kiKi', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'Okiki', date: '2026-02-22', time: '2026-02-21 22:35:49.215091+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'Okiki', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'samsung', date: '2026-02-24', time: '2026-02-22 07:23:06.260102+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'samsung', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'T wolf', date: '2026-02-23', time: '2026-02-22 14:23:38.041996+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'T wolf', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'Night', date: '2026-02-23', time: '2026-02-22 18:33:44.710945+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'Night', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'gbemi', date: '2026-02-25', time: '2026-02-23 21:07:21.533593+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'gbemi', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+apiClient.ts:114 API Response: 200 /dj_wallet/get_hubs/ {hubs: Array(11)}
+PartyContext.tsx:621 Created Parties Response: {hubs: Array(11)}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'dd', date: '2026-02-20', time: '2026-02-20 12:28:18.151574+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'dd', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'DOG out', date: '2026-02-21', time: '2026-02-21 17:14:22.930121+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'DOG out', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'cap locks', date: '2026-02-21', time: '2026-02-21 19:47:45.112295+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'cap locks', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'DVM', date: '2026-02-22', time: '2026-02-21 20:52:19.134960+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'DVM', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'criterion', date: '2026-02-22', time: '2026-02-21 21:46:59.374528+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'criterion', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'kiKi', date: '2026-02-22', time: '2026-02-21 22:15:20.115016+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'kiKi', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'Okiki', date: '2026-02-22', time: '2026-02-21 22:35:49.215091+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'Okiki', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'samsung', date: '2026-02-24', time: '2026-02-22 07:23:06.260102+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'samsung', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'T wolf', date: '2026-02-23', time: '2026-02-22 14:23:38.041996+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'T wolf', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'Night', date: '2026-02-23', time: '2026-02-22 18:33:44.710945+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'Night', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'gbemi', date: '2026-02-25', time: '2026-02-23 21:07:21.533593+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'gbemi', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+apiClient.ts:114 API Response: 200 /dj_wallet/get_hubs/ {hubs: Array(11)}
+PartyContext.tsx:593 Joined Parties Response: {hubs: Array(11)}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'dd', date: '2026-02-20', time: '2026-02-20 12:28:18.151574+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'dd', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'DOG out', date: '2026-02-21', time: '2026-02-21 17:14:22.930121+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'DOG out', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'cap locks', date: '2026-02-21', time: '2026-02-21 19:47:45.112295+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'cap locks', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'DVM', date: '2026-02-22', time: '2026-02-21 20:52:19.134960+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'DVM', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'criterion', date: '2026-02-22', time: '2026-02-21 21:46:59.374528+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'criterion', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'kiKi', date: '2026-02-22', time: '2026-02-21 22:15:20.115016+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'kiKi', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'Okiki', date: '2026-02-22', time: '2026-02-21 22:35:49.215091+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'Okiki', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'samsung', date: '2026-02-24', time: '2026-02-22 07:23:06.260102+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'samsung', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'T wolf', date: '2026-02-23', time: '2026-02-22 14:23:38.041996+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'T wolf', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'Night', date: '2026-02-23', time: '2026-02-22 18:33:44.710945+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'Night', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'gbemi', date: '2026-02-25', time: '2026-02-23 21:07:21.533593+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'gbemi', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+apiClient.ts:114 API Response: 200 /dj_wallet/get_hubs/ {hubs: Array(11)}
+PartyContext.tsx:621 Created Parties Response: {hubs: Array(11)}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'dd', date: '2026-02-20', time: '2026-02-20 12:28:18.151574+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'dd', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'DOG out', date: '2026-02-21', time: '2026-02-21 17:14:22.930121+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'DOG out', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'cap locks', date: '2026-02-21', time: '2026-02-21 19:47:45.112295+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'cap locks', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'DVM', date: '2026-02-22', time: '2026-02-21 20:52:19.134960+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'DVM', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'criterion', date: '2026-02-22', time: '2026-02-21 21:46:59.374528+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'criterion', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'kiKi', date: '2026-02-22', time: '2026-02-21 22:15:20.115016+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'kiKi', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'Okiki', date: '2026-02-22', time: '2026-02-21 22:35:49.215091+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'Okiki', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'samsung', date: '2026-02-24', time: '2026-02-22 07:23:06.260102+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'samsung', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'T wolf', date: '2026-02-23', time: '2026-02-22 14:23:38.041996+00:00', base_price: 2000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'T wolf', rawPrice: 2000, normalizedPrice: 2000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'Night', date: '2026-02-23', time: '2026-02-22 18:33:44.710945+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'Night', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:55 RAW HUB DATA: {name: 'gbemi', date: '2026-02-25', time: '2026-02-23 21:07:21.533593+00:00', base_price: 5000}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'gbemi', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}

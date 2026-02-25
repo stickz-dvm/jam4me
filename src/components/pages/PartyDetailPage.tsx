@@ -246,7 +246,7 @@ export function PartyDetailPage() {
       const interval = setInterval(() => {
         fetchNowPlaying(partyId);
         fetchHubDetails(partyId);
-      }, 10000);
+      }, 30000);
       return () => clearInterval(interval);
     }
   }, [passcode, currentParty?.id]);

@@ -125,7 +125,7 @@ export function DjPartyManagementPage() {
       const interval = setInterval(() => {
         fetchSongList(apiHubId);
         fetchNowPlaying(apiHubId);
-      }, 10000);
+      }, 30000);
 
       return () => clearInterval(interval);
     }

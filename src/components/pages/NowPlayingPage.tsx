@@ -19,7 +19,7 @@ export function NowPlayingPage() {
     useEffect(() => {
         if (currentParty?.id) {
             fetchNowPlaying(currentParty.id);
-            const interval = setInterval(() => fetchNowPlaying(currentParty.id), 10000);
+            const interval = setInterval(() => fetchNowPlaying(currentParty.id), 30000);
             return () => clearInterval(interval);
         }
     }, [currentParty?.id, fetchNowPlaying]);

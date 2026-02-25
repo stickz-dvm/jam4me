@@ -106,12 +106,18 @@ export function RegisterPage() {
           </CardHeader>
 
           <Tabs defaultValue="user" onValueChange={(value) => setUserStatus(value as UserType)} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="user" className="flex items-center justify-center gap-2">
+            <TabsList className="grid w-full grid-cols-2 mb-4 bg-secondary/50">
+              <TabsTrigger
+                value="user"
+                className="flex items-center justify-center gap-2 data-[state=active]:!bg-primary data-[state=active]:!text-primary-foreground data-[state=active]:!opacity-100"
+              >
                 <User className="h-4 w-4" />
                 <span>User</span>
               </TabsTrigger>
-              <TabsTrigger value="HUB_DJ" className="flex items-center justify-center gap-2">
+              <TabsTrigger
+                value="HUB_DJ"
+                className="flex items-center justify-center gap-2 data-[state=active]:!bg-accent data-[state=active]:!text-accent-foreground data-[state=active]:!opacity-100"
+              >
                 <Music className="h-4 w-4" />
                 <span>DJ</span>
               </TabsTrigger>
