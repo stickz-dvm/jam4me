@@ -13,6 +13,7 @@ import { Separator } from "../ui/separator";
 import { LogoutConfirmDialog } from "../LogoutConfirmDialog";
 import { PasswordInput } from "../ui/password-input";
 import { api } from "@/api/apiMethods";
+import { PWAInstallPrompt } from "../PWAInstallPrompt";
 
 export function ProfilePage() {
   const navigate = useNavigate();
@@ -272,6 +273,8 @@ export function ProfilePage() {
   return (
     <div className="space-y-6">
       <h2>Profile</h2>
+
+      <PWAInstallPrompt />
 
       <div className="flex flex-col items-center justify-center py-6">
         <div className="relative group">

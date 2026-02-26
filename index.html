@@ -6,6 +6,11 @@
     <title>Jam4Me - DJ Song Requests</title>
     <meta name="description" content="Connect with DJs and request songs at Nigerian parties and events" />
     <base href="/" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Jam4me" />
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/bNpHxp4V/Jam4me.png" />
     <style>
       /* Critical CSS to prevent flashing */
       html, body {
@@ -14,6 +19,7 @@
         margin: 0;
         padding: 0;
         min-height: 100vh;
+        overscroll-behavior-y: contain; /* Prevents pull-to-refresh on mobile PWA */
       }
     </style>
   </head>

@@ -8,6 +8,7 @@ import { useAuth } from "../context/AuthContext";
 import { LogoutConfirmDialog } from "./LogoutConfirmDialog";
 
 export function Layout() {
+  const { logout } = useAuth();
   const location = useLocation();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const prevLocationRef = useRef(location.pathname);

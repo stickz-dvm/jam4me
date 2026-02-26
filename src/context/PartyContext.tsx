@@ -1273,7 +1273,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
   }, [user, isAuthenticated, currentParty, findPartyById]);
 
   const getPartyQrCode = useCallback((partyId: string) => {
-    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=jam4me-party-${partyId}`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://jam4me.com/party/${partyId}`;
   }, []);
 
   const hasPendingSongs = useCallback((partyId: string) => {

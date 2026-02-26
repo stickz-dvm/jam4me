@@ -59,7 +59,7 @@ export function PartiesPage() {
     )
 
     const onScanSuccess: QrcodeSuccessCallback = (decodedText, decodedResult) => {
-      const partyId = decodedText.match(/(?:party\/|jam4me-party-)([a-z0-9]+)/)?.[1] || decodedText;
+      const partyId = decodedText.match(/(?:party\/|jam4me-party-)([a-zA-Z0-9]+)/i)?.[1] || decodedText;
 
       if (partyId) {
         setScanResult(partyId);
@@ -307,13 +307,11 @@ export function PartiesPage() {
               <div className="relative">
                 <Input
                   id="passcode"
-                  placeholder="Enter 6-digit code"
+                  placeholder="Enter 6-character code"
                   value={passcode}
-                  onChange={(e) => setPasscode(e.target.value)}
+                  onChange={(e) => setPasscode(e.target.value.toUpperCase())}
                   className="bg-input-background pr-10"
                   maxLength={6}
-                  pattern="[0-9]{6}"
-                  inputMode="numeric"
                 />
                 {passcode.length > 0 && passcode.length < 6 && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
