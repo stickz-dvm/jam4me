@@ -207,6 +207,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       if (Array.isArray(transactionsData)) {
         return transactionsData.map((t: any) => ({
           ...t,
+          amount: typeof t.amount === 'number' ? t.amount : parseFloat(t.amount || 0),
+          description: t.description || t.type || "Wallet Transaction",
           date: new Date(t.date || t.created_at || Date.now())
         }));
       }

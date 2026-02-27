@@ -204,7 +204,7 @@ export function DjWalletPage() {
             <CardContent>
               <div className="flex items-center space-x-2">
                 <WalletIcon className="h-6 w-6 text-primary" />
-                <span className="text-3xl font-bold">₦{balance.toLocaleString()}</span>
+                <span className="text-3xl font-bold">₦{(balance || 0).toLocaleString()}</span>
               </div>
             </CardContent>
             <CardFooter>
@@ -345,7 +345,7 @@ export function DjWalletPage() {
             <CardContent>
               <div className="flex items-center space-x-2">
                 <ArrowDownIcon className="h-6 w-6 text-spotify-green" />
-                <span className="text-3xl font-bold">₦{totalEarned.toLocaleString()}</span>
+                <span className="text-3xl font-bold">₦{(totalEarned || 0).toLocaleString()}</span>
               </div>
             </CardContent>
             <CardFooter>
@@ -361,11 +361,11 @@ export function DjWalletPage() {
             <CardContent>
               <div className="flex items-center space-x-2">
                 <ArrowUpIcon className="h-6 w-6 text-primary" />
-                <span className="text-3xl font-bold">₦{totalWithdrawn.toLocaleString()}</span>
+                <span className="text-3xl font-bold">₦{(totalWithdrawn || 0).toLocaleString()}</span>
               </div>
               {pendingWithdrawals > 0 && (
                 <div className="mt-2 text-sm text-muted-foreground">
-                  <span className="text-yellow-accent">₦{pendingWithdrawals.toLocaleString()}</span> pending
+                  <span className="text-yellow-accent">₦{(pendingWithdrawals || 0).toLocaleString()}</span> pending
                 </div>
               )}
             </CardContent>
@@ -414,7 +414,7 @@ export function DjWalletPage() {
                       </div>
                       <div className="text-right">
                         <p className={`font-bold ${tx.type === "songPayment" ? "text-green-500" : ""}`}>
-                          {tx.type === "songPayment" ? "+" : "-"}₦{tx.amount.toLocaleString()}
+                          {tx.type === "songPayment" ? "+" : "-"}₦{(tx.amount || 0).toLocaleString()}
                         </p>
                         <div className="flex items-center justify-end space-x-1 text-xs">
                           {tx.status === "completed" ? (
@@ -469,7 +469,7 @@ export function DjWalletPage() {
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-green-500">
-                            +₦{tx.amount.toLocaleString()}
+                            +₦{(tx.amount || 0).toLocaleString()}
                           </p>
                           <div className="flex items-center justify-end space-x-1 text-xs">
                             <CheckCircle className="h-3 w-3 text-green-500" />
@@ -509,7 +509,7 @@ export function DjWalletPage() {
                         </div>
                         <div className="text-right">
                           <p className="font-bold">
-                            -₦{tx.amount.toLocaleString()}
+                            -₦{(tx.amount || 0).toLocaleString()}
                           </p>
                           <div className="flex items-center justify-end space-x-1 text-xs">
                             {tx.status === "completed" ? (

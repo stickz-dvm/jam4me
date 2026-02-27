@@ -311,7 +311,7 @@ export function WalletPage() {
     .filter(
       (tx) =>
         tx.type === "payment" &&
-        !tx.description.includes("refund"),
+        !(tx.description || "").includes("refund"),
     )
     .reduce((sum, tx) => sum + tx.amount, 0);
 
@@ -319,7 +319,7 @@ export function WalletPage() {
     .filter(
       (tx) =>
         tx.type === "refund" ||
-        tx.description.includes("refund"),
+        (tx.description || "").includes("refund"),
     )
     .reduce((sum, tx) => sum + tx.amount, 0);
 
@@ -351,7 +351,7 @@ export function WalletPage() {
               <div className="flex items-center space-x-2">
                 <WalletIcon className="h-6 w-6 text-primary" />
                 <span className="text-3xl font-bold">
-                  ₦{balance.toLocaleString()}
+                  ₦{(balance || 0).toLocaleString()}
                 </span>
               </div>
             </CardContent>
@@ -590,7 +590,7 @@ export function WalletPage() {
               <div className="flex items-center space-x-2">
                 <PlusIcon className="h-6 w-6 text-green-500" />
                 <span className="text-3xl font-bold">
-                  ₦{totalFunded.toLocaleString()}
+                  ₦{(totalFunded || 0).toLocaleString()}
                 </span>
               </div>
             </CardContent>
@@ -614,13 +614,13 @@ export function WalletPage() {
               <div className="flex items-center space-x-2">
                 <ArrowUpIcon className="h-6 w-6 text-primary" />
                 <span className="text-3xl font-bold">
-                  ₦{totalSpent.toLocaleString()}
+                  ₦{(totalSpent || 0).toLocaleString()}
                 </span>
               </div>
               {totalRefunded > 0 && (
                 <div className="mt-2 text-sm text-muted-foreground">
                   <span className="text-yellow-accent">
-                    ₦{totalRefunded.toLocaleString()}
+                    ₦{(totalRefunded || 0).toLocaleString()}
                   </span>{" "}
                   refunded
                 </div>
@@ -653,7 +653,7 @@ export function WalletPage() {
                     setIsFundDialogOpen(true);
                   }}
                 >
-                  ₦{amount.toLocaleString()}
+                  ₦{(amount || 0).toLocaleString()}
                 </Button>
               ))}
               <Button
@@ -738,7 +738,7 @@ export function WalletPage() {
                               }`}
                           >
                             {tx.type === "fund" ? "+" : "-"}₦
-                            {tx.amount.toLocaleString()}
+                            {(tx.amount || 0).toLocaleString()}
                           </p>
                           <div className="flex items-center justify-end space-x-1 text-xs">
                             {tx.status === "completed" ? (
