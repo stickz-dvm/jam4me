@@ -115,4 +115,5 @@ PartyContext.tsx:56 Normalizing Party: {rawName: 'T wolf', rawPrice: 2000, norma
 PartyContext.tsx:55 RAW HUB DATA: {name: 'Night', date: '2026-02-23', time: '2026-02-22 18:33:44.710945+00:00', base_price: 5000}
 PartyContext.tsx:56 Normalizing Party: {rawName: 'Night', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
 PartyContext.tsx:55 RAW HUB DATA: {name: 'gbemi', date: '2026-02-25', time: '2026-02-23 21:07:21.533593+00:00', base_price: 5000}
-PartyContext.tsx:56 Normalizing Party: {rawName: 'gbemi', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}
+PartyContext.tsx:56 Normalizing Party: {rawName: 'gbemi', rawPrice: 5000, normalizedPrice: 5000, passcode: ''}G O D   a b e g , . . .   G o o d   n i g h t  
+ 
