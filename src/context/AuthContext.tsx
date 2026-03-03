@@ -548,21 +548,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   //   };
 
   /**
-   * Reset password function
+   * Reset password instructions - sends email to user
    */
-  const resetPassword = async (emailOrPhone: string): Promise<ApiResponse> => {
+  const resetPassword = async (email: string): Promise<ApiResponse> => {
     setIsLoading(true);
     try {
       const response = await api.post(
         "/user_wallet/forgot_password/",
-        { emailOrPhone }
+        { email }
       );
-
       toast.success("Password reset instructions sent!");
       return response;
     } catch (error: any) {
       console.error("Password reset error:", error);
       toast.error(error.message || "Failed to send reset instructions");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Confirm password reset - sets new password using uuid and token
+   */
+  const confirmResetPassword = async (uuid: string, token: string, new_password: string): Promise<ApiResponse> => {
+    setIsLoading(true);
+    try {
+      const response = await api.post(
+        "/user_wallet/confirm_password_reset/",
+        { uuid, token, new_password }
+      );
+      toast.success("Password reset successfully!");
+      return response;
+    } catch (error: any) {
+      console.error("Confirm reset error:", error);
+      toast.error(error.message || "Failed to reset password");
       throw error;
     } finally {
       setIsLoading(false);
@@ -677,6 +697,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         resetPassword,
+        confirmResetPassword,
         logout,
         updateUserProfile,
         isDj: user?.userType === "HUB_DJ",

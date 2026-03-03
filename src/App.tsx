@@ -8,6 +8,7 @@ import { LandingPage } from "./components/pages/LandingPage";
 import { LoginPage } from "./components/pages/LoginPage";
 import { RegisterPage } from "./components/pages/RegisterPage";
 import { ForgotPasswordPage } from "./components/pages/ForgotPasswordPage";
+import { ResetPasswordPage } from "./components/pages/ResetPasswordPage";
 import { OnboardingPage } from "./components/pages/OnboardingPage";
 import { DjOnboardingPage } from "./components/pages/DjOnboardingPage";
 import { PartiesPage } from "./components/pages/PartiesPage";
@@ -97,6 +98,7 @@ function AppWithProviders() {
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/reset-password/:uuid/:token" element={<ResetPasswordPage />} />
                   <Route path="/music-demo" element={<MusicPosterDemo />} />
 
                   {/* User protected routes */}

@@ -39,3 +39,8 @@ information.txt
 User_Doc.txt
 new_set_of_errors.txt
 DJ_Doc.txt
+logs.txt
+
+# electron
+release/
+dist_electron/

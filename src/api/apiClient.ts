@@ -54,6 +54,7 @@ const PUBLIC_ROUTES = [
   "/user_wallet/us_log/",
   "/dj_wallet/us_log/",
   "/user_wallet/forgot_password/",
+  "/user_wallet/confirm_password_reset/",
   "/auth/login",
   "/auth/register",
 ];

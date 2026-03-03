@@ -1034,6 +1034,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       await api.post("/dj_wallet/party/accept_song/", {
         user_name: song.requestedBy,
         song_title: song.title,
+        song_tittle: song.title,
         hub_id: party.hubId || party.id
       });
 
@@ -1131,9 +1132,12 @@ export function PartyProvider({ children }: { children: ReactNode }) {
         throw new Error("Song not found");
       }
 
-      // Aligned with backend: play_song expects hub_id
-      await api.post("/dj_wallet/party/play_song/", {
+      // Aligned with backend: use accept_song to trigger playback/now playing
+      // Added song_tittle for robustness against backend variation
+      await api.post("/dj_wallet/party/accept_song/", {
         song_title: song.title,
+        song_tittle: song.title,
+        user_name: song.requestedBy,
         hub_id: party.hubId || party.id
       });
 
@@ -1190,6 +1194,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
       // Aligned with backend: mark_as_played expects hub_id
       await api.post("/dj_wallet/party/mark_as_played/", {
         song_title: song.title,
+        song_tittle: song.title,
         hub_id: party.hubId || party.id
       });
 

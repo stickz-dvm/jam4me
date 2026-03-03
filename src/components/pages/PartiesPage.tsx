@@ -9,7 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { useAuth } from "../../context/AuthContext";
 import { useParty } from "../../context/PartyContext";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
-import { Html5QrcodeScanner, Html5QrcodeScanType, QrcodeSuccessCallback } from "html5-qrcode";
+import { QrScanner } from "../QrScanner";
 
 export function PartiesPage() {
   const navigate = useNavigate();
@@ -21,7 +21,6 @@ export function PartiesPage() {
   const [showScanner, setShowScanner] = useState(false);
   const [scanResult, setScanResult] = useState<string | null>(null);
 
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const containerRef = useRef(null);
 
   const getInitials = (name: string) => {
@@ -42,54 +41,26 @@ export function PartiesPage() {
     return null;
   }
 
-  useEffect(() => {
-    if (!containerRef.current || !showScanner) return;
+  const onScanSuccess = (decodedText: string) => {
+    const partyId = decodedText.match(/(?:party\/|jam4me-party-)([a-zA-Z0-9]+)/i)?.[1] || decodedText;
 
-    const config: any = {
-      fps: 10,
-      qrbox: { width: 150, height: 150 },
-      rememberLastUsedCamera: true,
-      supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA, Html5QrcodeScanType.SCAN_TYPE_FILE]
-    }
+    if (partyId) {
+      setScanResult(partyId);
+      setPasscode(partyId.toUpperCase());
+      setShowScanner(false);
 
-    const scanner = new Html5QrcodeScanner(
-      "reader",
-      config,
-      false
-    )
-
-    const onScanSuccess: QrcodeSuccessCallback = (decodedText, decodedResult) => {
-      const partyId = decodedText.match(/(?:party\/|jam4me-party-)([a-zA-Z0-9]+)/i)?.[1] || decodedText;
-
-      if (partyId) {
-        setScanResult(partyId);
-        scanner.clear();
-        setPasscode(partyId);
-        setShowScanner(false);
-      } else {
-        setJoinError("Invalid QR code");
+      // Auto-join if party ID is valid (6 chars for demo)
+      if (partyId.length === 6) {
+        handleJoinParty(partyId.toUpperCase());
       }
-    };
-
-    const onScanFailure = (error: any) => {
-      // Silently handle scan failures
+    } else {
+      setJoinError("Invalid QR code");
     }
+  };
 
-    scanner.render(onScanSuccess, onScanFailure);
-    scannerRef.current = scanner;
-
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch((err) => {
-          console.error("Scanner clear error: ", err);
-        })
-        scannerRef.current = null
-      }
-    }
-  }, [showScanner]);
-
-  const handleJoinParty = async () => {
-    if (!passcode.trim()) {
+  const handleJoinParty = async (codeToJoin?: string) => {
+    const code = codeToJoin || passcode;
+    if (!code.trim()) {
       setJoinError("Please enter a passcode");
       return;
     }
@@ -98,12 +69,12 @@ export function PartiesPage() {
       setJoinError("");
 
       // Wait for the party to be joined and state to update
-      await joinParty(passcode);
+      await joinParty(code);
 
       // Add a small delay to ensure state has propagated
       setTimeout(() => {
-        console.log("Navigating to party:", passcode);
-        navigate(`/party/${passcode}`);
+        console.log("Navigating to party:", code);
+        navigate(`/party/${code}`);
       }, 1000);
 
       // Close the dialog
@@ -339,15 +310,16 @@ export function PartiesPage() {
             </Button>
 
             {showScanner && (
-              <div ref={containerRef}>
-                <div id="reader" style={{ width: "100%", height: "400px" }}></div>
-              </div>
+              <QrScanner
+                onScanSuccess={onScanSuccess}
+                onClose={() => setShowScanner(false)}
+              />
             )}
           </div>
 
           <DialogFooter>
             <Button
-              onClick={handleJoinParty}
+              onClick={() => handleJoinParty()}
               disabled={isLoading || passcode.length !== 6}
               className={`${passcode.length === 6 ? 'glow' : ''}`}
             >

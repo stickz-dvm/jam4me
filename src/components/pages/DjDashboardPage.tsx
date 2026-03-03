@@ -273,11 +273,12 @@ export function DjDashboardPage() {
     navigate(`/dj/party/${id}`);
   };
 
-  // Copy party passcode to clipboard
+  // Copy party join URL to clipboard
   const copyPasscodeToClipboard = () => {
     if (selectedParty) {
-      navigator.clipboard.writeText(selectedParty.passcode);
-      toast.success("Passcode copied to clipboard!");
+      const joinUrl = `${window.location.origin}/party/${selectedParty.passcode}`;
+      navigator.clipboard.writeText(joinUrl);
+      toast.success("Party link copied to clipboard!");
     }
   };
 
@@ -625,9 +626,10 @@ export function DjDashboardPage() {
                   {/* {ongoingParties.map((party) => ( */}
                   <Card
                     key={ongoingParty?.id}
-                    className="bg-card/80 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-colors"
+                    className="bg-card/80 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all cursor-pointer group"
+                    onClick={() => navigateToPartyManagement(ongoingParty.id, ongoingParty.passcode)}
                   >
-                    <CardHeader>
+                    <CardHeader className="group-hover:translate-x-1 transition-transform">
                       <div className="flex justify-between items-start">
                         <CardTitle>{ongoingParty?.name}</CardTitle>
                         <Badge>Active</Badge>
@@ -656,11 +658,14 @@ export function DjDashboardPage() {
                         </div>
                       </div>
                     </CardContent>
-                    <CardFooter className="flex justify-between">
+                    <CardFooter className="flex justify-between" onClick={(e) => e.stopPropagation()}>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={(e) => handleShowQRCode(ongoingParty, e)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShowQRCode(ongoingParty, e);
+                        }}
                       >
                         <QrCode className="h-4 w-4 mr-2" />
                         QR Code
@@ -668,10 +673,9 @@ export function DjDashboardPage() {
                       <Button
                         variant="default"
                         size="sm"
+                        className="glow"
                         onClick={(e) => {
-                          e.preventDefault();
                           e.stopPropagation();
-                          console.log("clicked: ", ongoingParty.id, ongoingParty.passcode);
                           navigateToPartyManagement(ongoingParty.id, ongoingParty.passcode);
                         }}
                       >

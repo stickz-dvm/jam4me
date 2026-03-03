@@ -35,7 +35,8 @@ export type AuthContextType = {
   isLoading: boolean;
   login: (username: string, password: string, user_status: UserType) => Promise<ApiResponse<any> | undefined>;
   register: (username: string, email: string, password: string, user_status: UserType) => Promise<ApiResponse>;
-  resetPassword: (emailOrPhone: string) => Promise<ApiResponse>;
+  resetPassword: (email: string) => Promise<ApiResponse>;
+  confirmResetPassword: (uuid: string, token: string, new_password: string) => Promise<ApiResponse>;
   logout: () => void;
   updateUserProfile: (userData: Partial<User>) => void;
   isDj: boolean;

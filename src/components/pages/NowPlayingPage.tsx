@@ -76,19 +76,18 @@ export function NowPlayingPage() {
                             >
                                 {nowPlaying.username || "Guest Lover"}
                             </h2>
-                            <div className="flex items-center gap-3 bg-black/40 backdrop-blur-2xl border border-white/10 p-2.5 rounded-3xl w-fit pr-8">
-                                <div className="h-14 w-14 rounded-2xl overflow-hidden border-2 border-white/10 shadow-2xl">
-                                    {nowPlaying.profile_picture ? (
-                                        <img src={nowPlaying.profile_picture} className="h-full w-full object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full bg-blue-900/40 flex items-center justify-center">
-                                            <User className="text-white/20" />
-                                        </div>
-                                    )}
-                                </div>
-                                <div>
-                                    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Active Member</p>
-                                    <p className="text-white font-bold leading-tight tracking-tight text-lg">Viewing Live Session</p>
+                            {/* Party Join Code Section - Compact Version */}
+                            <div className="flex flex-col gap-1 md:gap-2 bg-white/5 backdrop-blur-3xl border border-white/10 p-3 md:p-5 rounded-2xl md:rounded-[2rem] w-fit shadow-2xl">
+                                <p className="text-[8px] md:text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-1">Party Join Code</p>
+                                <div className="flex items-center gap-3 md:gap-4">
+                                    <span className="text-2xl md:text-4xl font-black font-mono tracking-[0.1em] text-white">
+                                        {currentParty?.passcode || "------"}
+                                    </span>
+                                    <div className="h-6 md:h-8 w-[1px] md:w-[2px] bg-white/10" />
+                                    <div className="flex flex-col">
+                                        <span className="text-accent text-[8px] md:text-[10px] font-black uppercase tracking-widest">Live Now</span>
+                                        <span className="text-white/60 text-[8px] md:text-[10px] font-bold">jam4me.app</span>
+                                    </div>
                                 </div>
                             </div>
                         </motion.div>
@@ -132,7 +131,7 @@ export function NowPlayingPage() {
             {/* BOTTOM DOCK / TASKBAR */}
             <AnimatePresence>
                 {(nowPlaying && (nowPlaying.now_playing || nowPlaying.now_playing_data)) && (
-                    <div className="absolute bottom-10 inset-x-0 flex justify-center px-6 z-50">
+                    <div className="absolute bottom-32 inset-x-0 flex justify-center px-6 z-50">
                         <motion.div
                             initial={{ y: 100, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}

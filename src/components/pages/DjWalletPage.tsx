@@ -10,12 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { toast } from "sonner";
-import { WalletIcon, ArrowDownIcon, ArrowUpIcon, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { WalletIcon, ArrowDownIcon, ArrowUpIcon, Clock, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import apiClient from "../../api/apiClient";
 
 export function DjWalletPage() {
   const { user } = useAuth();
-  const { balance, transactions, withdrawFunds } = useWallet();
+  const { balance, transactions, withdrawFunds, refreshWalletData, isLoading } = useWallet();
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -28,6 +28,11 @@ export function DjWalletPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [verificationError, setVerificationError] = useState("");
+
+  // Refresh wallet data on mount
+  useEffect(() => {
+    refreshWalletData();
+  }, [refreshWalletData]);
 
   // I'll run this once when the page loads to get the bank list.
   useEffect(() => {
@@ -202,9 +207,25 @@ export function DjWalletPage() {
               <CardDescription>Your current wallet balance</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center space-x-2">
-                <WalletIcon className="h-6 w-6 text-primary" />
-                <span className="text-3xl font-bold">₦{(balance || 0).toLocaleString()}</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <WalletIcon className="h-6 w-6 text-primary" />
+                  <span className="text-3xl font-bold">₦{(balance || 0).toLocaleString()}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refreshWalletData()}
+                  disabled={isLoading}
+                  className="rounded-full px-4 h-8 bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary-foreground font-bold"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                  ) : (
+                    <Clock className="h-3 w-3 mr-2" />
+                  )}
+                  Refresh
+                </Button>
               </div>
             </CardContent>
             <CardFooter>

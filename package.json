@@ -3,14 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "description": "A Nigerian web platform connecting party-goers with DJs",
-  "main": "index.html",
+  "main": "electron/main.js",
   "scripts": {
     "start": "vite --port 4050",
     "build": "tsc && vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "test": "vitest"
+    "test": "vitest",
+    "electron:dev": "concurrently \"npm start\" \"wait-on http://localhost:4050 && electron .\"",
+    "electron:build": "npm run build && electron-builder"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -78,6 +80,10 @@
     "@typescript-eslint/parser": "^6.18.0",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^40.6.1",
+    "electron-builder": "^26.8.1",
     "eslint": "^8.56.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
@@ -88,7 +94,8 @@
     "typescript-eslint": "^8.0.1",
     "vite": "^6.3.5",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^3.2.3"
+    "vitest": "^3.2.3",
+    "wait-on": "^9.0.4"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -104,5 +111,20 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "build": {
+    "appId": "com.jam4me.app",
+    "productName": "Jam4me",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/logo.png"
+    }
   }
 }

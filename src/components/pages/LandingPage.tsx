@@ -1,20 +1,23 @@
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Users, CreditCard, Sparkles, PartyPopper, Volume2 } from "lucide-react";
+import { Download, Share, Smartphone, Sparkles, Volume2, X, Users, CreditCard, PartyPopper } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 import { useAuth } from "../../context/AuthContext";
 import { ImageWithFallback } from "../figma/ImageWithFallback";
 import { LogoPlaceholder } from "../LogoPlaceholder";
-import React, { useEffect, useState } from "react";
+import { usePWAInstall } from "../../hooks/usePWAInstall";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../ui/dialog";
 
 // Animation variants
 const containerVariants = {
-  hidden: { 
-    opacity: 0 
+  hidden: {
+    opacity: 0
   },
-  visible: { 
+  visible: {
     opacity: 1,
-    transition: { 
+    transition: {
       staggerChildren: 0.1,
       delayChildren: 0.3
     }
@@ -22,14 +25,14 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { 
-    y: 20, 
-    opacity: 0 
+  hidden: {
+    y: 20,
+    opacity: 0
   },
-  visible: { 
-    y: 0, 
+  visible: {
+    y: 0,
     opacity: 1,
-    transition: { 
+    transition: {
       type: "spring",
       stiffness: 100,
       damping: 10
@@ -38,14 +41,14 @@ const itemVariants = {
 };
 
 const featureCardVariants = {
-  hidden: { 
-    y: 50, 
-    opacity: 0 
+  hidden: {
+    y: 50,
+    opacity: 0
   },
-  visible: { 
-    y: 0, 
+  visible: {
+    y: 0,
     opacity: 1,
-    transition: { 
+    transition: {
       type: "spring",
       stiffness: 100,
       damping: 12
@@ -53,25 +56,49 @@ const featureCardVariants = {
   }
 };
 
-// Direct URL to the Nigerian DJ image
 const DJ_IMAGE_URL = "https://img.freepik.com/premium-photo/african-american-dj-wearing-headphones-glasses-mixing-music-nightclub_14117-115215.jpg?uid=P192534668&ga=GA1.1.1381693928.1739400041&semt=ais_items_boosted&w=740";
 
 export function LandingPage() {
-  const { isAuthenticated, getHomeRoute, isDj, getUserType } = useAuth();
+  const { isAuthenticated, getHomeRoute, getUserType } = useAuth();
   const [imageLoaded, setImageLoaded] = useState(false);
-  
-  // Dynamically generate user's home route based on their stored type
   const homeRoute = getHomeRoute();
-  
-  // Get user type for more personalized messaging
   const userType = getUserType();
-  
+
+  const { isInstallable, isInstalled, isIOS, installPWA } = usePWAInstall();
+  const [showIosInstallDialog, setShowIosInstallDialog] = useState(false);
+  const [isWindows, setIsWindows] = useState(false);
+
+  useEffect(() => {
+    // Detect Windows PC
+    const platform = (navigator as any).userAgentData?.platform || navigator.platform;
+    if (platform.toLowerCase().includes('win')) {
+      setIsWindows(true);
+    }
+  }, []);
+
+  const handleDownloadClick = async () => {
+    if (isIOS) {
+      setShowIosInstallDialog(true);
+      return;
+    }
+
+    if (isInstallable) {
+      const success = await installPWA();
+      if (success) {
+        toast.success("Installation started!");
+      }
+    } else {
+      // If it's android/chrome but install event haven't fired, redirect to instructions or show a message
+      toast.info("To install: use your browser's menu and select 'Install' or 'Add to Home Screen'.");
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <div className="relative flex flex-col items-center justify-center text-center px-4 py-20 md:py-32 overflow-hidden">
         {/* Background image with overlay */}
         <div className="absolute inset-0 z-0 overflow-hidden">
-          <img 
+          <img
             src={DJ_IMAGE_URL}
             alt="Nigerian DJ mixing music"
             className="absolute inset-0 w-full h-full object-cover"
@@ -81,42 +108,42 @@ export function LandingPage() {
               setImageLoaded(true);
             }}
           />
-          
+
           {/* Darker overlay to dim the background image more */}
           <div className="absolute inset-0 bg-black/70"></div>
-          
+
           {/* Animated elements for visual interest */}
-          <motion.div 
+          <motion.div
             className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-primary/20 blur-3xl"
-            animate={{ 
-              x: [0, 50, 0], 
+            animate={{
+              x: [0, 50, 0],
               y: [0, 30, 0],
               scale: [1, 1.2, 1],
-              opacity: [0.2, 0.3, 0.2] 
+              opacity: [0.2, 0.3, 0.2]
             }}
-            transition={{ 
-              duration: 10, 
+            transition={{
+              duration: 10,
               repeat: Infinity,
-              repeatType: "reverse" 
+              repeatType: "reverse"
             }}
           />
-          <motion.div 
+          <motion.div
             className="absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full bg-accent/20 blur-3xl"
-            animate={{ 
-              x: [0, -30, 0], 
+            animate={{
+              x: [0, -30, 0],
               y: [0, 50, 0],
               scale: [1, 1.1, 1],
-              opacity: [0.2, 0.3, 0.2] 
+              opacity: [0.2, 0.3, 0.2]
             }}
-            transition={{ 
-              duration: 8, 
+            transition={{
+              duration: 8,
               repeat: Infinity,
               repeatType: "reverse",
-              delay: 1 
+              delay: 1
             }}
           />
         </div>
-        
+
         {/* Content with proper centering classes */}
         <div className="relative z-10 flex flex-col items-center justify-center w-full">
           <motion.div variants={itemVariants} className="flex justify-center">
@@ -131,14 +158,39 @@ export function LandingPage() {
           <motion.div variants={itemVariants} className="flex flex-col sm:flex-row justify-center gap-4">
             <Button size="lg" className="glow" asChild>
               <Link to={isAuthenticated ? homeRoute : "/register"}>
-                {isAuthenticated 
-                  ? userType === "HUB_DJ" 
-                    ? "Go to DJ Dashboard" 
+                {isAuthenticated
+                  ? userType === "HUB_DJ"
+                    ? "Go to DJ Dashboard"
                     : "Go to Parties"
                   : "Create Account"
                 }
               </Link>
             </Button>
+            {isWindows ? (
+              <Button
+                size="lg"
+                variant="outline"
+                asChild
+                className="glow-accent bg-accent/20 border-accent/30 hover:bg-accent/30 text-white font-bold flex items-center gap-2"
+              >
+                <a href="/downloads/Jam4me-Setup.exe" download>
+                  <Download className="w-5 h-5" />
+                  Download for Windows
+                </a>
+              </Button>
+            ) : (
+              !isInstalled && (
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={handleDownloadClick}
+                  className="glow-accent bg-accent/10 border-accent/20 hover:bg-accent/20 text-white font-bold flex items-center gap-2"
+                >
+                  <Download className="w-5 h-5" />
+                  Download App
+                </Button>
+              )
+            )}
             {!isAuthenticated && (
               <Button size="lg" variant="outline" asChild className="backdrop-blur-sm bg-black/20 border-white/20 hover:bg-black/30">
                 <Link to="/login">Login</Link>
@@ -147,8 +199,53 @@ export function LandingPage() {
           </motion.div>
         </div>
       </div>
-      
-      <motion.div 
+
+      {/* iOS Install Prompt Dialog */}
+      <Dialog open={showIosInstallDialog} onOpenChange={setShowIosInstallDialog}>
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50 rounded-3xl overflow-hidden shadow-3xl">
+          <DialogHeader className="pt-6">
+            <div className="flex justify-center mb-4">
+              <div className="p-4 bg-primary/20 rounded-2xl">
+                <Smartphone className="w-10 h-10 text-primary" />
+              </div>
+            </div>
+            <DialogTitle className="text-2xl font-black text-center gradient-text uppercase tracking-tighter italic">Install Jam4me on iOS</DialogTitle>
+            <DialogDescription className="text-center text-muted-foreground font-medium pt-2">
+              Follow these simple steps to add Jam4me directly to your home screen for the best experience.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-6 px-2">
+            <div className="flex items-center gap-5 bg-white/5 p-4 rounded-2xl border border-white/10 group hover:border-primary/30 transition-all duration-300">
+              <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-primary rounded-xl font-black text-lg text-white group-hover:scale-110 transition-transform">1</div>
+              <div className="flex flex-col">
+                <p className="text-white font-bold flex items-center gap-2">
+                  Tap the <Share className="w-4 h-4 text-primary" /> button
+                </p>
+                <span className="text-xs text-muted-foreground uppercase tracking-widest font-black leading-none mt-1.5 pt-0.5">Found in your browser's menu bar</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-5 bg-white/5 p-4 rounded-2xl border border-white/10 group hover:border-primary/30 transition-all duration-300">
+              <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-primary rounded-xl font-black text-lg text-white group-hover:scale-110 transition-transform">2</div>
+              <div className="flex flex-col">
+                <p className="text-white font-bold flex items-center gap-2">
+                  Select <span className="bg-white/10 px-2 py-0.5 rounded-md border border-white/10">Add to Home Screen</span>
+                </p>
+                <span className="text-xs text-muted-foreground uppercase tracking-widest font-black leading-none mt-1.5 pt-0.5">Scroll down if you don't see it</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="pb-6 px-2">
+            <Button onClick={() => setShowIosInstallDialog(false)} className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/25 transition-all active:scale-95">
+              Got it!
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <motion.div
         className="container mx-auto px-4 py-16"
         initial="hidden"
         whileInView="visible"
@@ -163,9 +260,9 @@ export function LandingPage() {
             Jam4me connects party-goers with DJs in real-time, creating an interactive music experience for Nigerian nightlife
           </motion.p>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <motion.div 
+          <motion.div
             className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-lg p-6"
             variants={featureCardVariants}
           >
@@ -191,8 +288,8 @@ export function LandingPage() {
               </li>
             </ul>
           </motion.div>
-          
-          <motion.div 
+
+          <motion.div
             className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-lg p-6"
             variants={featureCardVariants}
           >
@@ -218,8 +315,8 @@ export function LandingPage() {
               </li>
             </ul>
           </motion.div>
-          
-          <motion.div 
+
+          <motion.div
             className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-lg p-6 md:col-span-2 lg:col-span-1"
             variants={featureCardVariants}
           >
@@ -247,18 +344,18 @@ export function LandingPage() {
           </motion.div>
         </div>
       </motion.div>
-      
+
       <div className="relative bg-gradient-to-b from-background to-background/80 py-16">
         <div className="absolute inset-0 z-0 opacity-10 overflow-hidden">
           {/* Secondary background image */}
-          <img 
+          <img
             src={DJ_IMAGE_URL}
             alt="Nigerian DJ background"
             className="absolute inset-0 w-full h-full object-cover"
           />
         </div>
-        
-        <motion.div 
+
+        <motion.div
           className="container mx-auto px-4 relative z-10"
           initial="hidden"
           whileInView="visible"
@@ -273,9 +370,9 @@ export function LandingPage() {
               Jam4me brings the vibrant Nigerian party culture to your smartphone, connecting you directly with the music
             </motion.p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <motion.div 
+            <motion.div
               className="order-2 md:order-1"
               variants={featureCardVariants}
             >
@@ -292,7 +389,7 @@ export function LandingPage() {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start gap-4">
                   <div className="bg-accent/10 text-accent p-3 rounded-full">
                     <Sparkles className="w-6 h-6" />
@@ -304,7 +401,7 @@ export function LandingPage() {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start gap-4">
                   <div className="bg-accent/10 text-accent p-3 rounded-full">
                     <Volume2 className="w-6 h-6" />
@@ -318,8 +415,8 @@ export function LandingPage() {
                 </div>
               </div>
             </motion.div>
-            
-            <motion.div 
+
+            <motion.div
               className="order-1 md:order-2 flex justify-center"
               variants={featureCardVariants}
             >
@@ -331,14 +428,14 @@ export function LandingPage() {
                   width={400}
                   height={533}
                 />
-                
+
               </div>
             </motion.div>
           </div>
         </motion.div>
       </div>
-      
-      <motion.div 
+
+      <motion.div
         className="container mx-auto px-4 py-16 text-center"
         initial="hidden"
         whileInView="visible"
@@ -354,9 +451,9 @@ export function LandingPage() {
         <motion.div variants={itemVariants}>
           <Button size="lg" className="glow" asChild>
             <Link to={isAuthenticated ? homeRoute : "/register"}>
-              {isAuthenticated 
-                ? userType === "HUB_DJ" 
-                  ? "Go to DJ Dashboard" 
+              {isAuthenticated
+                ? userType === "HUB_DJ"
+                  ? "Go to DJ Dashboard"
                   : "Go to Parties"
                 : "Get Started For Free"
               }
@@ -364,7 +461,7 @@ export function LandingPage() {
           </Button>
         </motion.div>
       </motion.div>
-      
+
       <footer className="bg-card/40 backdrop-blur-sm py-8">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center">

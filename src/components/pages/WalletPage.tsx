@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import { useWallet } from "../../context/WalletContext";
+import { useWallet, Transaction } from "../../context/WalletContext";
 import {
   Card,
   CardContent,
@@ -58,6 +58,7 @@ export function WalletPage() {
     transactions,
     fundWallet,
     withdrawFunds,
+    refreshWalletData,
     isLoading,
   } = useWallet();
   const [fundAmount, setFundAmount] = useState("");
@@ -70,6 +71,11 @@ export function WalletPage() {
     useState(false);
   const [selectedBank, setSelectedBank] = useState("");
   const [showValidationPopup, setShowValidationPopup] = useState(false);
+
+  // Refresh wallet data on mount
+  useEffect(() => {
+    refreshWalletData();
+  }, [refreshWalletData]);
 
   // I'm adding all the states I need for the real withdrawal flow.
   const [banks, setBanks] = useState<{ name: string; code: string }[]>([]);
@@ -288,7 +294,7 @@ export function WalletPage() {
     });
   };
 
-  const walletTransactions = transactions.map((tx) => ({
+  const walletTransactions = transactions.map((tx: Transaction) => ({
     id: tx.id,
     type:
       tx.type === "deposit"
@@ -304,24 +310,24 @@ export function WalletPage() {
   }));
 
   const totalFunded = transactions
-    .filter((tx) => tx.type === "deposit")
-    .reduce((sum, tx) => sum + tx.amount, 0);
+    .filter((tx: Transaction) => tx.type === "deposit")
+    .reduce((sum: number, tx: Transaction) => sum + tx.amount, 0);
 
   const totalSpent = transactions
     .filter(
-      (tx) =>
+      (tx: Transaction) =>
         tx.type === "payment" &&
         !(tx.description || "").includes("refund"),
     )
-    .reduce((sum, tx) => sum + tx.amount, 0);
+    .reduce((sum: number, tx: Transaction) => sum + tx.amount, 0);
 
   const totalRefunded = transactions
     .filter(
-      (tx) =>
+      (tx: Transaction) =>
         tx.type === "refund" ||
         (tx.description || "").includes("refund"),
     )
-    .reduce((sum, tx) => sum + tx.amount, 0);
+    .reduce((sum: number, tx: Transaction) => sum + tx.amount, 0);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -348,11 +354,27 @@ export function WalletPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center space-x-2">
-                <WalletIcon className="h-6 w-6 text-primary" />
-                <span className="text-3xl font-bold">
-                  ₦{(balance || 0).toLocaleString()}
-                </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <WalletIcon className="h-6 w-6 text-primary" />
+                  <span className="text-3xl font-bold">
+                    ₦{(balance || 0).toLocaleString()}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refreshWalletData()}
+                  disabled={isLoading}
+                  className="rounded-full px-4 h-8 bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary-foreground font-bold"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                  ) : (
+                    <Clock className="h-3 w-3 mr-2" />
+                  )}
+                  Refresh
+                </Button>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-2">
@@ -692,7 +714,7 @@ export function WalletPage() {
               <CardContent>
                 <div className="space-y-4">
                   {walletTransactions.length > 0 ? (
-                    walletTransactions.map((tx) => (
+                    walletTransactions.map((tx: any) => (
                       <div
                         key={tx.id}
                         className="flex items-center justify-between p-4 rounded-lg bg-muted/30 backdrop-blur-sm"
@@ -799,11 +821,11 @@ export function WalletPage() {
                 <div className="space-y-4">
                   {walletTransactions
                     .filter(
-                      (tx) =>
+                      (tx: any) =>
                         tx.type === "fund" ||
                         tx.type === "withdrawal",
                     )
-                    .map((tx) => (
+                    .map((tx: any) => (
                       <div
                         key={tx.id}
                         className="flex items-center justify-between p-4 rounded-lg bg-muted/30 backdrop-blur-sm"
@@ -862,8 +884,8 @@ export function WalletPage() {
               <CardContent>
                 <div className="space-y-4">
                   {walletTransactions
-                    .filter((tx) => tx.type === "spend")
-                    .map((tx) => (
+                    .filter((tx: any) => tx.type === "spend")
+                    .map((tx: any) => (
                       <div
                         key={tx.id}
                         className="flex items-center justify-between p-4 rounded-lg bg-muted/30 backdrop-blur-sm"
