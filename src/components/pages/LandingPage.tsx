@@ -153,7 +153,7 @@ export function LandingPage() {
             Jam4me
           </motion.h1>
           <motion.p variants={itemVariants} className="text-xl text-white max-w-md mb-8 drop-shadow-md">
-            Request your favorite songs at parties by paying the DJ directly
+            Influence the vibe. Support the DJ and get your tracks played instantly.
           </motion.p>
           <motion.div variants={itemVariants} className="flex flex-col sm:flex-row justify-center gap-4">
             <Button size="lg" className="glow" asChild>

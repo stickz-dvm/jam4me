@@ -7,12 +7,15 @@ function createWindow() {
         width: 1200,
         height: 800,
         title: "Jam4me",
+        autoHideMenuBar: true,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
             preload: path.join(__dirname, 'preload.js')
         },
-        icon: path.join(__dirname, '../public/logo.png') // Make sure you have a logo.png
+        icon: isDev
+            ? path.join(__dirname, '../public/logo.png')
+            : path.join(__dirname, '../dist/logo.png')
     });
 
     // Remove menu bar

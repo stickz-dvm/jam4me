@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import React from "react";
 
@@ -92,7 +92,7 @@ function AppWithProviders() {
         <WalletProvider>
           <PartyProvider>
             <SpotifyProvider>
-              <BrowserRouter>
+              <HashRouter>
                 <Routes>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<LoginPage />} />
@@ -135,7 +135,7 @@ function AppWithProviders() {
                   {/* Fallback route */}
                   <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
-              </BrowserRouter>
+              </HashRouter>
               <Toaster
                 position="top-center"
                 toastOptions={{
